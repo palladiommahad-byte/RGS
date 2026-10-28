@@ -1,0 +1,57 @@
+import type { ApiError as ApiErrorShape } from '@riad/shared';
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string,
+    public readonly details?: unknown,
+  ) {
+    super(message);
+  }
+}
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+/** One refresh at a time, shared by every request that hit a 401 concurrently. */
+function refreshSession(): Promise<boolean> {
+  refreshInFlight ??= fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'same-origin' })
+    .then((r) => r.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+type ApiInit = Omit<RequestInit, 'body'> & { body?: unknown };
+
+/** Browser-side client for the API (same-origin through the Next.js rewrite). */
+export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
+  const doFetch = () =>
+    fetch(`/api/v1${path}`, {
+      ...init,
+      credentials: 'same-origin',
+      headers: {
+        ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...init.headers,
+      },
+      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+    });
+
+  let res = await doFetch();
+  if (res.status === 401 && !path.startsWith('/auth/')) {
+    if (await refreshSession()) res = await doFetch();
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorShape>;
+    throw new ApiError(
+      res.status,
+      body.code ?? 'ERROR',
+      body.message ?? res.statusText,
+      body.details,
+    );
+  }
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}

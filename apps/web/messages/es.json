@@ -1,0 +1,116 @@
+{
+  "common": {
+    "loading": "Cargando…",
+    "language": "Idioma",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "close": "Cerrar"
+  },
+  "localeNames": {
+    "en": "English",
+    "fr": "Français",
+    "es": "Español",
+    "ar": "العربية"
+  },
+  "validation": {
+    "required": "Obligatorio.",
+    "invalid": "Valor no válido.",
+    "invalid_date": "Fecha no válida.",
+    "invalid_nationality": "Elija una nacionalidad.",
+    "invalid_email": "Correo electrónico no válido.",
+    "invalid_phone": "Número de teléfono no válido para este país.",
+    "departure_after_today": "La salida debe ser posterior a hoy."
+  },
+  "documentType": {
+    "PASSPORT": "Pasaporte",
+    "ID_CARD": "Documento de identidad",
+    "OTHER": "Otro documento"
+  },
+  "sex": {
+    "M": "Hombre",
+    "F": "Mujer",
+    "X": "No especificado"
+  },
+  "guest": {
+    "firstName": "Nombre(s)",
+    "lastName": "Apellidos",
+    "sex": "Sexo",
+    "nationality": "Nacionalidad",
+    "birthDate": "Fecha de nacimiento",
+    "document": "Documento",
+    "documentType": "Tipo de documento",
+    "documentNumber": "Número de documento",
+    "documentExpiry": "Fecha de caducidad",
+    "phone": "Teléfono",
+    "email": "Correo electrónico"
+  },
+  "checkin": {
+    "pageTitle": "Check-in en línea",
+    "welcome": "Bienvenido a {riad}",
+    "intro": "Haga el check-in desde su teléfono en 2 minutos: foto del pasaporte, datos de contacto y firma.",
+    "introPassport": "Tenga a mano su pasaporte o documento de identidad",
+    "introReception": "Después, la recepción le entregará la llave",
+    "room": "Habitación: {room}",
+    "start": "Empezar",
+    "invalidLink": "Este enlace de check-in no es válido. Diríjase a la recepción.",
+    "step": "Paso {current} de {total}",
+    "submit": "Finalizar el check-in",
+    "submitting": "Enviando…",
+    "passport": {
+      "mainTitle": "Pasaporte del huésped principal",
+      "guestTitle": "Pasaporte del huésped {n}",
+      "hint": "Coloque el documento plano, abierto en la página de la foto y con buena luz. Las dos líneas inferiores deben verse nítidas.",
+      "takePhoto": "Hacer una foto",
+      "choose": "Elegir una foto",
+      "manual": "Introducir los datos a mano",
+      "reading": "Leyendo el documento…",
+      "readOk": "Documento leído. Revise cada campo antes de continuar.",
+      "readPartial": "Algunos datos no se han podido leer con seguridad. Revíselos con atención.",
+      "readFailed": "No se ha podido leer automáticamente. Rellene los campos.",
+      "retake": "Repetir la foto",
+      "usePhoto": "Usar una foto",
+      "unsupported": "Formato de imagen no compatible. Haga una nueva foto.",
+      "uploadError": "No se ha podido enviar la foto. Compruebe su conexión e inténtelo de nuevo."
+    },
+    "contact": {
+      "title": "Contacto y estancia",
+      "phone": "Teléfono",
+      "country": "País",
+      "email": "Correo electrónico",
+      "emailHint": "Opcional — para recibir su factura.",
+      "adults": "Adultos",
+      "children": "Niños",
+      "departure": "Fecha de salida"
+    },
+    "consent": {
+      "title": "Consentimiento y firma",
+      "text": "De conformidad con la Ley marroquí n.º 09-08 relativa a la protección de las personas físicas respecto al tratamiento de datos personales, {riad} trata los datos recogidos aquí (identidad, documento de viaje, datos de contacto y firma) para registrar su estancia y cumplir su obligación legal de declarar a los viajeros ante las autoridades (ficha policial).\n\nSolo el personal autorizado del riad y las autoridades competentes pueden acceder a estos datos. La foto de su documento se elimina {days} días después de su salida; los datos del registro se conservan durante el plazo exigido por la ley.\n\nPuede ejercer sus derechos de acceso, rectificación y oposición ante {email}. Este tratamiento ha sido declarado ante la CNDP (autoridad marroquí de protección de datos).",
+      "atReception": "la recepción",
+      "accept": "He leído esta información y acepto el tratamiento de mis datos.",
+      "acceptRequired": "Marque la casilla para continuar.",
+      "signHere": "Firme dentro del recuadro",
+      "signLine": "Firma",
+      "clear": "Borrar",
+      "signatureRequired": "Firme dentro del recuadro."
+    },
+    "done": {
+      "title": "¡Gracias, su check-in se ha enviado!",
+      "reception": "Pase por la recepción para recoger su llave.",
+      "wifi": "Wi-Fi"
+    },
+    "errors": {
+      "generic": "Se ha producido un error. Inténtelo de nuevo o diríjase a la recepción.",
+      "NETWORK": "Sin conexión. Compruebe internet e inténtelo de nuevo.",
+      "TOO_MANY_REQUESTS": "Demasiados intentos. Diríjase a la recepción.",
+      "INVALID_DATES": "La fecha de salida debe ser posterior a hoy.",
+      "PHOTO_EXPIRED": "Una foto del pasaporte ha caducado. Hágala de nuevo.",
+      "INVALID_PHOTO": "Una foto del pasaporte no es válida. Hágala de nuevo.",
+      "INVALID_SIGNATURE": "No se ha podido leer la firma. Firme de nuevo.",
+      "TOO_MANY_GUESTS": "Hay más documentos que adultos.",
+      "INVALID_CHECKIN_LINK": "Este enlace de check-in ya no es válido.",
+      "VALIDATION_ERROR": "Algunos datos no son válidos. Revise los pasos anteriores."
+    }
+  }
+}

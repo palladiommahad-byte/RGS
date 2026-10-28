@@ -1,0 +1,46 @@
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AuditModule } from './audit/audit.module';
+import { AuthModule } from './auth/auth.module';
+import { CheckinModule } from './checkin/checkin.module';
+import { AuthCoreModule } from './common/auth/auth-core.module';
+import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
+import { PermissionsGuard } from './common/auth/permissions.guard';
+import { CryptoModule } from './common/crypto/crypto.module';
+import { HealthController } from './health/health.controller';
+import { PrismaModule } from './prisma/prisma.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { RetentionService } from './retention/retention.service';
+import { RoomsModule } from './rooms/rooms.module';
+import { StaysModule } from './stays/stays.module';
+import { StorageModule } from './storage/storage.module';
+
+@Module({
+  imports: [
+    PrismaModule,
+    CryptoModule,
+    AuditModule,
+    AuthCoreModule,
+    StorageModule,
+    RealtimeModule,
+    ScheduleModule.forRoot(),
+    JwtModule.register({ global: true }),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
+    AuthModule,
+    RoomsModule,
+    StaysModule,
+    CheckinModule,
+  ],
+  controllers: [HealthController],
+  providers: [
+    RetentionService,
+    // Order matters: rate limit -> authenticate -> authorise.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
+  ],
+})
+export class AppModule {}

@@ -1,0 +1,58 @@
+# Local development services. Host ports are configurable in .env
+# (Postgres defaults to 5433 to avoid clashing with a native Postgres on 5432).
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: riad
+      POSTGRES_PASSWORD: riad
+      POSTGRES_DB: riad
+    ports:
+      - '${POSTGRES_HOST_PORT:-5433}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U riad -d riad']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # MinIO no longer publishes images on Docker Hub; Chainguard maintains a build.
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '${MINIO_API_HOST_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_HOST_PORT:-9001}:9001'
+    volumes:
+      - miniodata:/data
+
+  # Creates the buckets once MinIO answers. Private buckets get no policy, so their
+  # objects are only reachable through signed URLs; riad-public is world-readable.
+  minio-init:
+    image: amazon/aws-cli:2.27.50
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        S3="aws --endpoint-url http://minio:9000"
+        until $$S3 s3 ls >/dev/null 2>&1; do echo "waiting for minio"; sleep 1; done
+        for b in riad-passports riad-receipts riad-documents riad-public; do
+          $$S3 s3 mb s3://$$b 2>/dev/null || true
+        done
+        $$S3 s3api put-bucket-policy --bucket riad-public --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::riad-public/*"]}]}'
+        echo "buckets ready"
+
+volumes:
+  pgdata:
+  miniodata:

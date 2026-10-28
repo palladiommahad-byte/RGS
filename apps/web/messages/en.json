@@ -1,0 +1,116 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "language": "Language",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "next": "Next",
+    "back": "Back",
+    "close": "Close"
+  },
+  "localeNames": {
+    "en": "English",
+    "fr": "Français",
+    "es": "Español",
+    "ar": "العربية"
+  },
+  "validation": {
+    "required": "Required.",
+    "invalid": "Invalid value.",
+    "invalid_date": "Invalid date.",
+    "invalid_nationality": "Choose a nationality.",
+    "invalid_email": "Invalid email address.",
+    "invalid_phone": "Invalid phone number for this country.",
+    "departure_after_today": "Departure must be after today."
+  },
+  "documentType": {
+    "PASSPORT": "Passport",
+    "ID_CARD": "Identity card",
+    "OTHER": "Other document"
+  },
+  "sex": {
+    "M": "Male",
+    "F": "Female",
+    "X": "Unspecified"
+  },
+  "guest": {
+    "firstName": "First name(s)",
+    "lastName": "Surname",
+    "sex": "Sex",
+    "nationality": "Nationality",
+    "birthDate": "Date of birth",
+    "document": "Document",
+    "documentType": "Document type",
+    "documentNumber": "Document number",
+    "documentExpiry": "Expiry date",
+    "phone": "Phone",
+    "email": "Email"
+  },
+  "checkin": {
+    "pageTitle": "Online check-in",
+    "welcome": "Welcome to {riad}",
+    "intro": "Check in from your phone in 2 minutes: passport photo, contact details and signature.",
+    "introPassport": "Have your passport or ID card at hand",
+    "introReception": "Reception will then hand you your key",
+    "room": "Room: {room}",
+    "start": "Start",
+    "invalidLink": "This check-in link is not valid. Please ask at reception.",
+    "step": "Step {current} of {total}",
+    "submit": "Complete check-in",
+    "submitting": "Sending…",
+    "passport": {
+      "mainTitle": "Main guest's passport",
+      "guestTitle": "Guest {n}'s passport",
+      "hint": "Lay the document flat, photo page open, in good light. The two lines at the bottom must be sharp.",
+      "takePhoto": "Take a photo",
+      "choose": "Choose a photo",
+      "manual": "Enter the details by hand",
+      "reading": "Reading your document…",
+      "readOk": "Document read. Please check every field before continuing.",
+      "readPartial": "Some details could not be read with certainty. Please check them carefully.",
+      "readFailed": "We could not read it automatically. Please fill in the fields.",
+      "retake": "Retake photo",
+      "usePhoto": "Use a photo",
+      "unsupported": "Unsupported image format. Please take a new photo.",
+      "uploadError": "The photo could not be sent. Check your connection and try again."
+    },
+    "contact": {
+      "title": "Contact & stay",
+      "phone": "Phone",
+      "country": "Country",
+      "email": "Email",
+      "emailHint": "Optional — to receive your invoice.",
+      "adults": "Adults",
+      "children": "Children",
+      "departure": "Departure date"
+    },
+    "consent": {
+      "title": "Consent & signature",
+      "text": "In accordance with Moroccan Law No. 09-08 on the protection of individuals with regard to the processing of personal data, {riad} processes the data collected here (identity, travel document, contact details and signature) to register your stay and to meet its legal obligation to declare guests to the authorities (police form).\n\nOnly authorised riad staff and the competent authorities can access this data. The photo of your document is deleted {days} days after your departure; the register details are kept for the period required by law.\n\nYou have the right to access, correct and object to this processing, which you can exercise with {email}. This processing has been declared to the CNDP (Moroccan data protection authority).",
+      "atReception": "reception",
+      "accept": "I have read this information and agree to the processing of my data.",
+      "acceptRequired": "Please tick the box to continue.",
+      "signHere": "Sign in the box",
+      "signLine": "Signature",
+      "clear": "Clear",
+      "signatureRequired": "Please sign in the box."
+    },
+    "done": {
+      "title": "Thank you, your check-in has been sent!",
+      "reception": "Please come to reception to collect your key.",
+      "wifi": "Wi-Fi"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again or ask at reception.",
+      "NETWORK": "No connection. Check your internet and try again.",
+      "TOO_MANY_REQUESTS": "Too many attempts. Please ask at reception.",
+      "INVALID_DATES": "The departure date must be after today.",
+      "PHOTO_EXPIRED": "A passport photo has expired. Please take it again.",
+      "INVALID_PHOTO": "A passport photo is invalid. Please take it again.",
+      "INVALID_SIGNATURE": "The signature could not be read. Please sign again.",
+      "TOO_MANY_GUESTS": "There are more documents than adults.",
+      "INVALID_CHECKIN_LINK": "This check-in link is no longer valid.",
+      "VALIDATION_ERROR": "Some details are invalid. Please check the previous steps."
+    }
+  }
+}

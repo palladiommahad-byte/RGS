@@ -1,0 +1,259 @@
+import type { INestApplication } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import { addDays, todayIso, type StayDetailDto, type TodayDto } from '@riad/shared';
+import sharp from 'sharp';
+import request from 'supertest';
+import type TestAgent from 'supertest/lib/agent';
+import { PASSPORT_OCR } from '../src/ocr/passport-ocr.provider';
+import { RealtimeGateway } from '../src/realtime/realtime.gateway';
+import { RetentionService } from '../src/retention/retention.service';
+import { StorageService } from '../src/storage/storage.service';
+import { createApp, createRiad, FakeStorage, loginAs, resetDatabase, type RiadFixture } from './fixtures';
+
+const API = '/api/v1';
+const GERMAN_MRZ = 'P<D<<MUSTERMANN<<ERIKA<<<<<<<<<<<<<<<<<<<<<<\nC01X00T478D<<6408125F2702283<<<<<<<<<<<<<<<4';
+
+describe('QR self check-in (e2e)', () => {
+  let app: INestApplication;
+  let prisma: PrismaClient;
+  let storage: FakeStorage;
+  let a: RiadFixture;
+  let b: RiadFixture;
+  let keyA: string;
+  let keyB: string;
+  let roomToken: string;
+  let receptionA: TestAgent;
+  let housekeepingA: TestAgent;
+  let emit: jest.SpyInstance;
+  let photo: Buffer;
+  let signature: string;
+  const ocrText = { value: GERMAN_MRZ };
+
+  const tomorrow = addDays(todayIso(), 1);
+  const http = () => request(app.getHttpServer());
+
+  const scan = (link: Record<string, string>, image = photo, type = 'image/jpeg') => {
+    const req = http().post(`${API}/checkin/scan-passport`);
+    for (const [k, v] of Object.entries(link)) void req.field(k, v);
+    return req.attach('image', image, { filename: 'passport.jpg', contentType: type });
+  };
+
+  const body = (overrides: Record<string, unknown> = {}) => ({
+    r: keyA,
+    locale: 'en',
+    phone: '+4915112345678',
+    email: 'erika@example.com',
+    adults: 1,
+    children: 0,
+    checkOutDate: tomorrow,
+    consent: true,
+    signature,
+    guests: [{ firstName: 'Erika', lastName: 'Mustermann', nationality: 'DEU', documentType: 'PASSPORT', documentNumber: 'C01X00T47' }],
+    ...overrides,
+  });
+
+  beforeAll(async () => {
+    prisma = new PrismaClient();
+    await resetDatabase(prisma);
+    a = await createRiad(prisma, 'Riad A');
+    b = await createRiad(prisma, 'Riad B');
+    await prisma.riad.update({ where: { id: a.riadId }, data: { wifiInfo: 'RiadGuest / bienvenue' } });
+    keyA = (await prisma.riad.findUniqueOrThrow({ where: { id: a.riadId } })).checkinKey;
+    keyB = (await prisma.riad.findUniqueOrThrow({ where: { id: b.riadId } })).checkinKey;
+    roomToken = (await prisma.room.findUniqueOrThrow({ where: { id: a.rooms[1]!.id } })).qrToken;
+
+    storage = new FakeStorage();
+    app = await createApp((builder) =>
+      builder
+        .overrideProvider(StorageService)
+        .useValue(storage)
+        .overrideProvider(PASSPORT_OCR)
+        .useValue({ name: 'fake', recognize: async () => ocrText.value }),
+    );
+    emit = jest.spyOn(app.get(RealtimeGateway), 'emitToRiad');
+    receptionA = await loginAs(app, a.emails.RECEPTION);
+    housekeepingA = await loginAs(app, a.emails.HOUSEKEEPING);
+
+    photo = await sharp({ create: { width: 640, height: 450, channels: 3, background: '#d9e4ff' } }).jpeg().toBuffer();
+    const png = await sharp({ create: { width: 300, height: 120, channels: 4, background: '#ffffff00' } }).png().toBuffer();
+    signature = `data:image/png;base64,${png.toString('base64')}`;
+  });
+
+  afterAll(async () => {
+    await app?.close();
+    await prisma?.$disconnect();
+  });
+
+  describe('context', () => {
+    it('resolves the entrance and room QR codes', async () => {
+      const entrance = await http().get(`${API}/checkin/context?r=${keyA}`).expect(200);
+      expect(entrance.body).toMatchObject({ riadName: 'Riad A', roomName: null, retentionDays: 90 });
+      const room = await http().get(`${API}/checkin/context?room=${roomToken}`).expect(200);
+      expect(room.body.roomName).toBe('Room 2');
+    });
+
+    it('rejects unknown links', async () => {
+      const res = await http().get(`${API}/checkin/context?r=nope`).expect(404);
+      expect(res.body.code).toBe('INVALID_CHECKIN_LINK');
+      await http().get(`${API}/checkin/context`).expect(404);
+    });
+  });
+
+  describe('scan-passport', () => {
+    it('stores the photo as pending and returns the MRZ fields', async () => {
+      const res = await scan({ r: keyA }).expect(200);
+      expect(res.body.photoRef).toMatch(/^[0-9a-f-]{36}\.[\w-]+$/);
+      expect(res.body.mrz).toMatchObject({
+        valid: true,
+        fields: { lastName: 'Mustermann', firstName: 'Erika', nationality: 'DEU', birthDate: '1964-08-12' },
+      });
+      expect(storage.keys('passports', `pending/${a.riadId}/`)).toHaveLength(1);
+    });
+
+    it('answers mrz: null when nothing is readable (manual entry)', async () => {
+      ocrText.value = 'just a blurry photo';
+      const res = await scan({ r: keyA }).expect(200);
+      expect(res.body.mrz).toBeNull();
+      ocrText.value = GERMAN_MRZ;
+    });
+
+    it('refuses non-images and unknown links', async () => {
+      const res = await scan({ r: keyA }, Buffer.from('hello'), 'text/plain').expect(400);
+      expect(res.body.code).toBe('UNSUPPORTED_IMAGE');
+      await scan({ r: 'nope' }).expect(404);
+    });
+  });
+
+  describe('submit', () => {
+    let stayId: string;
+
+    it('creates a pending stay, moves the photo, stores the signature and notifies staff', async () => {
+      const scanned = await scan({ room: roomToken }).expect(200);
+      emit.mockClear();
+      const res = await http()
+        .post(`${API}/checkin/submit`)
+        .send(
+          body({
+            r: undefined,
+            room: roomToken,
+            adults: 2,
+            children: 1,
+            guests: [
+              { ...body().guests[0], photoRef: scanned.body.photoRef, mrzRaw: GERMAN_MRZ },
+              { firstName: 'Max', lastName: 'Mustermann' },
+            ],
+          }),
+        )
+        .expect(201);
+      expect(res.body).toEqual({ riadName: 'Riad A', wifiInfo: 'RiadGuest / bienvenue' });
+
+      expect(emit).toHaveBeenCalledWith(a.riadId, 'checkin:new', expect.objectContaining({ status: 'PENDING' }));
+      stayId = (emit.mock.calls[0]![2] as { id: string }).id;
+
+      const today = (await receptionA.get(`${API}/today`).expect(200)).body as TodayDto;
+      const pending = today.pending.find((s) => s.id === stayId)!;
+      expect(pending).toMatchObject({ adults: 2, children: 1, guestCount: 2, requestedRoom: { name: 'Room 2' } });
+
+      const detail = (await receptionA.get(`${API}/stays/${stayId}`).expect(200)).body as StayDetailDto;
+      const main = detail.guests.find((g) => g.isMain)!;
+      expect(main).toMatchObject({ phone: '+4915112345678', documentNumber: 'C01X00T47', hasPassportPhoto: true });
+      expect(main.consentAt).not.toBeNull();
+
+      const files = await receptionA.get(`${API}/stays/${stayId}/guests/${main.id}/files`).expect(200);
+      expect(files.body.passportPhotoUrl).toContain(`riads/${a.riadId}/stays/${stayId}/`);
+      expect(files.body.signatureUrl).toContain('signature.png');
+      expect(storage.keys('passports', `riads/${a.riadId}/stays/${stayId}/`)).toHaveLength(2);
+      // The pending upload used by this check-in is gone.
+      const ref = (scanned.body.photoRef as string).split('.')[0];
+      expect(storage.has('passports', `pending/${a.riadId}/${ref}.jpg`)).toBe(false);
+    });
+
+    it("refuses a photo uploaded through another riad's link", async () => {
+      const scannedB = await scan({ r: keyB }).expect(200);
+      const res = await http()
+        .post(`${API}/checkin/submit`)
+        .send(body({ guests: [{ ...body().guests[0], photoRef: scannedB.body.photoRef }] }))
+        .expect(400);
+      expect(res.body.code).toBe('INVALID_PHOTO');
+    });
+
+    it('validates consent, dates and guest count', async () => {
+      await http().post(`${API}/checkin/submit`).send(body({ consent: false })).expect(400);
+      const dates = await http().post(`${API}/checkin/submit`).send(body({ checkOutDate: todayIso() })).expect(400);
+      expect(dates.body.code).toBe('INVALID_DATES');
+      const many = await http()
+        .post(`${API}/checkin/submit`)
+        .send(body({ guests: [body().guests[0], body().guests[0]] }))
+        .expect(400);
+      expect(many.body.code).toBe('TOO_MANY_GUESTS');
+      await http().post(`${API}/checkin/submit`).send(body({ signature: 'data:image/png;base64,AAAA' })).expect(400);
+    });
+
+    it('silently drops honeypot submissions', async () => {
+      const before = await prisma.stay.count();
+      const res = await http().post(`${API}/checkin/submit`).send(body({ website: 'http://spam' })).expect(201);
+      expect(res.body.wifiInfo).toBeNull();
+      expect(await prisma.stay.count()).toBe(before);
+    });
+
+    it('lets only check-in staff reject, and deletes the files', async () => {
+      await housekeepingA.post(`${API}/stays/${stayId}/reject`).expect(403);
+      await receptionA.post(`${API}/stays/${stayId}/reject`).expect(204);
+      await receptionA.get(`${API}/stays/${stayId}`).expect(404);
+      expect(storage.keys('passports', `riads/${a.riadId}/stays/${stayId}/`)).toHaveLength(0);
+      expect(await prisma.auditLog.count({ where: { entityId: stayId, action: 'stay.reject' } })).toBe(1);
+    });
+
+    it('cannot reject a checked-in stay', async () => {
+      const stay = await receptionA
+        .post(`${API}/stays`)
+        .send({
+          source: 'WALK_IN',
+          checkInDate: todayIso(),
+          checkOutDate: tomorrow,
+          adults: 1,
+          children: 0,
+          pricePerNight: 1,
+          roomId: a.rooms[0]!.id,
+          checkInNow: true,
+          mainGuest: { firstName: 'A', lastName: 'B' },
+        })
+        .expect(201);
+      const res = await receptionA.post(`${API}/stays/${stay.body.id}/reject`).expect(409);
+      expect(res.body.code).toBe('INVALID_TRANSITION');
+    });
+  });
+
+  describe('retention', () => {
+    it('deletes passport photos of stays that ended before the retention window', async () => {
+      const old = await prisma.stay.create({
+        data: {
+          riadId: a.riadId,
+          status: 'CHECKED_OUT',
+          checkInDate: new Date('2025-01-01'),
+          checkOutDate: new Date('2025-01-03'),
+          nights: 2,
+          guests: {
+            create: { riadId: a.riadId, isMain: true, firstName: 'Old', lastName: 'Guest', passportPhotoKey: 'riads/x/old.jpg' },
+          },
+        },
+        include: { guests: true },
+      });
+      await storage.put('passports', 'riads/x/old.jpg', Buffer.from('x'));
+      const purged = await app.get(RetentionService).purgePassportPhotos(new Date('2026-10-28'));
+      expect(purged).toBe(1);
+      expect(storage.has('passports', 'riads/x/old.jpg')).toBe(false);
+      const guest = await prisma.guest.findUniqueOrThrow({ where: { id: old.guests[0]!.id } });
+      expect(guest.passportPhotoKey).toBeNull();
+      expect(guest.lastName).toBe('Guest'); // the register keeps the text data
+    });
+  });
+
+  it('rate-limits submissions to 10 per hour per IP', async () => {
+    let status = 0;
+    for (let i = 0; i < 12 && status !== 429; i++) {
+      status = (await http().post(`${API}/checkin/submit`).send(body({ website: 'bot' }))).status;
+    }
+    expect(status).toBe(429);
+  });
+});

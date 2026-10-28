@@ -1,0 +1,689 @@
+// Riad Management System — V1 data model.
+// Conventions:
+// - Every business table carries riad_id (multi-tenant). Queries are always scoped
+//   by the riad_id from the JWT, never from the request body.
+// - Money is integer centimes (Int). Never Float/Decimal for amounts.
+// - Columns are snake_case in Postgres (@map), camelCase in TypeScript.
+// - document_number and cin are AES-256-GCM ciphertext; *_hash columns are HMAC
+//   blind indexes used for exact-match search.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum RoomStatus {
+  FREE
+  OCCUPIED
+  CLEANING
+  OUT_OF_SERVICE
+}
+
+enum StaySource {
+  BOOKING
+  AIRBNB
+  EXPEDIA
+  DIRECT
+  WALK_IN
+  OTHER
+}
+
+enum StayStatus {
+  PENDING
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum ExtraCategory {
+  FOOD
+  HAMMAM
+  TRANSFER
+  EXCURSION
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTA_COLLECTED
+}
+
+enum ExpensePaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  CHEQUE
+  PETTY_CASH
+}
+
+enum CashMovementType {
+  TOP_UP
+  EXPENSE
+  ADJUSTMENT
+}
+
+enum TaxCode {
+  TVA_ACCOMMODATION
+  TVA_FOOD
+  TAXE_SEJOUR
+  TPT
+}
+
+enum TaxMode {
+  PERCENT
+  PER_PERSON_PER_NIGHT
+}
+
+enum ContractType {
+  CDI
+  CDD
+  ANAPEC
+  FREELANCE
+  OTHER
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  UNPAID
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ---------------------------------------------------------------------------
+// Tenant & access control
+// ---------------------------------------------------------------------------
+
+model Riad {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  address       String?
+  city          String   @default("Marrakech")
+  phone         String?
+  email         String?
+  logoKey       String?  @map("logo_key")
+  taxCategory   String?  @map("tax_category")
+  invoicePrefix String   @default("INV") @map("invoice_prefix")
+  wifiInfo      String?  @map("wifi_info")
+  /// Secret token in the entrance QR code (/checkin?r=...); rotate to invalidate printed codes.
+  checkinKey    String   @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)")) @map("checkin_key")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  users             User[]
+  roles             Role[]
+  rooms             Room[]
+  stays             Stay[]
+  guests            Guest[]
+  stayExtras        StayExtra[]
+  payments          Payment[]
+  invoices          Invoice[]
+  expenseCategories ExpenseCategory[]
+  suppliers         Supplier[]
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
+  cashWallets       CashWallet[]
+  cashMovements     CashMovement[]
+  employees         Employee[]
+  attendances       Attendance[]
+  leaves            Leave[]
+  payrollEntries    PayrollEntry[]
+  taxSettings       TaxSetting[]
+  auditLogs         AuditLog[]
+  invoiceSequences  InvoiceSequence[]
+
+  @@map("riads")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  riadId       String    @map("riad_id") @db.Uuid
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  roleId       String    @map("role_id") @db.Uuid
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  riad          Riad           @relation(fields: [riadId], references: [id])
+  role          Role           @relation(fields: [roleId], references: [id])
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  cashWallets   CashWallet[]   @relation("WalletHolder")
+
+  @@index([riadId])
+  @@map("users")
+}
+
+/// Rotating refresh tokens. Only a SHA-256 hash of the token is stored.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent")
+  ip        String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  riadId    String   @map("riad_id") @db.Uuid
+  key       String
+  nameFr    String   @map("name_fr")
+  nameAr    String   @map("name_ar")
+  isSystem  Boolean  @default(true) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  riad        Riad             @relation(fields: [riadId], references: [id])
+  users       User[]
+  permissions RolePermission[]
+
+  @@unique([riadId, key])
+  @@map("roles")
+}
+
+/// Global catalogue of permission codes (e.g. "stays.read").
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ---------------------------------------------------------------------------
+// Rooms & stays
+// ---------------------------------------------------------------------------
+
+model Room {
+  id        String     @id @default(uuid()) @db.Uuid
+  riadId    String     @map("riad_id") @db.Uuid
+  name      String
+  type      String
+  capacity  Int
+  basePrice Int        @map("base_price") // centimes per night
+  status    RoomStatus @default(FREE)
+  qrToken   String     @unique @map("qr_token")
+  isActive  Boolean    @default(true) @map("is_active")
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  createdBy String?    @map("created_by") @db.Uuid
+
+  riad           Riad   @relation(fields: [riadId], references: [id])
+  stays          Stay[] @relation("StayRoom")
+  requestedStays Stay[] @relation("StayRequestedRoom")
+
+  @@unique([riadId, name])
+  @@index([riadId, status])
+  @@map("rooms")
+}
+
+model Stay {
+  id                 String     @id @default(uuid()) @db.Uuid
+  riadId             String     @map("riad_id") @db.Uuid
+  roomId             String?    @map("room_id") @db.Uuid
+  /// Room suggested by a room QR before staff confirmation.
+  requestedRoomId    String?    @map("requested_room_id") @db.Uuid
+  source             StaySource @default(DIRECT)
+  externalRef        String?    @map("external_ref")
+  checkInDate        DateTime   @map("check_in_date") @db.Date
+  checkOutDate       DateTime   @map("check_out_date") @db.Date
+  nights             Int
+  adults             Int        @default(1)
+  children           Int        @default(0)
+  pricePerNight      Int        @default(0) @map("price_per_night") // centimes
+  totalAccommodation Int        @default(0) @map("total_accommodation") // centimes
+  otaCommission      Int        @default(0) @map("ota_commission") // centimes
+  status             StayStatus @default(PENDING)
+  confirmedBy        String?    @map("confirmed_by") @db.Uuid
+  confirmedAt        DateTime?  @map("confirmed_at")
+  checkedOutAt       DateTime?  @map("checked_out_at")
+  notes              String?
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  createdBy          String?    @map("created_by") @db.Uuid
+
+  riad          Riad        @relation(fields: [riadId], references: [id])
+  room          Room?       @relation("StayRoom", fields: [roomId], references: [id])
+  requestedRoom Room?       @relation("StayRequestedRoom", fields: [requestedRoomId], references: [id])
+  guests        Guest[]
+  extras        StayExtra[]
+  payments      Payment[]
+  invoices      Invoice[]
+
+  @@index([riadId, status])
+  @@index([riadId, checkInDate])
+  @@index([riadId, checkOutDate])
+  @@map("stays")
+}
+
+model Guest {
+  id                 String    @id @default(uuid()) @db.Uuid
+  riadId             String    @map("riad_id") @db.Uuid
+  stayId             String    @map("stay_id") @db.Uuid
+  isMain             Boolean   @default(false) @map("is_main")
+  firstName          String    @map("first_name")
+  lastName           String    @map("last_name")
+  sex                String?
+  nationality        String? // ISO 3166-1 alpha-3 as printed in the MRZ
+  birthDate          DateTime? @map("birth_date") @db.Date
+  documentType       String?   @map("document_type")
+  documentNumber     String?   @map("document_number") // encrypted
+  documentNumberHash String?   @map("document_number_hash") // HMAC blind index
+  documentExpiry     DateTime? @map("document_expiry") @db.Date
+  phone              String?
+  email              String?
+  passportPhotoKey   String?   @map("passport_photo_key")
+  signatureKey       String?   @map("signature_key")
+  consentAt          DateTime? @map("consent_at")
+  mrzRaw             String?   @map("mrz_raw")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  riad Riad @relation(fields: [riadId], references: [id])
+  stay Stay @relation(fields: [stayId], references: [id], onDelete: Cascade)
+
+  @@index([riadId, lastName])
+  @@index([riadId, documentNumberHash])
+  @@index([stayId])
+  @@map("guests")
+}
+
+model StayExtra {
+  id        String        @id @default(uuid()) @db.Uuid
+  riadId    String        @map("riad_id") @db.Uuid
+  stayId    String        @map("stay_id") @db.Uuid
+  label     String
+  category  ExtraCategory
+  quantity  Int           @default(1)
+  unitPrice Int           @map("unit_price") // centimes
+  total     Int // centimes
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  createdBy String?       @map("created_by") @db.Uuid
+
+  riad Riad @relation(fields: [riadId], references: [id])
+  stay Stay @relation(fields: [stayId], references: [id], onDelete: Cascade)
+
+  @@index([stayId])
+  @@map("stay_extras")
+}
+
+model Payment {
+  id         String        @id @default(uuid()) @db.Uuid
+  riadId     String        @map("riad_id") @db.Uuid
+  stayId     String        @map("stay_id") @db.Uuid
+  amount     Int // centimes
+  method     PaymentMethod
+  paidAt     DateTime      @default(now()) @map("paid_at")
+  receivedBy String?       @map("received_by") @db.Uuid
+  note       String?
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  riad Riad @relation(fields: [riadId], references: [id])
+  stay Stay @relation(fields: [stayId], references: [id])
+
+  @@index([riadId, paidAt])
+  @@index([stayId])
+  @@map("payments")
+}
+
+/// Per riad, per year counter so invoice numbers are sequential without gaps.
+model InvoiceSequence {
+  riadId    String   @map("riad_id") @db.Uuid
+  year      Int
+  lastValue Int      @default(0) @map("last_value")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  riad Riad @relation(fields: [riadId], references: [id])
+
+  @@id([riadId, year])
+  @@map("invoice_sequences")
+}
+
+model Invoice {
+  id         String   @id @default(uuid()) @db.Uuid
+  riadId     String   @map("riad_id") @db.Uuid
+  stayId     String   @map("stay_id") @db.Uuid
+  number     String
+  year       Int
+  sequence   Int
+  totalHt    Int      @map("total_ht")
+  tvaAmount  Int      @map("tva_amount")
+  taxeSejour Int      @map("taxe_sejour")
+  tpt        Int
+  totalTtc   Int      @map("total_ttc")
+  /// Snapshot of the lines and rates used, so old invoices never change.
+  breakdown  Json?
+  pdfKey     String?  @map("pdf_key")
+  issuedAt   DateTime @default(now()) @map("issued_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdBy  String?  @map("created_by") @db.Uuid
+
+  riad Riad @relation(fields: [riadId], references: [id])
+  stay Stay @relation(fields: [stayId], references: [id])
+
+  @@unique([riadId, number])
+  @@unique([riadId, year, sequence])
+  @@index([riadId, issuedAt])
+  @@map("invoices")
+}
+
+// ---------------------------------------------------------------------------
+// Expenses
+// ---------------------------------------------------------------------------
+
+model ExpenseCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  riadId    String   @map("riad_id") @db.Uuid
+  /// Stable key for system categories (e.g. SALARIES), null for custom ones.
+  key       String?
+  nameFr    String   @map("name_fr")
+  nameAr    String   @map("name_ar")
+  icon      String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  riad              Riad               @relation(fields: [riadId], references: [id])
+  expenses          Expense[]
+  suppliers         Supplier[]
+  recurringExpenses RecurringExpense[]
+
+  @@unique([riadId, key])
+  @@map("expense_categories")
+}
+
+model Supplier {
+  id                String   @id @default(uuid()) @db.Uuid
+  riadId            String   @map("riad_id") @db.Uuid
+  name              String
+  defaultCategoryId String?  @map("default_category_id") @db.Uuid
+  phone             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdBy         String?  @map("created_by") @db.Uuid
+
+  riad            Riad             @relation(fields: [riadId], references: [id])
+  defaultCategory ExpenseCategory? @relation(fields: [defaultCategoryId], references: [id])
+  expenses        Expense[]
+
+  @@unique([riadId, name])
+  @@map("suppliers")
+}
+
+model Expense {
+  id             String               @id @default(uuid()) @db.Uuid
+  riadId         String               @map("riad_id") @db.Uuid
+  categoryId     String               @map("category_id") @db.Uuid
+  supplierId     String?              @map("supplier_id") @db.Uuid
+  amountTtc      Int                  @map("amount_ttc") // centimes
+  tvaAmount      Int                  @default(0) @map("tva_amount") // centimes, deductible TVA
+  date           DateTime             @db.Date
+  paymentMethod  ExpensePaymentMethod @default(CASH) @map("payment_method")
+  note           String?
+  receiptKey     String?              @map("receipt_key")
+  recurringId    String?              @map("recurring_id") @db.Uuid
+  walletId       String?              @map("wallet_id") @db.Uuid
+  payrollEntryId String?              @unique @map("payroll_entry_id") @db.Uuid
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  createdBy      String?              @map("created_by") @db.Uuid
+
+  riad         Riad              @relation(fields: [riadId], references: [id])
+  category     ExpenseCategory   @relation(fields: [categoryId], references: [id])
+  supplier     Supplier?         @relation(fields: [supplierId], references: [id])
+  recurring    RecurringExpense? @relation(fields: [recurringId], references: [id])
+  wallet       CashWallet?       @relation(fields: [walletId], references: [id])
+  payrollEntry PayrollEntry?     @relation(fields: [payrollEntryId], references: [id])
+  cashMovement CashMovement?
+
+  @@unique([recurringId, date])
+  @@index([riadId, date])
+  @@index([riadId, categoryId])
+  @@map("expenses")
+}
+
+model RecurringExpense {
+  id         String   @id @default(uuid()) @db.Uuid
+  riadId     String   @map("riad_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  label      String
+  amount     Int // centimes
+  dayOfMonth Int      @map("day_of_month")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdBy  String?  @map("created_by") @db.Uuid
+
+  riad     Riad            @relation(fields: [riadId], references: [id])
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  expenses Expense[]
+
+  @@index([riadId, isActive])
+  @@map("recurring_expenses")
+}
+
+model CashWallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  riadId    String   @map("riad_id") @db.Uuid
+  holderId  String   @map("holder_id") @db.Uuid
+  name      String
+  balance   Int      @default(0) // centimes, kept in sync with movements
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by") @db.Uuid
+
+  riad      Riad           @relation(fields: [riadId], references: [id])
+  holder    User           @relation("WalletHolder", fields: [holderId], references: [id])
+  movements CashMovement[]
+  expenses  Expense[]
+
+  @@index([riadId])
+  @@map("cash_wallets")
+}
+
+model CashMovement {
+  id        String           @id @default(uuid()) @db.Uuid
+  riadId    String           @map("riad_id") @db.Uuid
+  walletId  String           @map("wallet_id") @db.Uuid
+  type      CashMovementType
+  /// Signed centimes: positive for top-ups, negative for spending.
+  amount    Int
+  expenseId String?          @unique @map("expense_id") @db.Uuid
+  note      String?
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  createdBy String?          @map("created_by") @db.Uuid
+
+  riad    Riad       @relation(fields: [riadId], references: [id])
+  wallet  CashWallet @relation(fields: [walletId], references: [id])
+  expense Expense?   @relation(fields: [expenseId], references: [id])
+
+  @@index([walletId, createdAt])
+  @@map("cash_movements")
+}
+
+// ---------------------------------------------------------------------------
+// HR — only reachable by users holding hr.* permissions
+// ---------------------------------------------------------------------------
+
+model Employee {
+  id              String       @id @default(uuid()) @db.Uuid
+  riadId          String       @map("riad_id") @db.Uuid
+  firstName       String       @map("first_name")
+  lastName        String       @map("last_name")
+  cin             String? // encrypted
+  cinHash         String?      @map("cin_hash") // HMAC blind index
+  cnssNumber      String?      @map("cnss_number")
+  phone           String?
+  position        String
+  contractType    ContractType @default(CDI) @map("contract_type")
+  hireDate        DateTime     @map("hire_date") @db.Date
+  baseSalary      Int          @map("base_salary") // centimes per month
+  isActive        Boolean      @default(true) @map("is_active")
+  contractFileKey String?      @map("contract_file_key")
+  /// Secret token encoded in the employee's personal staff QR.
+  clockToken      String       @unique @map("clock_token")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  createdBy       String?      @map("created_by") @db.Uuid
+
+  riad           Riad           @relation(fields: [riadId], references: [id])
+  attendances    Attendance[]
+  leaves         Leave[]
+  payrollEntries PayrollEntry[]
+
+  @@index([riadId, isActive])
+  @@map("employees")
+}
+
+model Attendance {
+  id         String    @id @default(uuid()) @db.Uuid
+  riadId     String    @map("riad_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  checkInAt  DateTime  @map("check_in_at")
+  checkOutAt DateTime? @map("check_out_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  riad     Riad     @relation(fields: [riadId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([riadId, checkInAt])
+  @@index([employeeId, checkInAt])
+  @@map("attendances")
+}
+
+model Leave {
+  id         String      @id @default(uuid()) @db.Uuid
+  riadId     String      @map("riad_id") @db.Uuid
+  employeeId String      @map("employee_id") @db.Uuid
+  type       LeaveType
+  startDate  DateTime    @map("start_date") @db.Date
+  endDate    DateTime    @map("end_date") @db.Date
+  status     LeaveStatus @default(PENDING)
+  note       String?
+  decidedBy  String?     @map("decided_by") @db.Uuid
+  decidedAt  DateTime?   @map("decided_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  createdBy  String?     @map("created_by") @db.Uuid
+
+  riad     Riad     @relation(fields: [riadId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([riadId, startDate])
+  @@map("leaves")
+}
+
+model PayrollEntry {
+  id         String    @id @default(uuid()) @db.Uuid
+  riadId     String    @map("riad_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  /// First day of the payroll month.
+  month      DateTime  @db.Date
+  baseSalary Int       @map("base_salary")
+  bonuses    Int       @default(0)
+  advances   Int       @default(0)
+  deductions Int       @default(0)
+  netPaid    Int       @map("net_paid")
+  paidAt     DateTime? @map("paid_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+
+  riad     Riad     @relation(fields: [riadId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+  expense  Expense?
+
+  @@unique([employeeId, month])
+  @@index([riadId, month])
+  @@map("payroll_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Taxes & audit
+// ---------------------------------------------------------------------------
+
+/// Rates are data, never code. `value` is basis points for PERCENT (10% = 1000)
+/// and centimes for PER_PERSON_PER_NIGHT. valid_to null = still in force.
+model TaxSetting {
+  id        String    @id @default(uuid()) @db.Uuid
+  riadId    String    @map("riad_id") @db.Uuid
+  code      TaxCode
+  mode      TaxMode
+  value     Int
+  validFrom DateTime  @map("valid_from") @db.Date
+  validTo   DateTime? @map("valid_to") @db.Date
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by") @db.Uuid
+
+  riad Riad @relation(fields: [riadId], references: [id])
+
+  @@index([riadId, code, validFrom])
+  @@map("tax_settings")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  riadId    String   @map("riad_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  diff      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  riad Riad  @relation(fields: [riadId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([riadId, createdAt])
+  @@index([riadId, entity, entityId])
+  @@map("audit_logs")
+}
