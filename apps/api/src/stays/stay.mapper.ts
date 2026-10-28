@@ -24,6 +24,9 @@ export const stayDetailInclude = {
   room: { select: { id: true, name: true } },
   requestedRoom: { select: { id: true, name: true } },
   guests: { orderBy: [{ isMain: 'desc' }, { createdAt: 'asc' }] },
+  extras: { orderBy: { createdAt: 'asc' } },
+  payments: { orderBy: { paidAt: 'asc' } },
+  invoices: { orderBy: { issuedAt: 'asc' }, select: { id: true, number: true, totalTtc: true, issuedAt: true } },
   _count: { select: { guests: true } },
 } satisfies Prisma.StayInclude;
 
@@ -78,7 +81,7 @@ export function toGuestDto(g: Guest, enc: FieldEncryption): GuestDto {
 
 export function toStayDetail(
   s: StayDetailRow,
-  confirmedBy: { id: string; name: string } | null,
+  users: Map<string, { id: string; name: string }>,
   enc: FieldEncryption,
 ): StayDetailDto {
   const main = s.guests.find((g) => g.isMain);
@@ -90,8 +93,26 @@ export function toStayDetail(
     otaCommission: s.otaCommission,
     notes: s.notes,
     confirmedAt: s.confirmedAt?.toISOString() ?? null,
-    confirmedBy,
+    confirmedBy: (s.confirmedBy && users.get(s.confirmedBy)) || null,
     checkedOutAt: s.checkedOutAt?.toISOString() ?? null,
     guests: s.guests.map((g) => toGuestDto(g, enc)),
+    extras: s.extras.map((e) => ({
+      id: e.id,
+      label: e.label,
+      category: e.category,
+      quantity: e.quantity,
+      unitPrice: e.unitPrice,
+      total: e.total,
+      createdAt: e.createdAt.toISOString(),
+    })),
+    payments: s.payments.map((pm) => ({
+      id: pm.id,
+      amount: pm.amount,
+      method: pm.method,
+      paidAt: pm.paidAt.toISOString(),
+      note: pm.note,
+      receivedBy: (pm.receivedBy && users.get(pm.receivedBy)) || null,
+    })),
+    invoices: s.invoices.map((i) => ({ ...i, issuedAt: i.issuedAt.toISOString() })),
   };
 }

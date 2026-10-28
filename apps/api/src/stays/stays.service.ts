@@ -2,7 +2,6 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, type Stay } from '@prisma/client';
 import {
   accommodationTotal,
-  CHECKIN_ROOM_STATUSES,
   isoToUtcDate,
   nightsBetween,
   PERMISSIONS,
@@ -25,6 +24,7 @@ import { pageArgs, paginated } from '../common/pagination';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { guestCreateData, guestUpdateData } from './guest-data';
+import { occupyRoom, releaseRoom } from './room-locks';
 import { stayDetailInclude, staySummaryInclude, toGuestDto, toStayDetail, toStaySummary } from './stay.mapper';
 import type {
   ConfirmStayDto,
@@ -98,13 +98,13 @@ export class StaysService {
       include: stayDetailInclude,
     });
     if (!stay) throw notFound('Stay');
-    const confirmedBy = stay.confirmedBy
-      ? await this.prisma.user.findFirst({
-          where: { id: stay.confirmedBy, riadId: p.riadId },
-          select: { id: true, name: true },
-        })
-      : null;
-    return toStayDetail(stay, confirmedBy, this.enc);
+    // Names of the staff who confirmed the stay and received payments.
+    const userIds = [stay.confirmedBy, ...stay.payments.map((pm) => pm.receivedBy)].filter((x): x is string => !!x);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: [...new Set(userIds)] }, riadId: p.riadId },
+      select: { id: true, name: true },
+    });
+    return toStayDetail(stay, new Map(users.map((u) => [u.id, u])), this.enc);
   }
 
   /** Data for the reception "Today" screen, in the riad's timezone. */
@@ -307,26 +307,6 @@ export class StaysService {
     return this.get(p, id);
   }
 
-  /**
-   * CHECKED_IN -> CHECKED_OUT and the room goes to CLEANING.
-   * Phase 4 extends this with extras, taxes, payments and the invoice.
-   */
-  async checkout(p: AuthPrincipal, id: string): Promise<StayDetailDto> {
-    const before = await this.findOrThrow(p.riadId, id);
-    assertStatus(before, 'CHECKED_IN', 'CHECKED_OUT');
-    await this.transition(
-      p,
-      id,
-      'CHECKED_IN',
-      { status: 'CHECKED_OUT', checkedOutAt: new Date() },
-      'stay.checkout',
-      async (tx) => {
-        if (before.roomId) await releaseRoom(tx, p.riadId, before.roomId);
-      },
-    );
-    return this.get(p, id);
-  }
-
   // ---------------------------------------------------------------------------
   // Guests
   // ---------------------------------------------------------------------------
@@ -481,24 +461,6 @@ export class StaysService {
 }
 
 // -----------------------------------------------------------------------------
-
-/** Atomically takes a free/cleaning room. Fails if someone else just took it. */
-async function occupyRoom(tx: Tx, riadId: string, roomId: string): Promise<void> {
-  const { count } = await tx.room.updateMany({
-    where: { id: roomId, riadId, isActive: true, status: { in: [...CHECKIN_ROOM_STATUSES] } },
-    data: { status: 'OCCUPIED' },
-  });
-  if (count !== 1) {
-    throw new AppException('ROOM_NOT_AVAILABLE', 'This room is occupied or out of service', HttpStatus.CONFLICT);
-  }
-}
-
-async function releaseRoom(tx: Tx, riadId: string, roomId: string): Promise<void> {
-  await tx.room.updateMany({
-    where: { id: roomId, riadId, status: 'OCCUPIED' },
-    data: { status: 'CLEANING' },
-  });
-}
 
 function nightsOrThrow(checkIn: string, checkOut: string): number {
   const nights = nightsBetween(checkIn, checkOut);

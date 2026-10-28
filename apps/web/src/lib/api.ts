@@ -55,3 +55,23 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/** Downloads a file endpoint (session-authenticated) and saves it with the server's filename. */
+export async function apiDownload(path: string, fallbackName: string): Promise<void> {
+  const doFetch = () => fetch(`/api/v1${path}`, { credentials: 'same-origin' });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshSession())) res = await doFetch();
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorShape>;
+    throw new ApiError(res.status, body.code ?? 'ERROR', body.message ?? res.statusText, body.details);
+  }
+  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}

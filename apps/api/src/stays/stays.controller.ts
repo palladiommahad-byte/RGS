@@ -84,13 +84,6 @@ export class StaysController {
     return this.stays.cancel(p, id);
   }
 
-  @RequirePermissions(P.STAYS_WRITE)
-  @Post(':id/checkout')
-  @HttpCode(HttpStatus.OK)
-  checkout(@CurrentUser() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string): Promise<StayDetailDto> {
-    return this.stays.checkout(p, id);
-  }
-
   @RequirePermissions(P.CHECKIN_CONFIRM)
   @Post(':id/reject')
   @HttpCode(HttpStatus.NO_CONTENT)

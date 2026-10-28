@@ -1,11 +1,12 @@
 'use client';
 
-import type { GuestDto, Paginated, RoomDto, StayDetailDto } from '@riad/shared';
+import type { BillDto, GuestDto, Paginated, RoomDto, StayDetailDto } from '@riad/shared';
 import { ArrowLeft, Ban, CheckCircle2, Pencil, Plus, ShieldCheck, Trash2, XCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { StayBilling } from '@/components/billing/stay-billing';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { StayStatusBadge } from '@/components/status-badges';
@@ -28,6 +29,7 @@ export default function StayDetailPage() {
   const router = useRouter();
   const stay = useApiQuery<StayDetailDto>(`/stays/${id}`);
   const rooms = useApiQuery<Paginated<RoomDto>>(can('rooms.read') ? '/rooms?limit=100' : null);
+  const bill = useApiQuery<BillDto>(`/stays/${id}/bill`);
   const [dialog, setDialog] = useState<'confirm' | 'edit' | 'guest' | null>(null);
   const [editingGuest, setEditingGuest] = useState<GuestDto | undefined>();
   const action = useAction();
@@ -35,6 +37,7 @@ export default function StayDetailPage() {
   const reload = () => {
     stay.reload();
     rooms.reload();
+    bill.reload();
   };
 
   if (stay.error) {
@@ -240,11 +243,7 @@ export default function StayDetailPage() {
         </Card>
       </div>
 
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="text-base font-normal text-muted-foreground">{t('stays.extrasPhase4')}</CardTitle>
-        </CardHeader>
-      </Card>
+      <StayBilling stay={s} bill={bill.data} onChanged={reload} />
 
       <ConfirmStayDialog stay={s} rooms={roomList} open={dialog === 'confirm'} onOpenChange={(o) => setDialog(o ? 'confirm' : null)} onDone={reload} />
       <EditStayDialog stay={s} rooms={roomList} open={dialog === 'edit'} onOpenChange={(o) => setDialog(o ? 'edit' : null)} onDone={reload} />

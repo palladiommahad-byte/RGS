@@ -7,3 +7,5 @@ export * from './schemas/auth';
 export * from './schemas/rooms';
 export * from './schemas/stays';
 export * from './schemas/checkin';
+export * from './billing';
+export * from './schemas/billing';

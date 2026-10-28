@@ -214,9 +214,12 @@ describe('Rooms & stays (e2e)', () => {
     });
 
     it('checks out: stay CHECKED_OUT, room CLEANING, then locked', async () => {
-      const res = await receptionA.post(`${API}/stays/${stayId}/checkout`).expect(200);
+      // Billing rules are covered in billing.e2e-spec; here the guest settles later.
+      await receptionA.post(`${API}/stays/${stayId}/checkout`).send({ acceptBalanceDue: true }).expect(200);
+      const res = await receptionA.get(`${API}/stays/${stayId}`).expect(200);
       expect(res.body.status).toBe('CHECKED_OUT');
       expect(res.body.checkedOutAt).not.toBeNull();
+      expect(res.body.invoices).toHaveLength(1);
       const r = await prisma.room.findUniqueOrThrow({ where: { id: a.rooms[1]!.id } });
       expect(r.status).toBe('CLEANING');
 

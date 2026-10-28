@@ -9,6 +9,7 @@ import {
   type StayStatus,
 } from '../constants';
 import { isIsoDate, type IsoDate } from '../dates';
+import type { InvoiceSummaryDto, PaymentDto, StayExtraDto } from './billing';
 
 const isoDate = z.string().refine(isIsoDate, 'invalid_date');
 const optionalText = (max: number) =>
@@ -111,6 +112,9 @@ export type StayDetailDto = StaySummaryDto & {
   confirmedBy: { id: string; name: string } | null;
   checkedOutAt: string | null;
   guests: GuestDto[];
+  extras: StayExtraDto[];
+  payments: PaymentDto[];
+  invoices: InvoiceSummaryDto[];
 };
 
 export type TodayDto = {

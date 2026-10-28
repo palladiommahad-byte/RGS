@@ -119,6 +119,11 @@ model Riad {
   logoKey       String?  @map("logo_key")
   taxCategory   String?  @map("tax_category")
   invoicePrefix String   @default("INV") @map("invoice_prefix")
+  /// Legal identifiers printed on invoices (Morocco: ICE, IF, RC, Patente).
+  ice           String?
+  fiscalId      String?  @map("fiscal_id")
+  rcNumber      String?  @map("rc_number")
+  patente       String?
   wifiInfo      String?  @map("wifi_info")
   /// Secret token in the entrance QR code (/checkin?r=...); rotate to invalidate printed codes.
   checkinKey    String   @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)")) @map("checkin_key")

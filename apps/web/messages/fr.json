@@ -78,7 +78,10 @@
     "STAY_CHANGED": "Ce séjour vient d'être modifié par quelqu'un d'autre. Actualisez.",
     "INVALID_TRANSITION": "Cette action n'est pas possible dans l'état actuel du séjour.",
     "MAIN_GUEST": "Le client principal ne peut pas être supprimé.",
-    "INVALID_CHECKIN_LINK": "Lien d'enregistrement invalide."
+    "INVALID_CHECKIN_LINK": "Lien d'enregistrement invalide.",
+    "BALANCE_DUE": "Le client doit encore de l'argent : encaissez le solde ou cochez « départ avec solde dû ».",
+    "PAYMENT_LOCKED": "Ce paiement figure sur une facture émise et ne peut plus être supprimé.",
+    "INVALID_AMOUNT": "Montant invalide."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -218,13 +221,11 @@
     "confirmedBy": "Arrivée confirmée par {name} le {date}",
     "checkout": "Faire le départ",
     "checkoutConfirm": "Confirmer le départ de {name} ? La chambre {room} passera « À nettoyer ».",
-    "checkoutPhase4": "Les extras, taxes, paiements et la facture seront ajoutés à la phase 4.",
     "checkedOutAt": "Parti le {date}",
     "edit": "Modifier le séjour",
     "cancelStay": "Annuler le séjour",
     "cancelConfirm": "Annuler ce séjour ? Cette action est définitive.",
     "removeGuestConfirm": "Retirer {name} de ce séjour ?",
-    "extrasPhase4": "Extras, paiements et facture : disponibles à la phase 4.",
     "reject": "Rejeter",
     "rejectConfirm": "Rejeter cet enregistrement ? Le séjour, les photos de passeport et la signature seront supprimés définitivement.",
     "verifyHint": "Comparez chaque photo de passeport avec les informations saisies par le client avant de confirmer l'arrivée.",
@@ -320,5 +321,95 @@
     "guests": "{count, plural, one {# personne} other {# personnes}}",
     "review": "Vérifier",
     "dismiss": "Fermer"
+  },
+  "paymentMethod": {
+    "CASH": "Espèces",
+    "CARD": "Carte bancaire",
+    "TRANSFER": "Virement",
+    "OTA_COLLECTED": "Encaissé par la plateforme"
+  },
+  "extraCategory": {
+    "FOOD": "Restauration",
+    "HAMMAM": "Hammam & soins",
+    "TRANSFER": "Transfert",
+    "EXCURSION": "Excursion",
+    "OTHER": "Autre"
+  },
+  "taxCode": {
+    "TVA_ACCOMMODATION": "TVA hébergement",
+    "TVA_FOOD": "TVA restauration",
+    "TAXE_SEJOUR": "Taxe de séjour",
+    "TPT": "TPT"
+  },
+  "bill": {
+    "title": "Montant du séjour",
+    "accommodation": "Hébergement",
+    "totalHt": "Total HT",
+    "tva": "TVA {rate}",
+    "taxeSejour": "Taxe de séjour",
+    "tpt": "Taxe de promotion touristique",
+    "totalTtc": "Total TTC",
+    "paid": "Déjà payé",
+    "balance": "Reste à payer",
+    "credit": "Trop-perçu à rendre",
+    "settled": "Soldé",
+    "missingRates": "Taux non configurés : {codes}. Ils sont comptés à 0.",
+    "accountant": "Les taux de taxes doivent être validés par votre comptable.",
+    "frozen": "Facture {number} émise le {date} — montants figés.",
+    "ratesOf": "Taux en vigueur le {date}"
+  },
+  "extras": {
+    "title": "Extras",
+    "add": "Ajouter un extra",
+    "label": "Désignation",
+    "category": "Catégorie",
+    "quantity": "Quantité",
+    "unitPrice": "Prix unitaire TTC (MAD)",
+    "empty": "Aucun extra pour ce séjour.",
+    "deleteConfirm": "Supprimer « {label} » ?",
+    "locked": "La facture est émise : les extras ne peuvent plus changer."
+  },
+  "payments": {
+    "title": "Paiements",
+    "add": "Encaisser",
+    "amount": "Montant (MAD)",
+    "method": "Mode de paiement",
+    "note": "Note (facultatif)",
+    "empty": "Aucun paiement enregistré.",
+    "deleteConfirm": "Supprimer ce paiement de {amount} ?",
+    "receivedBy": "par {name}"
+  },
+  "invoices": {
+    "title": "Factures",
+    "download": "PDF",
+    "issuedOn": "Émise le {date}",
+    "empty": "La facture est émise au départ du client."
+  },
+  "checkout": {
+    "title": "Départ et facture",
+    "description": "La facture de {name} sera numérotée et ne pourra plus être modifiée. La chambre passera « À nettoyer ».",
+    "settle": "Encaisser le solde",
+    "acceptBalance": "Départ avec solde dû (le client paiera plus tard) — enregistré dans le journal.",
+    "confirm": "Valider le départ",
+    "done": "Facture {number} émise.",
+    "downloadInvoice": "Télécharger la facture",
+    "close": "Terminer"
+  },
+  "register": {
+    "subtitle": "Fiche de police : tous les clients arrivés ou partis.",
+    "searchPlaceholder": "Nom, ou numéro de document exact",
+    "from": "Du",
+    "to": "Au",
+    "exportCsv": "CSV",
+    "exportXlsx": "Excel",
+    "export": "Exporter",
+    "exportHint": "Choisissez une période (366 jours max) pour exporter la fiche de police.",
+    "name": "Client",
+    "nationality": "Nationalité",
+    "document": "Document",
+    "birth": "Naissance",
+    "stay": "Séjour",
+    "room": "Chambre",
+    "empty": "Aucun client sur cette période."
   }
 }

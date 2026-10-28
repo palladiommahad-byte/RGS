@@ -95,6 +95,26 @@ stay and its files).
 - **To validate before go-live**: the consent text and the CNDP declaration number with a
   lawyer.
 
+## Checkout, payments & invoices (phase 4)
+
+- **Bill maths** (`packages/shared/src/billing.ts`, unit-tested): room prices and extras
+  are TTC and TVA is extracted per line (`HT = round(TTC × 10000 / (10000 + rate))`);
+  FOOD extras use `TVA_FOOD` (falls back to the accommodation rate), others
+  `TVA_ACCOMMODATION`; taxe de séjour and TPT are added on top without TVA
+  (`PER_PERSON_PER_NIGHT` × adults × nights, or `PERCENT` of accommodation HT). Rates come
+  from `tax_settings` in force on the invoice date; missing ones count as 0 with a warning.
+  **Have the accountant validate these conventions.**
+- **Checkout** requires the balance to be settled, or an explicit "balance due" choice
+  (audit-logged). It issues a gapless yearly number `<invoice_prefix>-<year>-00001`
+  (atomic counter in `invoice_sequences`), freezes the bill in `invoices.breakdown`,
+  renders a French A4 PDF (pdfkit) into the private documents bucket and frees the room for
+  cleaning. Extras lock once invoiced; payments can still be added to settle a balance.
+- **Invoices** print the riad's ICE / IF / RC / Patente when set (`riads` table; editable
+  from Settings in phase 8) and the total in words.
+- **Guest register** (`/dashboard/guests`): everyone who checked in or out, searchable by
+  name or exact document number (blind index); CSV (semicolon, UTF-8 BOM, formula-injection
+  safe) and Excel exports in police fiche order, max 366 days, audit-logged.
+
 ## Scripts
 
 | Command          | Does                                       |
