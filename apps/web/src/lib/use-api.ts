@@ -31,18 +31,23 @@ export function useApiQuery<T>(path: string | null) {
   return { ...state, reload };
 }
 
-/** Runs a mutation, exposing `pending` and a translated error message. */
+/**
+ * Runs a mutation, exposing `pending` and a translated error message.
+ * Resolves to `undefined` only on failure: a call with no body (204) resolves to `true`,
+ * so `if (await run(...))` works for deletes too.
+ */
 export function useAction() {
   const errorMessage = useApiErrorMessage();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async <T,>(fn: () => Promise<T>): Promise<T | undefined> => {
+    async <T,>(fn: () => Promise<T>): Promise<(T extends void | undefined ? true : T) | undefined> => {
       setPending(true);
       setError(null);
       try {
-        return await fn();
+        const result = await fn();
+        return (result === undefined ? true : result) as T extends void | undefined ? true : T;
       } catch (e) {
         setError(errorMessage(e));
         return undefined;

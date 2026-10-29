@@ -139,6 +139,45 @@ async function main(): Promise<void> {
     });
   }
 
+  // Expenses demo: suppliers with a default category, two recurring expenses and a
+  // petty-cash wallet for reception.
+  const categoryId = async (key: string) =>
+    (await prisma.expenseCategory.findUniqueOrThrow({ where: { riadId_key: { riadId: riad.id, key } } })).id;
+  const suppliers: [string, string][] = [
+    ['Épicerie du Derb', 'FOOD'],
+    ['Boucherie Mouassine', 'FOOD'],
+    ['Blanchisserie Médina', 'CLEANING'],
+    ['Droguerie Atlas', 'SUPPLIES'],
+    ['Plombier Hassan', 'MAINTENANCE'],
+  ];
+  for (const [name, key] of suppliers) {
+    await prisma.supplier.upsert({
+      where: { riadId_name: { riadId: riad.id, name } },
+      update: {},
+      create: { riadId: riad.id, name, defaultCategoryId: await categoryId(key) },
+    });
+  }
+  if ((await prisma.recurringExpense.count({ where: { riadId: riad.id } })) === 0) {
+    await prisma.recurringExpense.createMany({
+      data: [
+        { riadId: riad.id, label: 'Internet fibre', categoryId: await categoryId('UTILITIES'), amount: 49900, dayOfMonth: 5 },
+        { riadId: riad.id, label: 'Loyer du riad', categoryId: await categoryId('OTHER'), amount: 1500000, dayOfMonth: 1 },
+      ],
+    });
+  }
+  const reception = await prisma.user.findUniqueOrThrow({ where: { email: 'reception@riad.local' } });
+  if (!(await prisma.cashWallet.findFirst({ where: { riadId: riad.id, holderId: reception.id } }))) {
+    await prisma.cashWallet.create({
+      data: {
+        riadId: riad.id,
+        holderId: reception.id,
+        name: 'Caisse réception',
+        balance: 150000,
+        movements: { create: { riadId: riad.id, type: 'TOP_UP', amount: 150000, note: 'Fonds de caisse initial' } },
+      },
+    });
+  }
+
   console.log(`Seeded riad "${riad.name}" (${riad.id})`);
   console.log(`Users (password: ${DEFAULT_PASSWORD}):`);
   for (const u of USERS) console.log(`  ${u.key.padEnd(12)} ${u.email}`);

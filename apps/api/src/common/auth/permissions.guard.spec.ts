@@ -9,7 +9,7 @@ import {
 import type { NextFunction, Response } from 'express';
 import request from 'supertest';
 import { HttpExceptionFilter } from '../filters/http-exception.filter';
-import { AuthenticatedOnly, Public, RequirePermissions } from './decorators';
+import { AuthenticatedOnly, Public, RequireAnyPermission, RequirePermissions } from './decorators';
 import { PermissionsGuard } from './permissions.guard';
 import type { RequestWithPrincipal } from './principal';
 
@@ -22,6 +22,8 @@ class ProbeController {
   @RequirePermissions(PERMISSIONS.FINANCE_REPORTS) @Get('finance') finance() { return { ok: true }; }
   @RequirePermissions(PERMISSIONS.SETTINGS_RIAD) @Get('settings') settings() { return { ok: true }; }
   @RequirePermissions(PERMISSIONS.ROOMS_STATUS_UPDATE) @Get('room-status') roomStatus() { return { ok: true }; }
+  @RequireAnyPermission(PERMISSIONS.EXPENSES_WRITE, PERMISSIONS.EXPENSES_WRITE_PETTY_CASH) @Get('expense') expense() { return { ok: true }; }
+  @RequirePermissions(PERMISSIONS.STAYS_READ) @RequireAnyPermission(PERMISSIONS.EXPENSES_WRITE, PERMISSIONS.HR_READ) @Get('both') both() { return { ok: true }; }
   @Get('undecorated') undecorated() { return { ok: true }; }
 }
 
@@ -89,6 +91,11 @@ describe('PermissionsGuard (RBAC)', () => {
     ['settings', 'MANAGER', 403],
     ['room-status', 'HOUSEKEEPING', 200],
     ['me', 'HOUSEKEEPING', 200],
+    ['expense', 'RECEPTION', 200],
+    ['expense', 'MANAGER', 200],
+    ['expense', 'HOUSEKEEPING', 403],
+    ['both', 'MANAGER', 200],
+    ['both', 'RECEPTION', 403],
   ])('%s as %s -> %i', async (path, role, status) => {
     await get(path, role).expect(status);
   });

@@ -12,7 +12,7 @@
       "name": "web",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@riad/web", "dev"],
-      "port": 3000
+      "port": 3100
     }
   ]
 }

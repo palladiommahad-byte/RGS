@@ -20,10 +20,10 @@ pnpm db:up                  # postgres (host port 5433) + MinIO (9000, console 9
 pnpm --filter @riad/shared build
 pnpm db:migrate             # applies Prisma migrations
 pnpm db:seed                # demo riad, users, rooms, categories, tax settings
-pnpm dev                    # api on :4000, web on :3000
+pnpm dev                    # api on :4000, web on :3100
 ```
 
-- Web: http://localhost:3000 (staff login at `/fr/login` or `/ar/login`)
+- Web: http://localhost:3100 (staff login at `/fr/login` or `/ar/login`)
 - API docs: http://localhost:4000/api/docs
 - MinIO console: http://localhost:9001 (minioadmin / minioadmin)
 
@@ -114,6 +114,24 @@ stay and its files).
 - **Guest register** (`/dashboard/guests`): everyone who checked in or out, searchable by
   name or exact document number (blind index); CSV (semicolon, UTF-8 BOM, formula-injection
   safe) and Excel exports in police fiche order, max 366 days, audit-logged.
+
+## Expenses (phase 5)
+
+- **Quick add** (`/dashboard/expenses`, floating "+" on phones): amount, category tile,
+  optional supplier (accent-insensitive autocomplete via Postgres `unaccent`; a new name
+  creates the supplier and remembers its category) and receipt photo/PDF (re-encoded,
+  private bucket, signed links).
+- **Permissions**: `expenses.write` (owner/manager) records, edits and deletes anything;
+  `expenses.write_petty_cash` (reception) can only spend from their own wallet and sees
+  only what they entered. Routes accepting either use `@RequireAnyPermission`.
+- **Petty cash**: managers open wallets, top them up and correct them after a cash count;
+  expenses debit the wallet atomically and a wallet can never go negative. Editing or
+  deleting a petty-cash expense re-credits the wallet.
+- **Recurring expenses**: generated every night at 00:15 (Casablanca) on their day of the
+  month (last day for short months), never for a month before they were created, and
+  idempotent via a unique `(recurring_id, date)` index. "Générer maintenant" runs it on
+  demand.
+- `ReceiptOcrProvider` is an empty interface reserved for V2.
 
 ## Scripts
 

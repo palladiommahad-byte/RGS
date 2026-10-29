@@ -9,3 +9,5 @@ export * from './schemas/stays';
 export * from './schemas/checkin';
 export * from './billing';
 export * from './schemas/billing';
+export * from './expenses';
+export * from './schemas/expenses';

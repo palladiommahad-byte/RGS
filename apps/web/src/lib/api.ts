@@ -56,6 +56,18 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** Multipart upload (receipts…), with the same session refresh as `api`. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const doFetch = () => fetch(`/api/v1${path}`, { method: 'POST', body: form, credentials: 'same-origin' });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshSession())) res = await doFetch();
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorShape>;
+    throw new ApiError(res.status, body.code ?? 'ERROR', body.message ?? res.statusText, body.details);
+  }
+  return (await res.json()) as T;
+}
+
 /** Downloads a file endpoint (session-authenticated) and saves it with the server's filename. */
 export async function apiDownload(path: string, fallbackName: string): Promise<void> {
   const doFetch = () => fetch(`/api/v1${path}`, { credentials: 'same-origin' });

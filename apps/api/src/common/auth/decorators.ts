@@ -16,6 +16,15 @@ export const AuthenticatedOnly = () => SetMetadata(AUTHENTICATED_ONLY_KEY, true)
 export const RequirePermissions = (...permissions: Permission[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);
 
+export const ANY_PERMISSION_KEY = 'auth:anyPermission';
+
+/**
+ * The user must hold AT LEAST ONE listed permission (e.g. full expense rights or petty
+ * cash only). The service then narrows what each permission may see or do.
+ */
+export const RequireAnyPermission = (...permissions: Permission[]) =>
+  SetMetadata(ANY_PERMISSION_KEY, permissions);
+
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthPrincipal => {
     const req = ctx.switchToHttp().getRequest<RequestWithPrincipal>();

@@ -452,9 +452,10 @@ model Supplier {
   updatedAt         DateTime @updatedAt @map("updated_at")
   createdBy         String?  @map("created_by") @db.Uuid
 
-  riad            Riad             @relation(fields: [riadId], references: [id])
-  defaultCategory ExpenseCategory? @relation(fields: [defaultCategoryId], references: [id])
-  expenses        Expense[]
+  riad              Riad               @relation(fields: [riadId], references: [id])
+  defaultCategory   ExpenseCategory?   @relation(fields: [defaultCategoryId], references: [id])
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
 
   @@unique([riadId, name])
   @@map("suppliers")
@@ -489,23 +490,28 @@ model Expense {
   @@unique([recurringId, date])
   @@index([riadId, date])
   @@index([riadId, categoryId])
+  @@index([riadId, createdBy])
   @@map("expenses")
 }
 
 model RecurringExpense {
-  id         String   @id @default(uuid()) @db.Uuid
-  riadId     String   @map("riad_id") @db.Uuid
-  categoryId String   @map("category_id") @db.Uuid
-  label      String
-  amount     Int // centimes
-  dayOfMonth Int      @map("day_of_month")
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  createdBy  String?  @map("created_by") @db.Uuid
+  id            String               @id @default(uuid()) @db.Uuid
+  riadId        String               @map("riad_id") @db.Uuid
+  categoryId    String               @map("category_id") @db.Uuid
+  label         String
+  amount        Int // centimes
+  /// 1-31; months without that day use their last day.
+  dayOfMonth    Int                  @map("day_of_month")
+  supplierId    String?              @map("supplier_id") @db.Uuid
+  paymentMethod ExpensePaymentMethod @default(TRANSFER) @map("payment_method")
+  isActive      Boolean              @default(true) @map("is_active")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+  createdBy     String?              @map("created_by") @db.Uuid
 
   riad     Riad            @relation(fields: [riadId], references: [id])
   category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  supplier Supplier?       @relation(fields: [supplierId], references: [id])
   expenses Expense[]
 
   @@index([riadId, isActive])

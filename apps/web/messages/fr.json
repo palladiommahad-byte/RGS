@@ -81,7 +81,14 @@
     "INVALID_CHECKIN_LINK": "Lien d'enregistrement invalide.",
     "BALANCE_DUE": "Le client doit encore de l'argent : encaissez le solde ou cochez « départ avec solde dû ».",
     "PAYMENT_LOCKED": "Ce paiement figure sur une facture émise et ne peut plus être supprimé.",
-    "INVALID_AMOUNT": "Montant invalide."
+    "INVALID_AMOUNT": "Montant invalide.",
+    "NO_WALLET": "Vous n'avez pas de caisse. Demandez au gérant d'en créer une.",
+    "INSUFFICIENT_FUNDS": "Pas assez d’argent dans la caisse. Demandez au gérant de l’alimenter.",
+    "WALLET_REQUIRED": "Choisissez la caisse.",
+    "METHOD_LOCKED": "Supprimez et ressaisissez la dépense pour changer de caisse.",
+    "UNSUPPORTED_FILE": "Envoyez une photo ou un PDF.",
+    "SUPPLIER_IN_USE": "Ce fournisseur a des dépenses.",
+    "EXPENSE_LOCKED": "Cette dépense vient de la paie."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -411,5 +418,95 @@
     "stay": "Séjour",
     "room": "Chambre",
     "empty": "Aucun client sur cette période."
+  },
+  "expenseMethod": {
+    "CASH": "Espèces",
+    "CARD": "Carte",
+    "TRANSFER": "Virement",
+    "CHEQUE": "Chèque",
+    "PETTY_CASH": "Caisse"
+  },
+  "expenses": {
+    "quickAdd": "Nouvelle dépense",
+    "edit": "Modifier la dépense",
+    "amount": "Montant TTC",
+    "category": "Catégorie",
+    "pickCategory": "Choisissez une catégorie.",
+    "supplier": "Fournisseur",
+    "supplierPlaceholder": "Facultatif — ex. Épicerie du Derb",
+    "addReceipt": "Photo du ticket",
+    "replaceReceipt": "Remplacer le ticket",
+    "receiptAttached": "Ticket joint",
+    "viewReceipt": "Voir le ticket",
+    "fromWallet": "Payé avec « {wallet} » — {balance} disponibles",
+    "moreOptions": "Plus d'options",
+    "date": "Date",
+    "tva": "TVA récupérable (MAD)",
+    "tvaHint": "Indiquée sur la facture du fournisseur.",
+    "method": "Mode de paiement",
+    "wallet": "Caisse",
+    "note": "Note",
+    "enteredBy": "Saisi par",
+    "periodTotal": "Total :",
+    "empty": "Aucune dépense sur cette période.",
+    "deleteConfirm": "Supprimer cette dépense de {amount} ?",
+    "recurringBadge": "Récurrente",
+    "payrollBadge": "Paie",
+    "tabs": {
+      "expenses": "Dépenses",
+      "wallets": "Caisses",
+      "recurring": "Récurrentes",
+      "suppliers": "Fournisseurs"
+    }
+  },
+  "wallets": {
+    "new": "Nouvelle caisse",
+    "empty": "Aucune caisse. Créez-en une pour le personnel qui paie les petits achats.",
+    "balance": "Solde disponible",
+    "topUp": "Alimenter",
+    "topUpTitle": "Remettre de l’argent à {name}",
+    "adjust": "Corriger",
+    "adjustTitle": "Corriger après comptage",
+    "adjustHint": "Utilisez la différence entre l’argent compté et le solde affiché.",
+    "addCash": "Ajouter",
+    "removeCash": "Retirer",
+    "reason": "Motif (obligatoire)",
+    "history": "Historique",
+    "noMovements": "Aucun mouvement.",
+    "holder": "Responsable",
+    "defaultName": "Caisse réception",
+    "movement": {
+      "TOP_UP": "Approvisionnement",
+      "EXPENSE": "Dépense",
+      "ADJUSTMENT": "Correction"
+    }
+  },
+  "recurring": {
+    "new": "Nouvelle dépense récurrente",
+    "edit": "Modifier la dépense récurrente",
+    "runNow": "Générer maintenant",
+    "hint": "Chaque mois, la dépense est créée automatiquement le jour choisi (le dernier jour si le mois est plus court).",
+    "generated": "{count, plural, =0 {Rien à générer aujourd’hui.} one {# dépense créée.} other {# dépenses créées.}}",
+    "empty": "Aucune dépense récurrente (loyer, internet, électricité…).",
+    "paused": "En pause",
+    "pause": "Mettre en pause",
+    "resume": "Réactiver",
+    "dayOfMonth": "{day, select, 1 {le 1er du mois} other {le {day} du mois}}",
+    "next": "Prochaine : {date}",
+    "last": "dernière : {date}",
+    "day": "Jour du mois",
+    "dayHint": "1 à 31",
+    "labelPlaceholder": "Ex. Loyer, Internet fibre",
+    "deleteConfirm": "Supprimer « {label} » ? Si des dépenses ont déjà été créées, elle sera seulement mise en pause."
+  },
+  "suppliers": {
+    "new": "Nouveau fournisseur",
+    "edit": "Modifier le fournisseur",
+    "empty": "Aucun fournisseur. Ils sont aussi créés automatiquement en saisissant une dépense.",
+    "noCategory": "Sans catégorie",
+    "expenseCount": "{count, plural, =0 {aucune dépense} one {# dépense} other {# dépenses}}",
+    "defaultCategory": "Catégorie par défaut",
+    "defaultCategoryHint": "Présélectionnée quand on choisit ce fournisseur.",
+    "deleteConfirm": "Supprimer « {name} » ?"
   }
 }

@@ -81,7 +81,14 @@
     "INVALID_CHECKIN_LINK": "رابط التسجيل غير صالح.",
     "BALANCE_DUE": "ما زال على النزيل مبلغ مستحق: حصّل الباقي أو اختر «مغادرة مع مبلغ مستحق».",
     "PAYMENT_LOCKED": "هذا الأداء مضمَّن في فاتورة صادرة ولا يمكن حذفه.",
-    "INVALID_AMOUNT": "مبلغ غير صالح."
+    "INVALID_AMOUNT": "مبلغ غير صالح.",
+    "NO_WALLET": "ليس لديك صندوق. اطلب من المدير إنشاء واحد.",
+    "INSUFFICIENT_FUNDS": "المبلغ غير كافٍ في الصندوق. اطلب من المدير تزويده.",
+    "WALLET_REQUIRED": "اختر الصندوق.",
+    "METHOD_LOCKED": "احذف المصروف وأعد إدخاله لتغيير الصندوق.",
+    "UNSUPPORTED_FILE": "أرسل صورة أو ملف PDF.",
+    "SUPPLIER_IN_USE": "لهذا المورّد مصاريف.",
+    "EXPENSE_LOCKED": "هذا المصروف ناتج عن الأجور."
   },
   "validation": {
     "required": "حقل إلزامي.",
@@ -411,5 +418,95 @@
     "stay": "الإقامة",
     "room": "الغرفة",
     "empty": "لا يوجد نزلاء في هذه الفترة."
+  },
+  "expenseMethod": {
+    "CASH": "نقدًا",
+    "CARD": "بطاقة",
+    "TRANSFER": "تحويل",
+    "CHEQUE": "شيك",
+    "PETTY_CASH": "الصندوق"
+  },
+  "expenses": {
+    "quickAdd": "مصروف جديد",
+    "edit": "تعديل المصروف",
+    "amount": "المبلغ مع الرسوم",
+    "category": "الفئة",
+    "pickCategory": "اختر فئة.",
+    "supplier": "المورّد",
+    "supplierPlaceholder": "اختياري",
+    "addReceipt": "صورة الوصل",
+    "replaceReceipt": "تغيير الوصل",
+    "receiptAttached": "تم إرفاق الوصل",
+    "viewReceipt": "عرض الوصل",
+    "fromWallet": "مدفوع من «{wallet}» — المتوفر {balance}",
+    "moreOptions": "خيارات إضافية",
+    "date": "التاريخ",
+    "tva": "الضريبة القابلة للاسترجاع (درهم)",
+    "tvaHint": "مذكورة في فاتورة المورّد.",
+    "method": "طريقة الأداء",
+    "wallet": "الصندوق",
+    "note": "ملاحظة",
+    "enteredBy": "أدخله",
+    "periodTotal": "المجموع:",
+    "empty": "لا توجد مصاريف في هذه الفترة.",
+    "deleteConfirm": "حذف هذا المصروف بمبلغ {amount}؟",
+    "recurringBadge": "متكرر",
+    "payrollBadge": "الأجور",
+    "tabs": {
+      "expenses": "المصاريف",
+      "wallets": "الصناديق",
+      "recurring": "المتكررة",
+      "suppliers": "المورّدون"
+    }
+  },
+  "wallets": {
+    "new": "صندوق جديد",
+    "empty": "لا توجد صناديق. أنشئ صندوقًا للموظف الذي يؤدي المشتريات الصغيرة.",
+    "balance": "الرصيد المتوفر",
+    "topUp": "تزويد",
+    "topUpTitle": "تسليم مبلغ إلى {name}",
+    "adjust": "تصحيح",
+    "adjustTitle": "تصحيح بعد العدّ",
+    "adjustHint": "أدخل الفرق بين المبلغ المعدود والرصيد المعروض.",
+    "addCash": "إضافة",
+    "removeCash": "سحب",
+    "reason": "السبب (إلزامي)",
+    "history": "السجل",
+    "noMovements": "لا توجد حركات.",
+    "holder": "المسؤول",
+    "defaultName": "صندوق الاستقبال",
+    "movement": {
+      "TOP_UP": "تزويد",
+      "EXPENSE": "مصروف",
+      "ADJUSTMENT": "تصحيح"
+    }
+  },
+  "recurring": {
+    "new": "مصروف متكرر جديد",
+    "edit": "تعديل المصروف المتكرر",
+    "runNow": "إنشاء الآن",
+    "hint": "يُنشأ المصروف تلقائيًا كل شهر في اليوم المختار (آخر يوم إذا كان الشهر أقصر).",
+    "generated": "{count, plural, =0 {لا شيء لإنشائه اليوم.} one {تم إنشاء مصروف واحد.} other {تم إنشاء # مصاريف.}}",
+    "empty": "لا توجد مصاريف متكررة (الكراء، الإنترنت، الكهرباء…).",
+    "paused": "متوقف",
+    "pause": "إيقاف مؤقت",
+    "resume": "إعادة التفعيل",
+    "dayOfMonth": "يوم {day} من الشهر",
+    "next": "القادم: {date}",
+    "last": "الأخير: {date}",
+    "day": "يوم الشهر",
+    "dayHint": "من 1 إلى 31",
+    "labelPlaceholder": "مثال: الكراء، الإنترنت",
+    "deleteConfirm": "حذف «{label}»؟ إذا أُنشئت مصاريف من قبل فسيتم إيقافه فقط."
+  },
+  "suppliers": {
+    "new": "مورّد جديد",
+    "edit": "تعديل المورّد",
+    "empty": "لا يوجد مورّدون. يُنشأون أيضًا تلقائيًا عند إدخال مصروف.",
+    "noCategory": "بدون فئة",
+    "expenseCount": "{count, plural, =0 {لا مصاريف} one {مصروف واحد} other {# مصاريف}}",
+    "defaultCategory": "الفئة الافتراضية",
+    "defaultCategoryHint": "تُختار تلقائيًا عند اختيار هذا المورّد.",
+    "deleteConfirm": "حذف «{name}»؟"
   }
 }
