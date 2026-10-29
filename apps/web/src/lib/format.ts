@@ -1,4 +1,4 @@
-import { formatMad, TIMEZONE, type Centimes, type IsoDate } from '@riad/shared';
+import { formatMad, TIMEZONE, zonedMidnight, type Centimes, type IsoDate } from '@riad/shared';
 
 /** Moroccan regional variants; ar-MA keeps Latin digits, which staff expect. */
 export function intlLocale(locale: string): string {
@@ -46,4 +46,38 @@ export function centimesToInput(centimes: Centimes): string {
   const sign = centimes < 0 ? '-' : '';
   const abs = Math.abs(centimes);
   return `${sign}${Math.trunc(abs / 100)}.${String(abs % 100).padStart(2, '0')}`;
+}
+
+/** "08:02" in the riad's timezone. */
+export function formatTime(timestamp: string, locale: string): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: TIMEZONE }).format(
+    new Date(timestamp),
+  );
+}
+
+/** 485 -> "8 h 05" */
+export function formatMinutes(minutes: number): string {
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** Instant -> `datetime-local` value in the riad's timezone (whatever the browser's zone). */
+export function toRiadInput(timestamp: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(new Date(timestamp));
+  const p = (type: string) => parts.find((x) => x.type === type)?.value ?? '00';
+  return `${p('year')}-${p('month')}-${p('day')}T${p('hour')}:${p('minute')}`;
+}
+
+/** `datetime-local` value read as riad time -> ISO instant. */
+export function fromRiadInput(value: string): string {
+  const [date, time = '00:00'] = value.split('T');
+  const [h, m] = time.split(':').map(Number);
+  return new Date(zonedMidnight(date!).getTime() + (h! * 60 + m!) * 60_000).toISOString();
 }

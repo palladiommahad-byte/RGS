@@ -7,6 +7,7 @@ import {
   Landmark,
   LayoutDashboard,
   Receipt,
+  ScanLine,
   Settings,
   TrendingUp,
   UserCog,
@@ -40,8 +41,10 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'finance', href: '/dashboard/finance', icon: TrendingUp, anyOf: [P.FINANCE_REPORTS], phase: 6 },
   { key: 'taxes', href: '/dashboard/taxes', icon: Landmark, anyOf: [P.TAX_SETTINGS], phase: 6 },
   { key: 'hr', href: '/dashboard/hr', icon: Briefcase, anyOf: [P.HR_READ], phase: 7 },
+  // Badge clock for the reception tablet: any signed-in staff.
+  { key: 'clock', href: '/staff/clock', icon: ScanLine, anyOf: [], phase: 7 },
   { key: 'users', href: '/dashboard/users', icon: UserCog, anyOf: [P.USERS_MANAGE], phase: 8 },
   { key: 'settings', href: '/dashboard/settings', icon: Settings, anyOf: [P.SETTINGS_RIAD], phase: 8, bottom: true },
 ];
 
-export const SECTION_KEYS = NAV_ITEMS.filter((i) => i.href !== '/dashboard').map((i) => i.key);
+export const SECTION_KEYS = NAV_ITEMS.filter((i) => i.href.startsWith('/dashboard/')).map((i) => i.key);

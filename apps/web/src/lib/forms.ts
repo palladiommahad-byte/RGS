@@ -7,6 +7,9 @@ const KNOWN = new Set([
   'invalid_amount',
   'invalid_nationality',
   'checkout_before_checkin',
+  'required',
+  'invalid_cin',
+  'end_before_start',
 ]);
 
 /**

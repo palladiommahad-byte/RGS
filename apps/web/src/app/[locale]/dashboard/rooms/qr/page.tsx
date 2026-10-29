@@ -3,10 +3,10 @@
 import type { Paginated, RoomDto } from '@riad/shared';
 import { Printer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { PageHeader } from '@/components/page-header';
+import { QrSvg } from '@/components/qr-svg';
 import { Button } from '@/components/ui/button';
 import { useApiQuery } from '@/lib/use-api';
 
@@ -73,21 +73,4 @@ export default function RoomQrPage() {
       )}
     </div>
   );
-}
-
-function QrSvg({ value }: { value: string }) {
-  const [svg, setSvg] = useState('');
-  useEffect(() => {
-    let cancelled = false;
-    void QRCode.toString(value, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' }).then(
-      (s) => !cancelled && setSvg(s),
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [value]);
-  // The SVG is generated locally by the qrcode library from our own URL.
-  return (
-    <div className="size-48 [&>svg]:size-full" aria-hidden dangerouslySetInnerHTML={{ __html: svg }} />
-  );;
 }

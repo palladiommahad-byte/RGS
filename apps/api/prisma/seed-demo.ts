@@ -1,6 +1,7 @@
 /**
  * Demo data for the finance dashboard: ~3 months of checked-out stays (with extras,
- * payments and invoices) and expenses, so charts and reports show something realistic.
+ * payments and invoices), expenses and HR (employees, badge scans, leaves, paid payroll),
+ * so charts and reports show something realistic.
  *
  * DEVELOPMENT / DEMO ONLY. Deterministic (seeded random) and re-runnable: rows it
  * created earlier (stays and expenses noted "[demo]") are removed first.
@@ -14,9 +15,11 @@ import {
   isoToUtcDate,
   nightsBetween,
   todayIso,
+  zonedMidnight,
   type TaxRate,
 } from '@riad/shared';
 import { FieldEncryption } from '../src/common/crypto/field-encryption';
+import { seedHrDemo } from './seed-demo-hr';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('seed-demo refuses to run in production.');
@@ -44,7 +47,11 @@ const weighted = <T>(pairs: [T, number][]): T => {
   for (const [v, w] of pairs) if ((r -= w) <= 0) return v;
   return pairs[0]![0];
 };
-const at = (iso: string, hhmm: string) => new Date(`${iso}T${hhmm}:00+01:00`);
+/** Riad-local wall-clock time (follows the tz data: Morocco is UTC+0 since 20 Sept 2026). */
+const at = (iso: string, hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return new Date(zonedMidnight(iso).getTime() + (h! * 60 + m!) * 60_000);
+};
 const round10 = (centimes: number) => Math.round(centimes / 1000) * 1000;
 
 const GUESTS: [string, string, string][] = [
@@ -245,7 +252,6 @@ async function main(): Promise<void> {
     if (d.endsWith('-08')) add(d, ids.UTILITIES, round10(int(180000, 260000)), { tva20: true, note: 'Électricité', method: 'TRANSFER' });
     if (d.endsWith('-12')) add(d, ids.UTILITIES, round10(int(35000, 55000)), { tva20: true, note: 'Eau', method: 'TRANSFER' });
     if (d.endsWith('-15')) add(d, ids.MARKETING, round10(int(80000, 150000)), { tva20: true, note: 'Publicité Instagram', method: 'CARD' });
-    if (d.endsWith('-28')) add(d, ids.SALARIES, 1800000, { note: 'Salaires (3 employés)', method: 'TRANSFER' });
     if (d.endsWith('-01')) add(d, ids.OTHER, 1500000, { note: 'Loyer', method: 'TRANSFER' });
     if (rand() < 0.08) add(d, ids.MAINTENANCE, round10(int(20000, 150000)), { supplierId: suppliers.plombier });
     if (d.endsWith('-05')) {
@@ -258,8 +264,11 @@ async function main(): Promise<void> {
   // A visible spike this month: boiler replacement (shows the >25 % alert).
   add(addDays(today, -6), ids.MAINTENANCE, 650000, { supplierId: suppliers.plombier, tva20: true, note: 'Remplacement chaudière', method: 'TRANSFER' });
   await prisma.expense.createMany({ data: rows });
+  // Salaries come from payroll (paid lines create their expense).
+  const hr = await seedHrDemo(prisma, enc, riadId, start, today, ids.SALARIES);
 
   console.log(`Demo data for "${riad.name}": ${stayCount} stays (with invoices), ${rows.length} expenses, ${start} → ${today}`);
+  console.log(hr);
   console.log(`Nights covered: ${nightsBetween(start, today)} days × ${rooms.length} rooms`);
 }
 

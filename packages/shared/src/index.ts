@@ -13,3 +13,5 @@ export * from './expenses';
 export * from './schemas/expenses';
 export * from './finance';
 export * from './schemas/finance';
+export * from './hr';
+export * from './schemas/hr';

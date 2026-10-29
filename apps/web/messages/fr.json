@@ -54,7 +54,8 @@
     "taxes": "Taxes",
     "hr": "Personnel",
     "users": "Utilisateurs",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "clock": "Pointage"
   },
   "dashboard": {
     "hello": "Bonjour {name}",
@@ -88,9 +89,19 @@
     "METHOD_LOCKED": "Supprimez et ressaisissez la dépense pour changer de caisse.",
     "UNSUPPORTED_FILE": "Envoyez une photo ou un PDF.",
     "SUPPLIER_IN_USE": "Ce fournisseur a des dépenses.",
-    "EXPENSE_LOCKED": "Cette dépense vient de la paie.",
+    "EXPENSE_LOCKED": "Cette dépense vient de la paie : modifiez-la depuis Personnel › Paie.",
     "TAX_PERIOD_OVERLAP": "Un autre taux est déjà en vigueur sur une partie de cette période.",
-    "INVALID_RATE": "Taux invalide (la TVA est toujours un pourcentage, au plus 100 %)."
+    "INVALID_RATE": "Taux invalide (la TVA est toujours un pourcentage, au plus 100 %).",
+    "BADGE_UNKNOWN": "Badge inconnu.",
+    "EMPLOYEE_INACTIVE": "Ce badge n'est plus actif.",
+    "EMPLOYEE_HAS_HISTORY": "Cet employé a un historique : décochez « Actif » au lieu de le supprimer.",
+    "INVALID_SHIFT": "Le départ doit être après l’arrivée (24 h maximum), et l’arrivée pas dans le futur.",
+    "LEAVE_OVERLAP": "Cet employé a déjà un congé sur ces dates.",
+    "LEAVE_DECIDED": "Cette demande a déjà été traitée.",
+    "PAYROLL_PAID": "Cette ligne est déjà payée : annulez d’abord le paiement.",
+    "PAYROLL_NOT_PAID": "Cette ligne n'est pas payée.",
+    "NEGATIVE_NET": "Les avances et retenues dépassent le salaire.",
+    "NO_SALARY_CATEGORY": "La catégorie de dépense « Salaires » est introuvable."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -101,7 +112,9 @@
     "invalid_email": "Adresse e-mail invalide.",
     "checkout_before_checkin": "Le départ doit être après l'arrivée.",
     "invalid_phone": "Numéro de téléphone invalide pour ce pays.",
-    "departure_after_today": "Le départ doit être après aujourd'hui."
+    "departure_after_today": "Le départ doit être après aujourd'hui.",
+    "invalid_cin": "Lettres et chiffres uniquement (ex. BE123456).",
+    "end_before_start": "La fin doit être après le début."
   },
   "roomStatus": {
     "FREE": "Libre",
@@ -586,5 +599,159 @@
     "validFrom": "Valable à partir du",
     "validTo": "Jusqu'au",
     "validToHint": "Vide = sans fin"
+  },
+  "contractType": {
+    "CDI": "CDI",
+    "CDD": "CDD",
+    "ANAPEC": "ANAPEC (stage)",
+    "FREELANCE": "Indépendant",
+    "OTHER": "Autre"
+  },
+  "leaveType": {
+    "ANNUAL": "Congé annuel",
+    "SICK": "Maladie",
+    "UNPAID": "Sans solde",
+    "OTHER": "Autre"
+  },
+  "leaveStatus": {
+    "PENDING": "En attente",
+    "APPROVED": "Approuvé",
+    "REJECTED": "Refusé"
+  },
+  "hr": {
+    "subtitle": "Visible uniquement par la direction.",
+    "employee": "Employé",
+    "month": "Mois",
+    "tabs": {
+      "employees": "Employés",
+      "attendance": "Pointage",
+      "leaves": "Congés",
+      "payroll": "Paie"
+    },
+    "stats": {
+      "active": "Employés actifs",
+      "salaryMass": "Masse salariale",
+      "salaryMassHint": "Salaires de base par mois",
+      "pendingLeaves": "Congés en attente"
+    },
+    "badges": {
+      "title": "Badges",
+      "hint": "À imprimer et plastifier. Chaque employé scanne son badge à la réception pour pointer.",
+      "scan": "Badge personnel — à scanner à la réception"
+    },
+    "employees": {
+      "search": "Nom, poste ou n° CIN exact",
+      "includeInactive": "Afficher les anciens",
+      "new": "Nouvel employé",
+      "edit": "Modifier l'employé",
+      "empty": "Aucun employé.",
+      "inactive": "Ancien",
+      "since": "depuis le {date}",
+      "perMonth": "par mois",
+      "viewContract": "Voir le contrat",
+      "deleteConfirm": "Supprimer {name} ? (Possible seulement sans historique ; sinon décochez « Actif ».)",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "position": "Poste",
+      "contractType": "Contrat",
+      "hireDate": "Date d'embauche",
+      "baseSalary": "Salaire de base (MAD / mois)",
+      "cin": "N° CIN",
+      "cinHint": "Chiffré dans la base.",
+      "cnss": "N° CNSS",
+      "phone": "Téléphone",
+      "contractFile": "Contrat signé",
+      "contractHint": "PDF ou photo, stocké en privé.",
+      "contractReplace": "Un contrat est déjà enregistré ; un nouveau fichier le remplace.",
+      "chooseFile": "Choisir un fichier",
+      "active": "Actif (peut pointer, inclus dans la paie)",
+      "rotate": "Nouveau badge",
+      "rotateConfirm": "L'ancien badge ne fonctionnera plus. Continuer ?",
+      "rotated": "Nouveau badge créé : imprimez-le depuis « Badges »."
+    },
+    "attendance": {
+      "hint": "Heures comptées à partir des scans de badge. Cliquez sur un employé pour le détail.",
+      "add": "Ajouter un pointage",
+      "edit": "Corriger le pointage",
+      "empty": "Aucun pointage ce mois-ci.",
+      "days": "Jours",
+      "hours": "Heures",
+      "leaveDays": "Congés",
+      "open": "Sans sortie",
+      "details": "Détail de {name}",
+      "noScans": "Aucun scan ce mois-ci.",
+      "noCheckOut": "Pas de sortie",
+      "deleteConfirm": "Supprimer ce pointage ?",
+      "checkIn": "Arrivée",
+      "checkOut": "Départ",
+      "checkOutHint": "Laisser vide si la personne est encore là."
+    },
+    "leaves": {
+      "all": "Tous",
+      "new": "Nouvelle demande",
+      "edit": "Modifier la demande",
+      "empty": "Aucune demande.",
+      "range": "du {from} au {to}",
+      "days": "{count, plural, one {# jour} other {# jours}}",
+      "decidedBy": "décidé par {name}",
+      "approve": "Approuver",
+      "reject": "Refuser",
+      "deleteConfirm": "Supprimer cette demande ?",
+      "type": "Type",
+      "start": "Du",
+      "end": "Au (inclus)",
+      "note": "Remarque"
+    },
+    "payroll": {
+      "notice": "Registre de paie simple, pas un bulletin légal. CNSS, AMO et IR sont calculés par votre comptable et saisis en retenues. Marquer une ligne payée crée automatiquement la dépense « Salaires » (montant net).",
+      "generate": "Préparer la paie du mois",
+      "addMissing": "{count, plural, one {Ajouter # employé manquant} other {Ajouter # employés manquants}}",
+      "payAll": "{count, plural, one {Payer la ligne restante} other {Payer les # lignes}}",
+      "export": "Excel",
+      "empty": "Aucune ligne de paie pour ce mois. Cliquez sur « Préparer la paie du mois ».",
+      "base": "Base",
+      "bonuses": "Primes",
+      "advances": "Avances",
+      "deductions": "Retenues",
+      "net": "Net à payer",
+      "status": "Statut",
+      "unpaidLeave": "{count, plural, one {# jour sans solde} other {# jours sans solde}}",
+      "paidOn": "Payé le {date}",
+      "toPay": "À payer",
+      "unpay": "Annuler le paiement",
+      "pay": "Payer",
+      "total": "Total",
+      "paidSoFar": "Déjà payé : {amount}",
+      "unpayConfirm": "Annuler le paiement de {name} ? La dépense « Salaires » liée sera supprimée.",
+      "deleteConfirm": "Retirer {name} de la paie de ce mois ?",
+      "baseIs": "Salaire de base : {amount}",
+      "advancesHint": "Avances déjà remises pendant le mois.",
+      "deductionsHint": "CNSS/AMO/IR salarié, absences…",
+      "deductionsLeaveHint": "{count, plural, one {# jour de congé sans solde ce mois-ci.} other {# jours de congé sans solde ce mois-ci.}}",
+      "payOne": "Payer {name}",
+      "payMonth": "Payer toute la paie du mois",
+      "payDate": "Date du paiement",
+      "payHint": "Une dépense « Salaires » est créée pour chaque ligne, sans le nom de l’employé.",
+      "confirmPay": "Confirmer le paiement"
+    }
+  },
+  "clock": {
+    "back": "Retour au tableau de bord",
+    "fullscreen": "Plein écran",
+    "title": "Pointage du personnel",
+    "instructions": "Présentez votre badge devant la caméra.",
+    "camera": {
+      "starting": "Démarrage de la caméra…",
+      "blocked": "Caméra non autorisée. Autorisez-la dans le navigateur, ou utilisez un lecteur de badge.",
+      "unsupported": "Pas de caméra disponible : utilisez un lecteur de badge ou saisissez le code."
+    },
+    "hello": "Bonjour {name} !",
+    "arrival": "Arrivée enregistrée à {time}",
+    "bye": "Au revoir {name} !",
+    "departure": "Départ à {time} · {duration} aujourd’hui",
+    "duplicate": "{name}, votre passage de {time} est déjà enregistré.",
+    "switchCamera": "Changer de caméra",
+    "manual": "Code du badge (lecteur ou saisie)",
+    "validate": "Valider"
   }
 }

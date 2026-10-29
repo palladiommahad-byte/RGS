@@ -22,8 +22,8 @@ describe('dates', () => {
   });
 
   it("uses Casablanca's calendar day, not UTC", () => {
-    // 23:30 UTC on 31 Dec is already 1 Jan in Casablanca (UTC+1).
-    expect(todayIso('Africa/Casablanca', new Date('2026-12-31T23:30:00Z'))).toBe('2027-01-01');
+    // 23:30 UTC on 31 Dec 2025 was already 1 Jan in Casablanca (UTC+1 until Sept 2026).
+    expect(todayIso('Africa/Casablanca', new Date('2025-12-31T23:30:00Z'))).toBe('2026-01-01');
   });
 });
 

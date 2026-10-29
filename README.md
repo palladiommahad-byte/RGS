@@ -147,7 +147,7 @@ stay and its files).
     (the commission is already an expense when it is booked as one).
 - **Alerts**: a category whose spending this month is more than 25 % above its average
   over the previous full months (at least two months of history).
-- **P&L export**: the last 6 months as Excel or landscape PDF, audit-logged.
+- **P&L export**: the last 12 months as Excel or landscape PDF, audit-logged (the page shows 6).
 - **Tax report** (`/dashboard/taxes`): built from the invoices *issued* in the month (their
   frozen breakdown) and the expenses dated in it: TVA collected per rate, deductible TVA,
   TVA due (or credit), taxe de séjour, TPT. The Excel export for the accountant has a
@@ -159,6 +159,36 @@ stay and its files).
   expenses (deterministic, refuses to run with `NODE_ENV=production`, removes its own
   previous rows first). Any taxe de séjour / TPT values it adds are placeholders: replace
   them with the accountant's figures.
+
+## HR (phase 7)
+
+- **Access**: every `/hr/*` route needs `hr.read` (view) or `hr.write` (change); reception
+  and housekeeping get 403 everywhere (e2e-tested). CIN is AES-256-GCM encrypted with a
+  blind index (exact search), returned only by `GET /hr/employees/:id`, never written to
+  the audit log. Contracts live in the private documents bucket; each view is audit-logged.
+- **Badge clock** (`/staff/clock`, reception tablet): each employee has a printable QR
+  badge (`/dashboard/hr/badges`) holding only a random token. Any signed-in staff session
+  can scan (camera via jsQR, or a USB/Bluetooth reader typing into the field); the answer
+  is the first name only. One scan = arrival, the next = departure; a second scan within
+  60 s is ignored; a shift open for more than 16 h counts as a forgotten check-out and a new
+  shift starts. Scans of one employee are serialised with a row lock. "New badge" disables
+  the old QR at once.
+- **Attendance report**: days, hours, approved leave days and shifts without check-out per
+  employee and month; managers can add, correct or delete shifts (audit-logged).
+- **Leaves**: employees have no account, so a manager records the request, then approves
+  or rejects it (once). Pending and approved leaves of one employee cannot overlap.
+- **Payroll**: "Préparer la paie" creates draft lines from base salaries for active
+  employees hired by the end of the month (idempotent). Net = base + bonuses − advances −
+  deductions. **CNSS, AMO and IR are not computed** — the accountant provides them and they
+  are entered as deductions. Marking a line paid creates, in the same transaction, a
+  "Salaires" expense for the net, dated on the payment day, noted `Salaire YYYY-MM`
+  without the employee's name, and locked in the expenses screens. "Annuler le paiement"
+  deletes that expense. Advances handed out during the month are not recorded as
+  expenses by the system. Excel export per month.
+- **Time zone**: local dates and month bounds use the runtime's tz database. Morocco moved
+  to permanent UTC+0 on 20 Sept 2026 (tzdata **2026c**); the API logs a warning at start-up
+  when Node's `process.versions.tz` is older. Use a Node release (and Docker base image)
+  that ships 2026c or later.
 
 ## Scripts
 

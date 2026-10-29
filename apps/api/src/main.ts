@@ -23,6 +23,19 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
   await app.listen(config.API_PORT);
   Logger.log(`API listening on http://localhost:${config.API_PORT}/api/v1`, 'Bootstrap');
+  warnIfStaleTzData();
+}
+
+/**
+ * "Today", month bounds and badge times use the runtime's tz database. Morocco moved to
+ * permanent UTC+0 on 20 Sept 2026 (tzdata 2026c); older data is one hour off.
+ */
+const MIN_TZDATA = '2026c';
+function warnIfStaleTzData(): void {
+  const tz = process.versions.tz;
+  if (tz && tz < MIN_TZDATA) {
+    Logger.warn(`Node time-zone data is ${tz} (need ${MIN_TZDATA}+ for Morocco): local times will be 1 h off. Update Node.`, 'Bootstrap');
+  }
 }
 
 void bootstrap();
