@@ -24,7 +24,10 @@ function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
-type ApiInit = Omit<RequestInit, 'body'> & { body?: unknown };
+/** A 401 from these means bad credentials or a dead session: refreshing can't help. */
+const NO_REFRESH = new Set(['/auth/login', '/auth/refresh', '/auth/logout']);
+
+type ApiInit =Omit<RequestInit, 'body'> & { body?: unknown };
 
 /** Browser-side client for the API (same-origin through the Next.js rewrite). */
 export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
@@ -40,7 +43,8 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     });
 
   let res = await doFetch();
-  if (res.status === 401 && !path.startsWith('/auth/')) {
+  // /auth/me must refresh too, or a reload after the access token expires logs the user out.
+  if (res.status === 401 && !NO_REFRESH.has(path)) {
     if (await refreshSession()) res = await doFetch();
   }
   if (!res.ok) {

@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
 import { PermissionsGuard } from './common/auth/permissions.guard';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { FinanceModule } from './finance/finance.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -39,6 +40,7 @@ import { StorageModule } from './storage/storage.module';
     BillingModule,
     RegisterModule,
     ExpensesModule,
+    FinanceModule,
   ],
   controllers: [HealthController],
   providers: [

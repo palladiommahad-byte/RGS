@@ -133,6 +133,33 @@ stay and its files).
   demand.
 - `ReceiptOcrProvider` is an empty interface reserved for V2.
 
+## Finance & taxes (phase 6)
+
+- **Dashboard** (`/dashboard/finance`, `finance.reports`): today / this month / last month /
+  30 days / custom, each compared with the previous period of the same length. All amounts
+  are **HT** (TVA, taxe de séjour and TPT excluded) and accrual-based:
+  - accommodation revenue = nights spent inside the period × price, TVA removed, for
+    checked-in and checked-out stays (pending and cancelled ones are ignored);
+  - extras count on the day they were added; expenses = TTC − deductible TVA on their date;
+  - occupancy = occupied nights / (active rooms × days); ADR, RevPAR and cost per occupied
+    night follow from it (formulas in `packages/shared/src/finance.ts`, unit-tested).
+  - "Net by source" spreads each OTA commission over the stay's nights; it is a view only
+    (the commission is already an expense when it is booked as one).
+- **Alerts**: a category whose spending this month is more than 25 % above its average
+  over the previous full months (at least two months of history).
+- **P&L export**: the last 6 months as Excel or landscape PDF, audit-logged.
+- **Tax report** (`/dashboard/taxes`): built from the invoices *issued* in the month (their
+  frozen breakdown) and the expenses dated in it: TVA collected per rate, deductible TVA,
+  TVA due (or credit), taxe de séjour, TPT. The Excel export for the accountant has a
+  summary, the invoice list and the deductible-TVA list.
+- **Tax settings** (`tax.settings`): each rate has a validity period. Adding a rate closes
+  the previous open-ended one the day before; overlapping periods are refused; TVA is
+  always a percentage. Issued invoices keep the rates they were computed with.
+- **Demo data**: `pnpm db:seed-demo` adds ~3 months of stays, extras, payments, invoices and
+  expenses (deterministic, refuses to run with `NODE_ENV=production`, removes its own
+  previous rows first). Any taxe de séjour / TPT values it adds are placeholders: replace
+  them with the accountant's figures.
+
 ## Scripts
 
 | Command          | Does                                       |
@@ -142,5 +169,6 @@ stay and its files).
 | `pnpm test:e2e`  | API end-to-end tests against `<db>_test` (created automatically; dev data is untouched) |
 | `pnpm typecheck` | `tsc --noEmit` in every package            |
 | `pnpm db:reset`  | Drops, re-migrates and re-seeds the database |
+| `pnpm db:seed-demo` | Adds 3 months of demo activity for the finance pages |
 
 Deployment (VPS + Docker) is documented in phase 9.

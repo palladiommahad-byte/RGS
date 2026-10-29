@@ -11,3 +11,5 @@ export * from './billing';
 export * from './schemas/billing';
 export * from './expenses';
 export * from './schemas/expenses';
+export * from './finance';
+export * from './schemas/finance';

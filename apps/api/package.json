@@ -15,7 +15,8 @@
     "prisma:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
     "prisma:reset": "dotenv -e ../../.env -- prisma migrate reset --force",
     "prisma:studio": "dotenv -e ../../.env -- prisma studio",
-    "test:e2e": "dotenv -e ../../.env -- jest --config test/jest-e2e.json --runInBand"
+    "test:e2e": "dotenv -e ../../.env -- jest --config test/jest-e2e.json --runInBand",
+    "prisma:seed-demo": "dotenv -e ../../.env -- tsx prisma/seed-demo.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
