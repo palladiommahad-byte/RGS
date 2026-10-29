@@ -43,6 +43,12 @@ export class StorageService {
     );
   }
 
+  async get(bucket: BucketName, key: string): Promise<Buffer> {
+    const res = await this.s3.send(new GetObjectCommand({ Bucket: this.buckets[bucket], Key: key }));
+    if (!res.Body) throw new Error(`Empty object ${bucket}/${key}`);
+    return Buffer.from(await res.Body.transformToByteArray());
+  }
+
   async copy(bucket: BucketName, fromKey: string, toKey: string): Promise<void> {
     const name = this.buckets[bucket];
     await this.s3.send(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_ROLE_PERMISSIONS, PERMISSIONS, isHrPermission } from './permissions';
+import { DEFAULT_ROLE_PERMISSIONS, PERMISSIONS, hasAllPermissions, isHrPermission } from './permissions';
 
 describe('default role matrix', () => {
   it('gives HR permissions only to owner and manager', () => {
@@ -26,5 +26,19 @@ describe('default role matrix', () => {
     expect(r).not.toContain(PERMISSIONS.EXPENSES_READ_ALL);
     expect(r).not.toContain(PERMISSIONS.EXPENSES_WRITE);
     expect(r).toContain(PERMISSIONS.EXPENSES_WRITE_PETTY_CASH);
+  });
+});
+
+describe('role assignment (no privilege escalation)', () => {
+  const can = (actor: readonly string[], target: readonly string[]) => hasAllPermissions(actor, target);
+
+  it('lets the owner give any role', () => {
+    for (const role of Object.values(DEFAULT_ROLE_PERMISSIONS)) expect(can(DEFAULT_ROLE_PERMISSIONS.OWNER, role)).toBe(true);
+  });
+
+  it('stops a manager from creating or managing an owner', () => {
+    expect(can(DEFAULT_ROLE_PERMISSIONS.MANAGER, DEFAULT_ROLE_PERMISSIONS.OWNER)).toBe(false);
+    expect(can(DEFAULT_ROLE_PERMISSIONS.MANAGER, DEFAULT_ROLE_PERMISSIONS.RECEPTION)).toBe(true);
+    expect(can(DEFAULT_ROLE_PERMISSIONS.MANAGER, DEFAULT_ROLE_PERMISSIONS.MANAGER)).toBe(true);
   });
 });

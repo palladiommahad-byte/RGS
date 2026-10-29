@@ -14,6 +14,8 @@ import { CryptoModule } from './common/crypto/crypto.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { FinanceModule } from './finance/finance.module';
 import { HrModule } from './hr/hr.module';
+import { SettingsModule } from './settings/settings.module';
+import { UsersModule } from './users/users.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -43,6 +45,8 @@ import { StorageModule } from './storage/storage.module';
     ExpensesModule,
     FinanceModule,
     HrModule,
+    SettingsModule,
+    UsersModule,
   ],
   controllers: [HealthController],
   providers: [

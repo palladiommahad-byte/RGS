@@ -110,7 +110,7 @@ stay and its files).
   renders a French A4 PDF (pdfkit) into the private documents bucket and frees the room for
   cleaning. Extras lock once invoiced; payments can still be added to settle a balance.
 - **Invoices** print the riad's ICE / IF / RC / Patente when set (`riads` table; editable
-  from Settings in phase 8) and the total in words.
+  from Settings) and the total in words.
 - **Guest register** (`/dashboard/guests`): everyone who checked in or out, searchable by
   name or exact document number (blind index); CSV (semicolon, UTF-8 BOM, formula-injection
   safe) and Excel exports in police fiche order, max 366 days, audit-logged.
@@ -189,6 +189,32 @@ stay and its files).
   to permanent UTC+0 on 20 Sept 2026 (tzdata **2026c**); the API logs a warning at start-up
   when Node's `process.versions.tz` is older. Use a Node release (and Docker base image)
   that ships 2026c or later.
+
+## Settings & users (phase 8)
+
+The original phase 8 (public website + booking form) was dropped: this is an internal
+system. Phase 8 delivers spec §5.8 instead.
+
+- **Riad settings** (`/dashboard/settings`, `settings.riad` = owner): name, address,
+  contacts, invoice prefix (with a preview of the next number; numbering continues when the
+  prefix changes), ICE / IF / RC / Patente printed on new invoices, Wi-Fi text shown to
+  guests after online check-in, logo. The logo is re-encoded as a ≤512 px PNG (SVG refused),
+  kept in the private documents bucket, served to signed-in staff by `GET /riad/logo`
+  (versioned URL, cacheable) and drawn on new invoice PDFs. Every change is audit-logged.
+- **Users** (`/dashboard/users`, `users.manage` = owner + manager): create (temporary
+  password generated in the browser, handed over in person), edit, deactivate/reactivate,
+  reset password; read-only role × permission matrix. Accounts are never deleted (the audit
+  log points to them).
+  - *No privilege escalation*: a role can only be given, and an account only managed, by
+    someone holding all of its permissions — a manager cannot create, edit or reset an
+    owner.
+  - *No self-lockout*: nobody can deactivate themselves or change their own role, so an
+    active owner always remains.
+  - Deactivation, role change and password reset revoke the user's refresh tokens; the
+    principal cache is cleared, so a deactivated user is refused on the next request.
+- **Change my password** (key icon at the bottom of the menu, `POST /auth/change-password`):
+  checks the current password, signs out every other device, keeps this one.
+- Role permissions are stored in the database; editing the matrix itself is not in V1.
 
 ## Scripts
 

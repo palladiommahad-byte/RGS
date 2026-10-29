@@ -1,3 +1,4 @@
+import { getStorageToken, type ThrottlerStorageService } from '@nestjs/throttler';
 import type { INestApplication } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModuleBuilder } from '@nestjs/testing';
@@ -23,6 +24,11 @@ export class FakeStorage {
   readonly objects = new Map<string, Buffer>();
   async put(bucket: string, key: string, body: Buffer): Promise<void> {
     this.objects.set(`${bucket}/${key}`, body);
+  }
+  async get(bucket: string, key: string): Promise<Buffer> {
+    const body = this.objects.get(`${bucket}/${key}`);
+    if (!body) throw new Error('NoSuchKey');
+    return body;
   }
   async copy(bucket: string, from: string, to: string): Promise<void> {
     const body = this.objects.get(`${bucket}/${from}`);
@@ -116,8 +122,16 @@ export async function createRiad(prisma: PrismaClient, name: string): Promise<Ri
   return { riadId: riad.id, emails, rooms };
 }
 
-export async function loginAs(app: INestApplication, email: string): Promise<TestAgent> {
+export async function loginAs(app: INestApplication, email: string, password = PASSWORD): Promise<TestAgent> {
   const agent = request.agent(app.getHttpServer());
-  await agent.post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(200);
+  await agent.post('/api/v1/auth/login').send({ email, password }).expect(200);
   return agent;
+}
+
+/** Clears rate-limit counters, for suites that sign in more often than the limit allows. */
+export function resetRateLimits(app: INestApplication): void {
+  // @nestjs/throttler 6 keeps hit times in a second (private) map next to `storage`.
+  const store = app.get<ThrottlerStorageService>(getStorageToken()) as unknown as { storage: Map<string, unknown>; hitExpirations: Map<string, unknown> };
+  store.storage.clear();
+  store.hitExpirations.clear();
 }

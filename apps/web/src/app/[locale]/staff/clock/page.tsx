@@ -135,7 +135,7 @@ export default function StaffClockPage() {
           <Link href="/dashboard" className={buttonVariants({ variant: 'ghost', size: 'icon' })} aria-label={t('clock.back')}>
             <ArrowLeft className="size-5 rtl:rotate-180" />
           </Link>
-          <BrandMark name={user.riad.name} />
+          <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
         </div>
         <div className="text-end">
           <div className="text-2xl font-semibold tabular-nums" dir="ltr">

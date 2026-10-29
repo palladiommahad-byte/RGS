@@ -13,6 +13,7 @@ import {
 } from '../common/auth/principal';
 import { env } from '../config/env';
 import { AuthService, type IssuedTokens } from './auth.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 
 @ApiTags('auth')
@@ -57,6 +58,19 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     await this.auth.logout(readCookie(req, REFRESH_COOKIE));
     clearAuthCookies(res);
+  }
+
+  @AuthenticatedOnly()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async changePassword(
+    @CurrentUser() principal: AuthPrincipal,
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    setAuthCookies(res, await this.auth.changePassword(principal.userId, dto.current, dto.next, clientInfo(req)));
   }
 
   @AuthenticatedOnly()

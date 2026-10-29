@@ -10,6 +10,11 @@ const KNOWN = new Set([
   'required',
   'invalid_cin',
   'end_before_start',
+  'invalid_email',
+  'invalid_prefix',
+  'invalid_ice',
+  'password_too_short',
+  'password_mismatch',
 ]);
 
 /**

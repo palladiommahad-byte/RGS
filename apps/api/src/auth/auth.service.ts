@@ -18,6 +18,9 @@ export type IssuedTokens = {
 
 type ClientInfo = { userAgent?: string; ip?: string };
 
+/** Logo keys end with "logo-<timestamp>.png": the timestamp busts browser caches. */
+export const logoVersion = (key: string | null) => key?.match(/logo-(\d+)\.png$/)?.[1] ?? null;
+
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 
 // Verified against when the email is unknown, so response time does not reveal
@@ -93,7 +96,7 @@ export class AuthService {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       include: {
-        riad: { select: { id: true, name: true } },
+        riad: { select: { id: true, name: true, logoKey: true } },
         role: { include: { permissions: { include: { permission: true } } } },
       },
     });
@@ -109,8 +112,25 @@ export class AuthService {
         nameAr: user.role.nameAr,
       },
       permissions: user.role.permissions.map((rp) => rp.permission.code).sort(),
-      riad: user.riad,
+      riad: { id: user.riad.id, name: user.riad.name, logoVersion: logoVersion(user.riad.logoKey) },
     };
+  }
+
+  /**
+   * The user changes their own password: every other session is signed out, the current
+   * one gets fresh tokens.
+   */
+  async changePassword(userId: string, current: string, next: string, client: ClientInfo): Promise<IssuedTokens> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (!(await argon2.verify(user.passwordHash, current))) {
+      throw new AppException('WRONG_PASSWORD', 'The current password is wrong', HttpStatus.BAD_REQUEST);
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: userId }, data: { passwordHash: await argon2.hash(next) } });
+      await tx.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+      await tx.auditLog.create({ data: { riadId: user.riadId, userId, action: 'user.password_change', entity: 'User', entityId: userId } });
+    });
+    return this.issueTokens(user.id, user.riadId, user.roleId, client);
   }
 
   private async issueTokens(

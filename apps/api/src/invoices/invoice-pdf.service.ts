@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Invoice, Payment, Riad } from '@prisma/client';
 import type { BillLine, PaymentMethod } from '@riad/shared';
 import PDFDocument from 'pdfkit';
@@ -53,6 +53,8 @@ function lineLabel(l: BillLine, b: InvoiceBreakdown): string {
 /** A4 invoice in French (the accounting language in Morocco), from the frozen snapshot. */
 @Injectable()
 export class InvoicePdfService {
+  private readonly logger = new Logger(InvoicePdfService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
@@ -66,14 +68,25 @@ export class InvoicePdfService {
       where: { stayId: invoice.stayId, createdAt: { lte: invoice.issuedAt } },
       orderBy: { paidAt: 'asc' },
     });
-    const pdf = await this.render(invoice, invoice.riad, payments);
+    const pdf = await this.render(invoice, invoice.riad, payments, await this.logo(invoice.riad));
     const key = `riads/${invoice.riadId}/invoices/${invoice.year}/${invoice.number}.pdf`;
     await this.storage.put('documents', key, pdf, 'application/pdf');
     await this.prisma.invoice.update({ where: { id: invoice.id }, data: { pdfKey: key } });
     return key;
   }
 
-  render(invoice: Invoice, riad: Riad, payments: Payment[]): Promise<Buffer> {
+  /** The riad logo, if any. A missing or unreadable logo never blocks an invoice. */
+  private async logo(riad: Riad): Promise<Buffer | null> {
+    if (!riad.logoKey) return null;
+    try {
+      return await this.storage.get('documents', riad.logoKey);
+    } catch (e) {
+      this.logger.warn(`Invoice without logo: ${String(e)}`);
+      return null;
+    }
+  }
+
+  render(invoice: Invoice, riad: Riad, payments: Payment[], logo: Buffer | null = null): Promise<Buffer> {
     const b = invoice.breakdown as unknown as InvoiceBreakdown;
     const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `Facture ${invoice.number}`, Author: riad.name } });
     const chunks: Buffer[] = [];
@@ -83,8 +96,12 @@ export class InvoicePdfService {
     const right = doc.page.width - 50;
     const width = right - left;
 
-    // Header: riad identity (left), invoice number (right)
-    doc.fillColor(TEAL).font('Helvetica-Bold').fontSize(18).text(clean(riad.name), left, 50, { width: width / 2 });
+    // Header: logo + riad identity (left), invoice number (right)
+    const logoSize = 56;
+    if (logo) doc.image(logo, left, 46, { fit: [logoSize, logoSize] });
+    const idLeft = logo ? left + logoSize + 12 : left;
+    const idWidth = width / 2 - (idLeft - left);
+    doc.fillColor(TEAL).font('Helvetica-Bold').fontSize(18).text(clean(riad.name), idLeft, 50, { width: idWidth });
     doc.fillColor(MUTED).font('Helvetica').fontSize(9);
     const identity = [
       riad.address,
@@ -99,7 +116,7 @@ export class InvoicePdfService {
         .filter(Boolean)
         .join(' · '),
     ].filter(Boolean) as string[];
-    for (const l of identity) doc.text(clean(l), { width: width / 2 });
+    for (const l of identity) doc.text(clean(l), idLeft, doc.y, { width: idWidth });
 
     doc.fillColor(TEAL).font('Helvetica-Bold').fontSize(20).text('FACTURE', left + width / 2, 50, { width: width / 2, align: 'right' });
     doc.fillColor('#14211f').font('Helvetica').fontSize(10);

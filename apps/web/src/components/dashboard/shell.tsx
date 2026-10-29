@@ -1,7 +1,7 @@
 'use client';
 
 import { STAFF_LOCALES } from '@riad/shared';
-import { LogOut, Menu, X } from 'lucide-react';
+import { KeyRound, LogOut, Menu, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -10,6 +10,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Button } from '@/components/ui/button';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
+import { ChangePasswordDialog } from '@/components/change-password-dialog';
 import { NAV_ITEMS, type NavItem } from './nav-items';
 
 function initials(name: string): string {
@@ -27,6 +28,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, can, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     setOpen(false);
@@ -73,7 +75,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <div className="flex h-20 items-center justify-between gap-2 px-5">
-          <BrandMark name={user.riad.name} />
+          <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
           <Button
             variant="ghost"
             size="icon"
@@ -103,6 +105,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <div className="truncate text-sm font-medium">{user.name}</div>
               <div className="truncate text-xs text-muted-foreground">{roleName}</div>
             </div>
+            <Button variant="ghost" size="icon" onClick={() => setChangingPassword(true)} aria-label={t('account.changePassword')} title={t('account.changePassword')}>
+              <KeyRound />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => void logout()} aria-label={t('common.logout')} title={t('common.logout')}>
               <LogOut className="rtl:rotate-180" />
             </Button>
@@ -115,10 +120,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label={t('common.openMenu')}>
             <Menu />
           </Button>
-          <BrandMark name={user.riad.name} />
+          <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
         </header>
         <main className="mx-auto w-full max-w-[1440px] p-4 md:p-8 print:p-0">{children}</main>
       </div>
+      <ChangePasswordDialog open={changingPassword} onOpenChange={setChangingPassword} />
     </div>
   );
 }

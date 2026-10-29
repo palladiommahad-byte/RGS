@@ -13,5 +13,5 @@ export type AuthUser = {
   email: string;
   role: { id: string; key: string; nameFr: string; nameAr: string };
   permissions: string[];
-  riad: { id: string; name: string };
+  riad: { id: string; name: string; logoVersion: string | null };
 };

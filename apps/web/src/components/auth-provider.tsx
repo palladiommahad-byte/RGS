@@ -10,6 +10,8 @@ type AuthContextValue = {
   /** UI convenience only — the API enforces every permission itself. */
   can: (...anyOf: string[]) => boolean;
   logout: () => Promise<void>;
+  /** Re-reads the session (after a riad rename, a new logo…). */
+  refresh: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -36,14 +38,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.replace(`/${locale}/login`);
   }, [locale]);
 
+  const refresh = useCallback(async () => {
+    setUser(await api<AuthUser>('/auth/me'));
+  }, []);
+
   const value = useMemo<AuthContextValue | null>(
     () =>
       user && {
         user,
         can: (...anyOf: string[]) => anyOf.length === 0 || hasAnyPermission(user.permissions, anyOf),
         logout,
+        refresh,
       },
-    [user, logout],
+    [user, logout, refresh],
   );
 
   if (!value) {
