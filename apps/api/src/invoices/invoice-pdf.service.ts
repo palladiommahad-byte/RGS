@@ -20,6 +20,12 @@ const money = (centimes: number) =>
     `${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(centimes / 100)} MAD`,
   );
 const day = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+
+/** Width and height from a PNG header (stored logos are always PNG); square if unknown. */
+function pngSize(png: Buffer): { w: number; h: number } {
+  const ok = png.length > 24 && png.toString('latin1', 12, 16) === 'IHDR';
+  return ok ? { w: png.readUInt32BE(16), h: png.readUInt32BE(20) } : { w: 1, h: 1 };
+}
 const pct = (bp: number) => `${(bp / 100).toLocaleString('fr-FR')} %`;
 
 const METHOD: Record<PaymentMethod, string> = {
@@ -96,12 +102,24 @@ export class InvoicePdfService {
     const right = doc.page.width - 50;
     const width = right - left;
 
-    // Header: logo + riad identity (left), invoice number (right)
-    const logoSize = 56;
-    if (logo) doc.image(logo, left, 46, { fit: [logoSize, logoSize] });
-    const idLeft = logo ? left + logoSize + 12 : left;
+    // Header: logo + riad identity (left), invoice number (right). Square-ish logos sit
+    // beside the name; wide ones go above it, so neither shape ends up tiny.
+    let idLeft = left;
+    let idTop = 50;
+    if (logo) {
+      const { w, h } = pngSize(logo);
+      if (w / h > 1.6) {
+        const logoWidth = Math.min(200, (w / h) * 40);
+        const logoHeight = (logoWidth * h) / w;
+        doc.image(logo, left, 46, { width: logoWidth, height: logoHeight });
+        idTop = 46 + logoHeight + 8;
+      } else {
+        doc.image(logo, left, 46, { fit: [56, 56] });
+        idLeft = left + 68;
+      }
+    }
     const idWidth = width / 2 - (idLeft - left);
-    doc.fillColor(TEAL).font('Helvetica-Bold').fontSize(18).text(clean(riad.name), idLeft, 50, { width: idWidth });
+    doc.fillColor(TEAL).font('Helvetica-Bold').fontSize(18).text(clean(riad.name), idLeft, idTop, { width: idWidth });
     doc.fillColor(MUTED).font('Helvetica').fontSize(9);
     const identity = [
       riad.address,
@@ -117,14 +135,15 @@ export class InvoicePdfService {
         .join(' · '),
     ].filter(Boolean) as string[];
     for (const l of identity) doc.text(clean(l), idLeft, doc.y, { width: idWidth });
+    const identityBottom = doc.y;
 
     doc.fillColor(TEAL).font('Helvetica-Bold').fontSize(20).text('FACTURE', left + width / 2, 50, { width: width / 2, align: 'right' });
     doc.fillColor('#14211f').font('Helvetica').fontSize(10);
     doc.text(`N° ${invoice.number}`, { width: width / 2, align: 'right' });
     doc.text(`Date : ${day(invoice.issuedAt.toISOString().slice(0, 10))}`, { width: width / 2, align: 'right' });
 
-    // Client & stay
-    let y = Math.max(doc.y, 120) + 20;
+    // Client & stay, below whichever header column is taller.
+    let y = Math.max(identityBottom, doc.y, 120) + 20;
     doc.roundedRect(left, y, width, 64, 6).fillAndStroke('#f3f6f5', LINE);
     doc.fillColor(MUTED).fontSize(8).text('CLIENT', left + 12, y + 10);
     doc.fillColor('#14211f').font('Helvetica-Bold').fontSize(11).text(clean(b.guest?.name ?? '-'), left + 12, y + 22);
