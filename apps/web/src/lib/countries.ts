@@ -54,3 +54,10 @@ export function dialOptions(locale: string): DialOption[] {
   }
   return cache.get(key)!.map((o) => ({ country: o.code as CountryCode, dial: getCountryCallingCode(o.code as CountryCode), name: o.name }));
 }
+
+/** "MAR" -> "Maroc" in the UI language (falls back to the code). */
+export function nationalityName(alpha3: string | null | undefined, locale: string): string | null {
+  if (!alpha3) return null;
+  const a2 = alpha3ToAlpha2(alpha3);
+  return (a2 && displayNames(locale)(a2)) || alpha3;
+}

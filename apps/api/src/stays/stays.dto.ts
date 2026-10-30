@@ -95,4 +95,9 @@ export class ListStaysQueryDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({ description: 'Stays overlapping [from, to)' }) @IsOptional() @IsIsoDate() from?: string;
   @ApiPropertyOptional() @IsOptional() @IsIsoDate() to?: string;
+
+  @ApiPropertyOptional({ description: 'Stays in this room, or pending check-ins that asked for it' })
+  @IsOptional()
+  @IsUUID()
+  roomId?: string;
 }

@@ -4,6 +4,7 @@ import {
   BookUser,
   Briefcase,
   CalendarCheck,
+  CalendarDays,
   Landmark,
   LayoutDashboard,
   Receipt,
@@ -28,6 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'today', href: '/dashboard', icon: LayoutDashboard, anyOf: [P.STAYS_READ, P.ROOMS_READ] },
   { key: 'rooms', href: '/dashboard/rooms', icon: BedDouble, anyOf: [P.ROOMS_READ] },
   { key: 'stays', href: '/dashboard/stays', icon: CalendarCheck, anyOf: [P.STAYS_READ] },
+  { key: 'calendar', href: '/dashboard/calendar', icon: CalendarDays, anyOf: [P.STAYS_READ] },
   { key: 'guests', href: '/dashboard/guests', icon: BookUser, anyOf: [P.STAYS_READ] },
   {
     key: 'expenses',

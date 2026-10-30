@@ -248,5 +248,27 @@ describe('Rooms & stays (e2e)', () => {
       expect(t.arrivals.map((s) => s.id)).toContain(res.body.id);
       expect(t.rooms.occupied).toBe(1);
     });
+
+    it("lists a room's stays, including QR check-ins that asked for it", async () => {
+      const room = a.rooms[1]!;
+      // A guest's QR check-in: no room assigned yet, only the one they asked for.
+      const requested = await prisma.stay.create({
+        data: {
+          riadId: a.riadId,
+          requestedRoomId: room.id,
+          checkInDate: new Date('2030-01-10T00:00:00Z'),
+          checkOutDate: new Date('2030-01-12T00:00:00Z'),
+          nights: 2,
+          pricePerNight: 0,
+          totalAccommodation: 0,
+          status: 'PENDING',
+        },
+      });
+      const list = await receptionA.get(`${API}/stays?roomId=${room.id}&from=2030-01-01&to=2030-02-01`).expect(200);
+      expect(list.body.items.map((s: { id: string }) => s.id)).toEqual([requested.id]);
+      const other = await receptionA.get(`${API}/stays?roomId=${a.rooms[2]!.id}&from=2030-01-01&to=2030-02-01`).expect(200);
+      expect(other.body.total).toBe(0);
+      await receptionA.get(`${API}/stays?roomId=not-a-uuid`).expect(400);
+    });
   });
 });

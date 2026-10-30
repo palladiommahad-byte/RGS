@@ -1,15 +1,19 @@
 'use client';
 
 import {
+  addDays,
   guestFormSchema,
+  isIsoDate,
   stayFormSchema,
+  todayIso,
   type Paginated,
   type RoomDto,
   type StayDetailDto,
 } from '@riad/shared';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
@@ -27,17 +31,46 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
+import { centimesToInput } from '@/lib/format';
 import { fieldErrors, type FieldErrors } from '@/lib/forms';
 import { useAction, useApiQuery } from '@/lib/use-api';
 
 export default function NewStayPage() {
+  return (
+    <Suspense>
+      <NewStay />
+    </Suspense>
+  );
+}
+
+/** ?roomId=&checkIn= (from the calendar) prefill the room and the dates. */
+function initialStay(params: URLSearchParams): StayValues {
+  const values = emptyStayValues();
+  const checkIn = params.get('checkIn');
+  if (checkIn && isIsoDate(checkIn) && checkIn >= values.checkInDate) {
+    values.checkInDate = checkIn;
+    values.checkOutDate = addDays(checkIn, 1);
+  }
+  values.roomId = params.get('roomId') ?? '';
+  return values;
+}
+
+function NewStay() {
   const t = useTranslations();
   const router = useRouter();
+  const params = useSearchParams();
   const { can } = useAuth();
   const rooms = useApiQuery<Paginated<RoomDto>>('/rooms?limit=100');
-  const [stay, setStay] = useState<StayValues>(emptyStayValues);
+  const [stay, setStay] = useState<StayValues>(() => initialStay(params));
   const [guest, setGuest] = useState<GuestValues>(EMPTY_GUEST);
-  const [checkInNow, setCheckInNow] = useState(true);
+  // Checking in right away only makes sense for an arrival today.
+  const [checkInNow, setCheckInNow] = useState(() => stay.checkInDate === todayIso());
+
+  // A room given in the link: use its base price, as picking it in the form would.
+  useEffect(() => {
+    const room = rooms.data?.items.find((r) => r.id === stay.roomId);
+    if (room && !stay.pricePerNightMad) setStay((v) => ({ ...v, pricePerNightMad: centimesToInput(room.basePrice) }));
+  }, [rooms.data, stay.roomId, stay.pricePerNightMad]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const { run, pending, error } = useAction();
 

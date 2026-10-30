@@ -73,6 +73,8 @@ export class StaysService {
     if (q.status) where.status = q.status;
     if (q.from) where.checkOutDate = { gt: isoToUtcDate(q.from) };
     if (q.to) where.checkInDate = { lt: isoToUtcDate(q.to) };
+    // A guest's QR check-in only has the room they asked for until reception confirms it.
+    if (q.roomId) where.AND = [{ OR: [{ roomId: q.roomId }, { roomId: null, requestedRoomId: q.roomId }] }];
     if (q.search) {
       const contains = { contains: q.search, mode: Prisma.QueryMode.insensitive };
       where.OR = [

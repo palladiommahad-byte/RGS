@@ -55,7 +55,8 @@
     "hr": "Personnel",
     "users": "Utilisateurs",
     "settings": "Paramètres",
-    "clock": "Pointage"
+    "clock": "Pointage",
+    "calendar": "Calendrier"
   },
   "dashboard": {
     "hello": "Bonjour {name}",
@@ -850,5 +851,39 @@
     "users_manage": "Gérer les utilisateurs",
     "settings_riad": "Paramètres du riad",
     "audit_read": "Consulter le journal d'audit"
+  },
+  "calendar": {
+    "subtitle": "Choisissez une chambre pour voir ses séjours et ses clients.",
+    "rooms": "Chambres",
+    "hideRooms": "Masquer les chambres",
+    "showRooms": "Afficher les chambres",
+    "searchRooms": "Rechercher une chambre",
+    "perNight": "{price} / nuit",
+    "noRooms": "Aucune chambre.",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "today": "Aujourd'hui",
+    "view": "Affichage",
+    "views": {
+      "month": "Mois",
+      "week": "Semaine",
+      "day": "Jour"
+    },
+    "newStayOn": "Nouveau séjour le {date}",
+    "cleaning": "Ménage",
+    "cleaningHint": "Départ : chambre à nettoyer",
+    "past": "Jours passés",
+    "noGuestYet": "Client à enregistrer",
+    "toConfirm": "À confirmer",
+    "day": {
+      "arriving": "Arrivées",
+      "staying": "En séjour cette nuit",
+      "departing": "Départs"
+    },
+    "freeNight": "Chambre libre cette nuit · {price}",
+    "noData": "Rien ce jour-là.",
+    "fromQr": "Saisi par le client (QR)",
+    "openStay": "Ouvrir le séjour",
+    "openToConfirm": "Vérifier et confirmer"
   }
 }

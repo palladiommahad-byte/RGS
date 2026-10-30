@@ -55,7 +55,8 @@
     "hr": "الموظفون",
     "users": "المستخدمون",
     "settings": "الإعدادات",
-    "clock": "تسجيل الحضور"
+    "clock": "تسجيل الحضور",
+    "calendar": "التقويم"
   },
   "dashboard": {
     "hello": "مرحبًا {name}",
@@ -850,5 +851,39 @@
     "users_manage": "إدارة المستخدمين",
     "settings_riad": "إعدادات الرياض",
     "audit_read": "الاطلاع على سجل التدقيق"
+  },
+  "calendar": {
+    "subtitle": "اختر غرفة لعرض إقاماتها ونزلائها.",
+    "rooms": "الغرف",
+    "hideRooms": "إخفاء الغرف",
+    "showRooms": "عرض الغرف",
+    "searchRooms": "البحث عن غرفة",
+    "perNight": "{price} / ليلة",
+    "noRooms": "لا توجد غرف.",
+    "previous": "السابق",
+    "next": "التالي",
+    "today": "اليوم",
+    "view": "العرض",
+    "views": {
+      "month": "شهر",
+      "week": "أسبوع",
+      "day": "يوم"
+    },
+    "newStayOn": "إقامة جديدة يوم {date}",
+    "cleaning": "تنظيف",
+    "cleaningHint": "مغادرة: الغرفة للتنظيف",
+    "past": "أيام مضت",
+    "noGuestYet": "نزيل لم يُسجَّل بعد",
+    "toConfirm": "للتأكيد",
+    "day": {
+      "arriving": "الوصول",
+      "staying": "مقيمون هذه الليلة",
+      "departing": "المغادرة"
+    },
+    "freeNight": "الغرفة شاغرة هذه الليلة · {price}",
+    "noData": "لا شيء في هذا اليوم.",
+    "fromQr": "أدخلها النزيل (QR)",
+    "openStay": "فتح الإقامة",
+    "openToConfirm": "التحقق والتأكيد"
   }
 }
