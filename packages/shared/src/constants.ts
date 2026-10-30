@@ -4,7 +4,7 @@ export const TIMEZONE = 'Africa/Casablanca';
 /** Locales for guest-facing pages. */
 export const PUBLIC_LOCALES = ['en', 'fr', 'es', 'ar'] as const;
 /** Locales for the staff dashboard. */
-export const STAFF_LOCALES = ['fr', 'ar'] as const;
+export const STAFF_LOCALES = ['fr', 'en', 'ar'] as const;
 export const RTL_LOCALES = ['ar'] as const;
 export type PublicLocale = (typeof PUBLIC_LOCALES)[number];
 export type StaffLocale = (typeof STAFF_LOCALES)[number];
@@ -47,16 +47,16 @@ export type TaxMode = (typeof TAX_MODES)[number];
 
 /** Seeded expense categories (key is stable, names are editable). */
 export const DEFAULT_EXPENSE_CATEGORIES = [
-  { key: 'FOOD', nameFr: 'Nourriture & petit-déjeuner', nameAr: 'الطعام والفطور', icon: 'utensils' },
-  { key: 'CLEANING', nameFr: 'Ménage & blanchisserie', nameAr: 'التنظيف والغسيل', icon: 'sparkles' },
-  { key: 'UTILITIES', nameFr: 'Eau, électricité, internet', nameAr: 'الماء والكهرباء والإنترنت', icon: 'plug' },
-  { key: 'SALARIES', nameFr: 'Salaires', nameAr: 'الأجور', icon: 'users' },
-  { key: 'MAINTENANCE', nameFr: 'Entretien', nameAr: 'الصيانة', icon: 'wrench' },
-  { key: 'OTA_COMMISSIONS', nameFr: 'Commissions OTA', nameAr: 'عمولات منصات الحجز', icon: 'percent' },
-  { key: 'MARKETING', nameFr: 'Marketing', nameAr: 'التسويق', icon: 'megaphone' },
-  { key: 'TAXES', nameFr: 'Impôts & taxes', nameAr: 'الضرائب والرسوم', icon: 'landmark' },
-  { key: 'SUPPLIES', nameFr: 'Fournitures', nameAr: 'المستلزمات', icon: 'package' },
-  { key: 'OTHER', nameFr: 'Autre', nameAr: 'أخرى', icon: 'circle-ellipsis' },
+  { key: 'FOOD', nameEn: 'Food & breakfast', nameFr: 'Nourriture & petit-déjeuner', nameAr: 'الطعام والفطور', icon: 'utensils' },
+  { key: 'CLEANING', nameEn: 'Cleaning & laundry', nameFr: 'Ménage & blanchisserie', nameAr: 'التنظيف والغسيل', icon: 'sparkles' },
+  { key: 'UTILITIES', nameEn: 'Water, power, internet', nameFr: 'Eau, électricité, internet', nameAr: 'الماء والكهرباء والإنترنت', icon: 'plug' },
+  { key: 'SALARIES', nameEn: 'Salaries', nameFr: 'Salaires', nameAr: 'الأجور', icon: 'users' },
+  { key: 'MAINTENANCE', nameEn: 'Maintenance', nameFr: 'Entretien', nameAr: 'الصيانة', icon: 'wrench' },
+  { key: 'OTA_COMMISSIONS', nameEn: 'OTA commissions', nameFr: 'Commissions OTA', nameAr: 'عمولات منصات الحجز', icon: 'percent' },
+  { key: 'MARKETING', nameEn: 'Marketing', nameFr: 'Marketing', nameAr: 'التسويق', icon: 'megaphone' },
+  { key: 'TAXES', nameEn: 'Taxes & duties', nameFr: 'Impôts & taxes', nameAr: 'الضرائب والرسوم', icon: 'landmark' },
+  { key: 'SUPPLIES', nameEn: 'Supplies', nameFr: 'Fournitures', nameAr: 'المستلزمات', icon: 'package' },
+  { key: 'OTHER', nameEn: 'Other', nameFr: 'Autre', nameAr: 'أخرى', icon: 'circle-ellipsis' },
 ] as const;
 
 export type ApiError = {

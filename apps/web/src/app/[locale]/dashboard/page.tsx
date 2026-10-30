@@ -13,6 +13,7 @@ import { BedDouble, Brush, CalendarCheck, DoorOpen, LogOut, Plus, RefreshCw, Use
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { StaySheet } from '@/components/calendar/stay-sheet';
 import { PageHeader } from '@/components/page-header';
 import { useRealtimeEvent } from '@/components/realtime-provider';
 import { RoomBoard } from '@/components/rooms/room-board';
@@ -35,6 +36,7 @@ export default function TodayPage() {
   const { can } = useAuth();
   const canStays = can('stays.read');
   const [weekStart, setWeekStart] = useState<IsoDate>(() => weekStartOf(todayIso()));
+  const [openStay, setOpenStay] = useState<string | null>(null);
 
   const today = useApiQuery<TodayDto>(canStays ? '/today' : null);
   const rooms = useApiQuery<Paginated<RoomDto>>(can('rooms.read') ? '/rooms?limit=100' : null);
@@ -52,6 +54,9 @@ export default function TodayPage() {
   };
 
   useRealtimeEvent('checkin:new', reload);
+  // Check-ins, check-outs and housekeeping on other devices show up at once.
+  useRealtimeEvent('rooms:changed', reload);
+  useRealtimeEvent('stays:changed', reload);
 
   // Safety net for missed socket events and changes made from other tabs.
   useEffect(() => {
@@ -151,7 +156,9 @@ export default function TodayPage() {
                 weekStart={weekStart}
                 today={d.date}
                 stays={week.data?.items ?? []}
+                rooms={roomList}
                 onWeekChange={setWeekStart}
+                onOpenStay={setOpenStay}
               />
             </CardContent>
           </Card>
@@ -174,7 +181,7 @@ export default function TodayPage() {
               <CardTitle>{t('today.roomBoard')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <RoomBoard rooms={roomList} inHouse={d?.inHouse} onChanged={reload} />
+              <RoomBoard rooms={roomList} inHouse={d?.inHouse} expected={d?.pending} onChanged={reload} />
             </CardContent>
           </Card>
         )}
@@ -216,6 +223,8 @@ export default function TodayPage() {
           {t('errors.generic')}
         </p>
       )}
+
+      <StaySheet stayId={openStay} onOpenChange={(o) => !o && setOpenStay(null)} />
     </div>
   );
 }

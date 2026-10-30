@@ -14,6 +14,7 @@ import type { AuthPrincipal } from '../common/auth/principal';
 import { diffFields } from '../common/diff';
 import { pageArgs, paginated } from '../common/pagination';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import type { CreateRoomDto, ListRoomsQueryDto, UpdateRoomDto } from './rooms.dto';
 
 const newQrToken = () => randomBytes(16).toString('base64url');
@@ -23,6 +24,7 @@ export class RoomsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   async list(p: AuthPrincipal, q: ListRoomsQueryDto): Promise<Paginated<RoomDto>> {
@@ -68,6 +70,7 @@ export class RoomsService {
       );
       return created;
     });
+    this.realtime.roomsChanged(p.riadId);
     return this.toDto(room, p);
   }
 
@@ -91,6 +94,7 @@ export class RoomsService {
       );
       return updated;
     });
+    this.realtime.roomsChanged(p.riadId);
     return this.toDto(room, p);
   }
 
@@ -130,6 +134,7 @@ export class RoomsService {
       );
       return tx.room.findUniqueOrThrow({ where: { id } });
     });
+    this.realtime.roomsChanged(p.riadId);
     return this.toDto(room, p);
   }
 
@@ -156,7 +161,7 @@ export class RoomsService {
     const stays = await this.prisma.stay.count({
       where: { riadId: p.riadId, OR: [{ roomId: id }, { requestedRoomId: id }] },
     });
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       if (stays > 0) await tx.room.update({ where: { id }, data: { isActive: false } });
       else await tx.room.delete({ where: { id } });
       await this.audit.log(
@@ -172,6 +177,8 @@ export class RoomsService {
       );
       return { deleted: stays === 0, deactivated: stays > 0 };
     });
+    this.realtime.roomsChanged(p.riadId);
+    return result;
   }
 
   async checkinLinks(p: AuthPrincipal): Promise<{ entranceKey: string }> {

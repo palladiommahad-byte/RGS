@@ -29,8 +29,8 @@
     "ar": "العربية"
   },
   "auth": {
-    "title": "تسجيل الدخول",
-    "subtitle": "فضاء مخصص لموظفي الرياض.",
+    "title": "سجّل الدخول إلى مساحتك.",
+    "subtitle": "مخصص لموظفي الرياض: الإدارة والاستقبال والتنظيف.",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
     "submit": "تسجيل الدخول",
@@ -39,10 +39,26 @@
     "tooMany": "محاولات كثيرة. حاول مرة أخرى بعد دقيقة.",
     "error": "حدث خطأ. حاول مرة أخرى.",
     "appName": "Riad Manager",
-    "tagline": "التسيير اليومي للرياض في مكان واحد.",
-    "pointStays": "الوصولات والإقامات والمغادرات في الوقت الحقيقي",
-    "pointRooms": "حالة الغرف لفريق التنظيف",
-    "pointSecure": "بيانات النزلاء مشفّرة ومحمية"
+    "badge": "نظام داخلي للرياض",
+    "headline1": "كل إقامة،",
+    "headline2": "في أحسن تنظيم.",
+    "lead": "الوصول عبر رمز QR، الغرف، الفواتير، المصاريف والموظفون: يعمل فريق الرياض كله على شاشة واحدة.",
+    "cardTitle": "اليوم · الاستقبال",
+    "cardBadge": "وصولان",
+    "cardRow1Title": "تسجيل QR · الغرفة 3",
+    "cardRow1Sub": "جواز مقروء ← للتأكيد",
+    "cardRow1Action": "تأكيد",
+    "cardRow2Title": "الغرفة 5",
+    "cardRow2Sub": "مغادرة ← للتنظيف",
+    "cardRow2Action": "تم",
+    "eyebrow": "مرحبًا بعودتك",
+    "emailPlaceholder": "you@riad.ma",
+    "passwordPlaceholder": "كلمة المرور",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
+    "forgot": "نسيت كلمة المرور؟",
+    "forgotHint": "اطلب من المسير: يمكنه منحك كلمة مرور جديدة من صفحة المستخدمين.",
+    "secure": "اتصال آمن · تُنشأ الحسابات من طرف الإدارة"
   },
   "nav": {
     "today": "اليوم",
@@ -179,7 +195,8 @@
     "nextWeek": "الأسبوع التالي",
     "legendInHouse": "مقيم",
     "legendPending": "قيد الانتظار",
-    "legendCheckedOut": "غادر"
+    "legendCheckedOut": "غادر",
+    "noRoomRow": "بدون غرفة"
   },
   "rooms": {
     "new": "غرفة جديدة",
@@ -199,7 +216,15 @@
     "showInactive": "عرض الغرف المعطّلة",
     "reactivate": "إعادة التفعيل",
     "empty": "لا توجد غرف بعد.",
-    "persons": "{count, plural, one {شخص واحد} two {شخصان} few {# أشخاص} other {# شخصًا}}"
+    "persons": "{count, plural, one {شخص واحد} two {شخصان} few {# أشخاص} other {# شخصًا}}",
+    "all": "الكل",
+    "capacityShort": "السعة",
+    "priceShort": "السعر الأساسي",
+    "nightOf": "الليلة {night}/{total}",
+    "tapWhenClean": "المس عند جاهزيتها",
+    "toClean": "مغادرة: للتنظيف",
+    "arrivalToday": "وصول: {name}",
+    "outOfServiceHint": "غير متاحة للحجز"
   },
   "qr": {
     "title": "رموز QR لتسجيل الوصول",
@@ -264,7 +289,11 @@
     "openPhoto": "فتح الصورة بالحجم الكامل",
     "passportPhoto": "صورة الوثيقة",
     "signature": "توقيع النزيل",
-    "consentAt": "تمت الموافقة (القانون 09-08) بتاريخ {date}"
+    "consentAt": "تمت الموافقة (القانون 09-08) بتاريخ {date}",
+    "dates": "التواريخ",
+    "status": "الحالة",
+    "arrivesToday": "يصل اليوم",
+    "leavesToday": "يغادر اليوم"
   },
   "guest": {
     "firstName": "الاسم الشخصي",
@@ -481,7 +510,18 @@
       "wallets": "الصناديق",
       "recurring": "المتكررة",
       "suppliers": "المورّدون"
-    }
+    },
+    "period": "الفترة",
+    "allTime": "الكل",
+    "allCategories": "كل الفئات",
+    "allSuppliers": "كل الموردين",
+    "allUsers": "أدخلها الجميع",
+    "periodTotalLabel": "مجموع الفترة",
+    "inclVat": "مع الضريبة",
+    "recoverableVat": "الضريبة القابلة للاسترجاع",
+    "recoverableVatHint": "تُخصم من الضريبة الواجب أداؤها",
+    "count": "عدد المصاريف",
+    "vatIncluded": "منها ضريبة {amount}"
   },
   "wallets": {
     "new": "صندوق جديد",

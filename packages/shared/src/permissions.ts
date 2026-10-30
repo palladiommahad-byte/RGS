@@ -48,11 +48,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, Permission[]> = {
   HOUSEKEEPING: [P.ROOMS_READ, P.ROOMS_STATUS_UPDATE],
 };
 
-export const ROLE_NAMES: Record<RoleKey, { fr: string; ar: string }> = {
-  OWNER: { fr: 'Propriétaire', ar: 'المالك' },
-  MANAGER: { fr: 'Gérant', ar: 'المدير' },
-  RECEPTION: { fr: 'Réception', ar: 'الاستقبال' },
-  HOUSEKEEPING: { fr: 'Ménage', ar: 'التدبير المنزلي' },
+export const ROLE_NAMES: Record<RoleKey, { fr: string; en: string; ar: string }> = {
+  OWNER: { fr: 'Propriétaire', en: 'Owner', ar: 'المالك' },
+  MANAGER: { fr: 'Gérant', en: 'Manager', ar: 'المدير' },
+  RECEPTION: { fr: 'Réception', en: 'Reception', ar: 'الاستقبال' },
+  HOUSEKEEPING: { fr: 'Ménage', en: 'Housekeeping', ar: 'التدبير المنزلي' },
 };
 
 export function isHrPermission(p: string): boolean {

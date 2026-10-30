@@ -61,7 +61,7 @@ export class ExpensesService {
     if (q.supplierId) where.supplierId = q.supplierId;
     if (q.walletId) where.walletId = q.walletId;
 
-    const [rows, total, sum] = await this.prisma.$transaction([
+    const [rows, total, sum, byCategory] = await this.prisma.$transaction([
       this.prisma.expense.findMany({
         where,
         include: expenseInclude,
@@ -69,7 +69,8 @@ export class ExpensesService {
         ...pageArgs(q),
       }),
       this.prisma.expense.count({ where }),
-      this.prisma.expense.aggregate({ where, _sum: { amountTtc: true } }),
+      this.prisma.expense.aggregate({ where, _sum: { amountTtc: true, tvaAmount: true } }),
+      this.prisma.expense.groupBy({ by: ['categoryId'], where, _sum: { amountTtc: true }, orderBy: { _sum: { amountTtc: 'desc' } } }),
     ]);
     const users = await loadUserNames(this.prisma, p.riadId, rows.map((r) => r.createdBy));
     return {
@@ -78,6 +79,8 @@ export class ExpensesService {
       page: q.page,
       limit: q.limit,
       sumTtc: sum._sum.amountTtc ?? 0,
+      sumTva: sum._sum.tvaAmount ?? 0,
+      byCategory: byCategory.map((g) => ({ categoryId: g.categoryId, amount: g._sum?.amountTtc ?? 0 })),
     };
   }
 

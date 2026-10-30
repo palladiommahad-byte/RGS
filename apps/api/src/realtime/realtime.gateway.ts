@@ -22,8 +22,10 @@ function readCookie(header: string | undefined, name: string): string | undefine
 }
 
 /**
- * Staff dashboards connect here with their session cookie and join their riad's room.
- * Events are notifications only ("something changed, reload"); data still comes from REST.
+ * Staff dashboards connect here with their session cookie. Events are notifications only
+ * ("something changed, reload"); data still comes from REST. Two channels per riad:
+ * - `riad:<id>` (stays.read): stay events, which may carry guest names;
+ * - `rooms:<id>` (rooms.read): room status changes, no guest data — housekeeping too.
  */
 @WebSocketGateway({
   path: REALTIME_PATH,
@@ -47,8 +49,11 @@ export class RealtimeGateway implements OnGatewayConnection {
       });
       const principal = await this.principals.get(payload.sub);
       if (!principal || principal.riadId !== payload.riadId) throw new Error('inactive user');
-      if (!principal.permissions.includes(PERMISSIONS.STAYS_READ)) throw new Error('no stays.read');
-      await client.join(`riad:${principal.riadId}`);
+      const stays = principal.permissions.includes(PERMISSIONS.STAYS_READ);
+      const rooms = principal.permissions.includes(PERMISSIONS.ROOMS_READ);
+      if (!stays && !rooms) throw new Error('no stays.read or rooms.read');
+      if (stays) await client.join(`riad:${principal.riadId}`);
+      if (rooms) await client.join(`rooms:${principal.riadId}`);
     } catch (e) {
       this.logger.debug(`Socket rejected: ${String(e)}`);
       client.emit('auth:error');
@@ -58,5 +63,15 @@ export class RealtimeGateway implements OnGatewayConnection {
 
   emitToRiad(riadId: string, event: string, payload: unknown): void {
     this.server?.to(`riad:${riadId}`).emit(event, payload);
+  }
+
+  /** A room's status or details changed (check-in, check-out, room move, housekeeping…). */
+  roomsChanged(riadId: string): void {
+    this.server?.to(`rooms:${riadId}`).emit('rooms:changed', {});
+  }
+
+  /** A stay was created, edited, confirmed, checked out, cancelled or rejected. */
+  staysChanged(riadId: string): void {
+    this.emitToRiad(riadId, 'stays:changed', {});
   }
 }

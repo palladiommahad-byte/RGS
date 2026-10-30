@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { roomMark } from './styles';
 
 /** Left column of the calendar: the rooms, searchable; the selected one is outlined. */
 export function RoomPanel({
@@ -67,7 +68,7 @@ export function RoomPanel({
                   )}
                   aria-hidden
                 >
-                  {r.name.replace(/\D/g, '') || r.name[0]?.toUpperCase()}
+                  {roomMark(r.name)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">

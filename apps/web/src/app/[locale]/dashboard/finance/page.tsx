@@ -3,6 +3,7 @@
 import {
   addDays,
   addMonths,
+  categoryLabel,
   monthStartOf,
   percentChange,
   todayIso,
@@ -174,7 +175,7 @@ export default function FinancePage() {
                   <p key={a.categoryId} className="flex items-start gap-2 text-sm text-amber-900">
                     <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                     {t('alert', {
-                      category: locale === 'ar' ? a.nameAr : a.nameFr,
+                      category: categoryLabel(a, locale),
                       amount: m(a.amount),
                       average: m(a.average),
                       percent: pct((a.amount - a.average) / a.average),
@@ -220,7 +221,7 @@ export default function FinancePage() {
                 {d.expensesByCategory.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('noData')}</p>
                 ) : (
-                  <DonutChart data={d.expensesByCategory.map((c) => ({ name: locale === 'ar' ? c.nameAr : c.nameFr, value: c.amount }))} />
+                  <DonutChart data={d.expensesByCategory.map((c) => ({ name: categoryLabel(c, locale), value: c.amount }))} />
                 )}
               </CardContent>
             </Card>

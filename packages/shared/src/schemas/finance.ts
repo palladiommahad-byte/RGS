@@ -33,9 +33,9 @@ export type FinanceDashboardDto = {
   /** 6 months ending with the period's month. */
   months: (PeriodMetricsDto & { month: string })[];
   bySource: { source: StaySource; revenue: number; commission: number; net: number }[];
-  expensesByCategory: { categoryId: string; nameFr: string; nameAr: string; amount: number }[];
+  expensesByCategory: { categoryId: string; key: string | null; nameFr: string; nameAr: string; amount: number }[];
   extrasByCategory: { category: ExtraCategory; amount: number }[];
-  alerts: { categoryId: string; nameFr: string; nameAr: string; month: string; amount: number; average: number }[];
+  alerts: { categoryId: string; key: string | null; nameFr: string; nameAr: string; month: string; amount: number; average: number }[];
 };
 
 export type TaxSettingDto = {

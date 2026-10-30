@@ -1,6 +1,6 @@
 'use client';
 
-import { STAFF_LOCALES } from '@riad/shared';
+import { roleLabel, STAFF_LOCALES } from '@riad/shared';
 import { KeyRound, LogOut, Menu, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -39,7 +39,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const bottom = visible.filter((i) => i.bottom);
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-  const roleName = locale === 'ar' ? user.role.nameAr : user.role.nameFr;
+  const roleName = roleLabel(user.role, locale);
 
   const navLink = (item: NavItem) => {
     const active = isActive(item.href);

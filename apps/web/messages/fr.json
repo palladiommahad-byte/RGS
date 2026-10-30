@@ -29,8 +29,8 @@
     "ar": "العربية"
   },
   "auth": {
-    "title": "Connexion",
-    "subtitle": "Espace réservé au personnel du riad.",
+    "title": "Connectez-vous à votre espace.",
+    "subtitle": "Réservé au personnel du riad : direction, réception et ménage.",
     "email": "E-mail",
     "password": "Mot de passe",
     "submit": "Se connecter",
@@ -39,10 +39,26 @@
     "tooMany": "Trop de tentatives. Réessayez dans une minute.",
     "error": "Une erreur est survenue. Réessayez.",
     "appName": "Riad Manager",
-    "tagline": "La gestion quotidienne du riad, au même endroit.",
-    "pointStays": "Arrivées, séjours et départs en temps réel",
-    "pointRooms": "État des chambres pour l'équipe de ménage",
-    "pointSecure": "Données des clients chiffrées et protégées"
+    "badge": "Système interne du riad",
+    "headline1": "Chaque séjour,",
+    "headline2": "bien tenu.",
+    "lead": "Arrivées par QR code, chambres, factures, dépenses et personnel : toute l'équipe du riad travaille sur le même écran.",
+    "cardTitle": "Aujourd'hui · Réception",
+    "cardBadge": "2 arrivées",
+    "cardRow1Title": "Check-in QR · Chambre 3",
+    "cardRow1Sub": "Passeport lu → à confirmer",
+    "cardRow1Action": "Confirmer",
+    "cardRow2Title": "Chambre 5",
+    "cardRow2Sub": "Départ → à nettoyer",
+    "cardRow2Action": "Fait",
+    "eyebrow": "Bon retour",
+    "emailPlaceholder": "vous@votre-riad.ma",
+    "passwordPlaceholder": "Votre mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "forgot": "Mot de passe oublié ?",
+    "forgotHint": "Demandez à votre gérant : il peut vous donner un nouveau mot de passe depuis la page Utilisateurs.",
+    "secure": "Connexion sécurisée · Les comptes sont créés par la direction"
   },
   "nav": {
     "today": "Aujourd'hui",
@@ -179,7 +195,8 @@
     "nextWeek": "Semaine suivante",
     "legendInHouse": "En séjour",
     "legendPending": "En attente",
-    "legendCheckedOut": "Parti"
+    "legendCheckedOut": "Parti",
+    "noRoomRow": "Sans chambre"
   },
   "rooms": {
     "new": "Nouvelle chambre",
@@ -199,7 +216,15 @@
     "showInactive": "Afficher les chambres désactivées",
     "reactivate": "Réactiver",
     "empty": "Aucune chambre pour l'instant.",
-    "persons": "{count, plural, one {# personne} other {# personnes}}"
+    "persons": "{count, plural, one {# personne} other {# personnes}}",
+    "all": "Toutes",
+    "capacityShort": "Capacité",
+    "priceShort": "Prix de base",
+    "nightOf": "nuit {night}/{total}",
+    "tapWhenClean": "Touchez quand elle est prête",
+    "toClean": "Départ : à nettoyer",
+    "arrivalToday": "Arrivée : {name}",
+    "outOfServiceHint": "Indisponible à la réservation"
   },
   "qr": {
     "title": "QR codes d'enregistrement",
@@ -264,7 +289,11 @@
     "openPhoto": "Ouvrir la photo en grand",
     "passportPhoto": "Photo du document",
     "signature": "Signature du client",
-    "consentAt": "Consentement (loi 09-08) donné le {date}"
+    "consentAt": "Consentement (loi 09-08) donné le {date}",
+    "dates": "Dates",
+    "status": "Statut",
+    "arrivesToday": "Arrive aujourd'hui",
+    "leavesToday": "Part aujourd'hui"
   },
   "guest": {
     "firstName": "Prénom",
@@ -481,7 +510,18 @@
       "wallets": "Caisses",
       "recurring": "Récurrentes",
       "suppliers": "Fournisseurs"
-    }
+    },
+    "period": "Période",
+    "allTime": "Tout",
+    "allCategories": "Toutes les catégories",
+    "allSuppliers": "Tous les fournisseurs",
+    "allUsers": "Saisies par tout le monde",
+    "periodTotalLabel": "Total de la période",
+    "inclVat": "TTC",
+    "recoverableVat": "TVA récupérable",
+    "recoverableVatHint": "À déduire de la TVA à payer",
+    "count": "Nombre de dépenses",
+    "vatIncluded": "dont TVA {amount}"
   },
   "wallets": {
     "new": "Nouvelle caisse",

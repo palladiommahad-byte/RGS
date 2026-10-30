@@ -1,4 +1,4 @@
-import type { ExpenseCategoryDto } from '@riad/shared';
+import { categoryLabel, type ExpenseCategoryDto } from '@riad/shared';
 import {
   CircleEllipsis,
   Landmark,
@@ -32,6 +32,6 @@ export function CategoryIcon({ icon, className }: { icon: string; className?: st
   return <Icon className={className} aria-hidden />;
 }
 
-export function categoryName(c: Pick<ExpenseCategoryDto, 'nameFr' | 'nameAr'>, locale: string): string {
-  return locale === 'ar' ? c.nameAr : c.nameFr;
+export function categoryName(c: Pick<ExpenseCategoryDto, 'key' | 'nameFr' | 'nameAr'>, locale: string): string {
+  return categoryLabel(c, locale);
 }

@@ -127,6 +127,10 @@ describe('Expenses, suppliers, petty cash, recurring (e2e)', () => {
       const all = (await managerA.get(`${API}/expenses?limit=50`).expect(200)).body as ExpenseListDto;
       expect(all.total).toBe(3);
       expect(all.sumTtc).toBe(45000 + 1000 + 12000);
+      // Per-category totals cover the whole period and add up to the total.
+      expect(all.byCategory.reduce((n, c) => n + c.amount, 0)).toBe(all.sumTtc);
+      expect(all.byCategory.find((c) => c.categoryId === cat.FOOD)?.amount).toBe(46000);
+      expect(all.sumTva).toBeGreaterThanOrEqual(0);
       const food = (await managerA.get(`${API}/expenses?categoryId=${cat.FOOD}`).expect(200)).body as ExpenseListDto;
       expect(food.sumTtc).toBe(46000);
       const byWallet = (await managerA.get(`${API}/expenses?walletId=${walletId}`).expect(200)).body as ExpenseListDto;

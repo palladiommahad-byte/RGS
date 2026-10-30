@@ -52,6 +52,8 @@ function CalendarScreen() {
 
   // A guest's new QR check-in shows up without a reload.
   useRealtimeEvent('checkin:new', stays.reload);
+  useRealtimeEvent('stays:changed', stays.reload);
+  useRealtimeEvent('rooms:changed', rooms.reload);
 
   const update = (next: Partial<{ room: string; view: CalendarView; date: IsoDate }>) => {
     const p = new URLSearchParams(params.toString());

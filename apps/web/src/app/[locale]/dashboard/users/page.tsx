@@ -4,6 +4,7 @@ import {
   ALL_PERMISSIONS,
   newUserFormSchema,
   resetPasswordSchema,
+  roleLabel,
   userFormSchema,
   type Paginated,
   type RoleDto,
@@ -36,7 +37,7 @@ import { useAction, useApiQuery } from '@/lib/use-api';
 import { cn } from '@/lib/utils';
 
 const LIMIT = 20;
-const roleName = (r: { nameFr: string; nameAr: string }, locale: string) => (locale === 'ar' ? r.nameAr : r.nameFr);
+const roleName = (r: { key: string; nameFr: string; nameAr: string }, locale: string) => roleLabel(r, locale);
 /** Permission codes contain dots, which next-intl reads as nesting. */
 const permKey = (code: string) => `permission.${code.replace(/\./g, '_')}`;
 

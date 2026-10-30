@@ -16,3 +16,4 @@ export * from './schemas/finance';
 export * from './hr';
 export * from './schemas/hr';
 export * from './schemas/settings';
+export * from './names';

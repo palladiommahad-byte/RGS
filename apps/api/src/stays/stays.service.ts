@@ -24,6 +24,7 @@ import { pageArgs, paginated } from '../common/pagination';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { guestCreateData, guestUpdateData } from './guest-data';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { occupyRoom, releaseRoom } from './room-locks';
 import { stayDetailInclude, staySummaryInclude, toGuestDto, toStayDetail, toStaySummary } from './stay.mapper';
 import type {
@@ -62,7 +63,14 @@ export class StaysService {
     private readonly audit: AuditService,
     private readonly enc: FieldEncryption,
     private readonly storage: StorageService,
+    private readonly realtime: RealtimeGateway,
   ) {}
+
+  /** Open dashboards reload: stays and room statuses may both have changed. */
+  private notify(riadId: string): void {
+    this.realtime.staysChanged(riadId);
+    this.realtime.roomsChanged(riadId);
+  }
 
   // ---------------------------------------------------------------------------
   // Queries
@@ -206,6 +214,7 @@ export class StaysService {
       );
       return stay.id;
     });
+    this.notify(p.riadId);
     return this.get(p, id);
   }
 
@@ -255,6 +264,7 @@ export class StaysService {
         tx,
       );
     });
+    this.notify(p.riadId);
     return this.get(p, id);
   }
 
@@ -298,6 +308,7 @@ export class StaysService {
         tx,
       );
     });
+    this.notify(p.riadId);
     return this.get(p, id);
   }
 
@@ -306,6 +317,7 @@ export class StaysService {
     const before = await this.findOrThrow(p.riadId, id);
     assertStatus(before, 'PENDING', 'CANCELLED');
     await this.transition(p, id, 'PENDING', { status: 'CANCELLED' }, 'stay.cancel');
+    this.notify(p.riadId);
     return this.get(p, id);
   }
 
@@ -400,6 +412,7 @@ export class StaysService {
       'passports',
       stay.guests.flatMap((g) => [g.passportPhotoKey, g.signatureKey]),
     );
+    this.notify(p.riadId);
   }
 
   /** 5-minute signed URLs so staff can compare the passport photo with the typed data. */

@@ -1,41 +1,39 @@
 'use client';
 
-import type { Paginated, RoomDto } from '@riad/shared';
-import { Pencil, Plus, QrCode, RefreshCcw, Trash2, Users } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import type { Paginated, RoomDto, RoomStatus } from '@riad/shared';
+import { Plus, QrCode } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
+import { useRealtimeEvent } from '@/components/realtime-provider';
 import { Pagination } from '@/components/pagination';
+import { RoomCard } from '@/components/rooms/room-card';
 import { RoomFormDialog } from '@/components/rooms/room-form-dialog';
-import { RoomStatusDialog } from '@/components/rooms/room-status-dialog';
-import { RoomStatusBadge } from '@/components/status-badges';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { formatMoney } from '@/lib/format';
 import { useAction, useApiQuery } from '@/lib/use-api';
 
 const LIMIT = 50;
 
 export default function RoomsPage() {
   const t = useTranslations();
-  const locale = useLocale();
   const { can } = useAuth();
   const canWrite = can('rooms.write');
   const [page, setPage] = useState(1);
   const [showInactive, setShowInactive] = useState(false);
   const [editing, setEditing] = useState<RoomDto | undefined>();
   const [formOpen, setFormOpen] = useState(false);
-  const [statusRoom, setStatusRoom] = useState<RoomDto | null>(null);
   const action = useAction();
 
   const query = useApiQuery<Paginated<RoomDto>>(
     `/rooms?page=${page}&limit=${LIMIT}${showInactive ? '&includeInactive=true' : ''}`,
   );
+
+  // Statuses change on their own (check-in, check-out) and from other devices.
+  useRealtimeEvent('rooms:changed', query.reload);
 
   function openForm(room?: RoomDto) {
     setEditing(room);
@@ -50,6 +48,10 @@ export default function RoomsPage() {
   async function remove(room: RoomDto) {
     if (!window.confirm(t('rooms.deleteConfirm', { name: room.name }))) return;
     if (await action.run(() => api(`/rooms/${room.id}`, { method: 'DELETE' }))) query.reload();
+  }
+
+  async function setStatus(room: RoomDto, status: RoomStatus) {
+    if (await action.run(() => api(`/rooms/${room.id}/status`, { method: 'PATCH', body: { status } }))) query.reload();
   }
 
   async function reactivate(room: RoomDto) {
@@ -100,62 +102,18 @@ export default function RoomsPage() {
         <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">{t('rooms.empty')}</p>
       )}
 
-      <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+      <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {query.data?.items.map((room) => (
           <li key={room.id}>
-            <Card className="gap-3 px-5 py-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold">{room.name}</h2>
-                  <p className="text-sm text-muted-foreground">{room.type}</p>
-                </div>
-                {room.isActive ? (
-                  <RoomStatusBadge status={room.status} />
-                ) : (
-                  <Badge tone="gray">{t('rooms.deactivated')}</Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="inline-flex items-center gap-1">
-                  <Users className="size-4" aria-hidden />
-                  {t('rooms.persons', { count: room.capacity })}
-                </span>
-                <span className="font-medium">{formatMoney(room.basePrice, locale)}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {room.isActive && can('rooms.status.update') && (
-                  <Button variant="secondary" size="sm" onClick={() => setStatusRoom(room)}>
-                    {t('rooms.changeStatus')}
-                  </Button>
-                )}
-                {canWrite && room.isActive && (
-                  <>
-                    <Button variant="ghost" size="sm" onClick={() => openForm(room)}>
-                      <Pencil aria-hidden />
-                      {t('common.edit')}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => void regenerate(room)}>
-                      <RefreshCcw aria-hidden />
-                      {t('rooms.regenerateQr')}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive"
-                      onClick={() => void remove(room)}
-                    >
-                      <Trash2 aria-hidden />
-                      {t('common.delete')}
-                    </Button>
-                  </>
-                )}
-                {canWrite && !room.isActive && (
-                  <Button variant="outline" size="sm" onClick={() => void reactivate(room)}>
-                    {t('rooms.reactivate')}
-                  </Button>
-                )}
-              </div>
-            </Card>
+            <RoomCard
+              room={room}
+              busy={action.pending}
+              onStatus={(status) => void setStatus(room, status)}
+              onEdit={() => openForm(room)}
+              onRegenerate={() => void regenerate(room)}
+              onRemove={() => void remove(room)}
+              onReactivate={() => void reactivate(room)}
+            />
           </li>
         ))}
       </ul>
@@ -165,7 +123,6 @@ export default function RoomsPage() {
       )}
 
       <RoomFormDialog open={formOpen} room={editing} onOpenChange={setFormOpen} onSaved={() => query.reload()} />
-      <RoomStatusDialog room={statusRoom} onClose={() => setStatusRoom(null)} onChanged={() => query.reload()} />
     </div>
   );
 }

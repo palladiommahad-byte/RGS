@@ -86,7 +86,16 @@ export type ExpenseDto = {
   createdAt: string;
 };
 
-export type ExpenseListDto = { items: ExpenseDto[]; page: number; limit: number; total: number; sumTtc: number };
+export type ExpenseListDto = {
+  items: ExpenseDto[];
+  page: number;
+  limit: number;
+  total: number;
+  /** Over every page of the filtered period, not just this one. */
+  sumTtc: number;
+  sumTva: number;
+  byCategory: { categoryId: string; amount: number }[];
+};
 
 export type CashWalletDto = {
   id: string;

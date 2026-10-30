@@ -4,22 +4,19 @@ import {
   addDays,
   addMonths,
   monthStartOf,
-  nightsBetween,
   todayIso,
   type IsoDate,
   type RoomDto,
-  type StaySource,
-  type StayStatus,
   type StaySummaryDto,
 } from '@riad/shared';
 import { Brush, CalendarDays, ChevronLeft, ChevronRight, LogIn, LogOut, Moon, Plus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { CSSProperties } from 'react';
-import { weekStartOf } from '@/components/stays/week-calendar';
 import { StayStatusBadge } from '@/components/status-badges';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney, intlLocale } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { guestName, rowBars, weekStartOf, type Bar } from './layout';
+import { HATCH, SOURCE_BADGE, STAY_BAR } from './styles';
 
 export type CalendarView = 'month' | 'week' | 'day';
 
@@ -38,64 +35,6 @@ export function shiftCursor(view: CalendarView, cursor: IsoDate, step: 1 | -1): 
   if (view === 'week') return addDays(cursor, 7 * step);
   return addMonths(cursor, step);
 }
-
-const BAR: Record<StayStatus, string> = {
-  CHECKED_IN: 'bg-gradient-to-r from-teal-900 to-teal-700 text-white rtl:bg-gradient-to-l',
-  PENDING: 'bg-gradient-to-r from-amber-200 to-amber-100 text-amber-950 ring-1 ring-amber-300 rtl:bg-gradient-to-l',
-  CHECKED_OUT: 'bg-gradient-to-r from-teal-100 to-teal-100/60 text-teal-900 rtl:bg-gradient-to-l',
-  CANCELLED: 'hidden',
-};
-
-/** Neutral initials per booking channel (no third-party logos). */
-const SOURCE_BADGE: Record<StaySource, { label: string; className: string }> = {
-  BOOKING: { label: 'B', className: 'bg-[#1d4f91] text-white' },
-  AIRBNB: { label: 'A', className: 'bg-[#e0565b] text-white' },
-  EXPEDIA: { label: 'E', className: 'bg-[#f5c518] text-black' },
-  DIRECT: { label: 'D', className: 'bg-white text-teal-900' },
-  WALK_IN: { label: 'W', className: 'bg-white text-teal-900' },
-  OTHER: { label: '•', className: 'bg-white text-teal-900' },
-};
-
-const HATCH: CSSProperties = {
-  backgroundImage: 'repeating-linear-gradient(135deg, var(--border) 0 1px, transparent 1px 7px)',
-};
-
-type Bar = { stay: StaySummaryDto; left: number; right: number; lane: number; cutStart: boolean; cutEnd: boolean };
-
-/**
- * Bars for one row of `days` columns starting at `rowStart`, hotel style: from the middle
- * of the arrival day to the middle of the departure day, so a departure and an arrival
- * share a day without overlapping. Overlaps go to the next lane.
- */
-function rowBars(stays: StaySummaryDto[], rowStart: IsoDate, days: number): Bar[] {
-  const bars = stays
-    .filter((s) => s.status !== 'CANCELLED')
-    .map((stay) => {
-      const inIdx = nightsBetween(rowStart, stay.checkInDate);
-      const outIdx = nightsBetween(rowStart, stay.checkOutDate);
-      return {
-        stay,
-        left: inIdx < 0 ? 0 : inIdx + 0.5,
-        right: outIdx >= days ? days : outIdx + 0.5,
-        lane: 0,
-        cutStart: inIdx < 0,
-        cutEnd: outIdx >= days,
-      };
-    })
-    .filter((b) => b.right > 0 && b.left < days && b.right > b.left)
-    .sort((a, b) => a.left - b.left || b.right - a.right);
-  const laneEnds: number[] = [];
-  for (const b of bars) {
-    let lane = laneEnds.findIndex((end) => end <= b.left);
-    if (lane === -1) lane = laneEnds.length;
-    laneEnds[lane] = b.right;
-    b.lane = lane;
-  }
-  return bars;
-}
-
-const guestName = (s: StaySummaryDto, fallback: string) =>
-  s.mainGuest ? `${s.mainGuest.firstName} ${s.mainGuest.lastName}`.trim() : fallback;
 
 /** True if someone sleeps in the room on the night of `day`. */
 const occupied = (stays: StaySummaryDto[], day: IsoDate) =>
@@ -141,7 +80,7 @@ export function RoomCalendar({
       <header className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2">
           <CalendarDays className="size-5 text-teal-700" aria-hidden />
-          <h2 className="text-lg font-semibold capitalize">{title}</h2>
+          <h2 className="text-lg font-semibold first-letter:uppercase">{title}</h2>
         </div>
         <div className="flex items-center gap-1">
           <Button variant="outline" size="icon" className="size-9" onClick={() => onCursorChange(shiftCursor(view, cursor, -1))} aria-label={t('calendar.previous')}>
@@ -332,7 +271,7 @@ function StayBar({ bar, top, height, tall, onOpen }: { bar: Bar; top: number; he
       title={`${name} · ${formatDate(s.checkInDate, locale)} → ${formatDate(s.checkOutDate, locale)}`}
       className={cn(
         'absolute z-10 flex items-center gap-2 overflow-hidden px-2 text-start shadow-sm transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring',
-        BAR[s.status],
+        STAY_BAR[s.status],
         bar.cutStart ? 'rounded-s-none' : 'rounded-s-xl',
         bar.cutEnd ? 'rounded-e-none' : 'rounded-e-xl',
       )}
@@ -353,9 +292,22 @@ function StayBar({ bar, top, height, tall, onOpen }: { bar: Bar; top: number; he
           {tall && s.mainGuest?.nationality ? ` · ${s.mainGuest.nationality}` : ''}
         </span>
       </span>
-      {wide && s.totalAccommodation > 0 && (
-        <span className="shrink-0 text-sm font-semibold tabular-nums">{formatMoney(s.totalAccommodation, locale)}</span>
-      )}
+      <span
+        className={cn(
+          'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap tabular-nums',
+          s.status === 'CHECKED_IN' ? 'bg-white/20' : 'bg-black/10',
+        )}
+        title={t('stays.nightsCount', { count: s.nights })}
+      >
+        {wide ? (
+          t('stays.nightsCount', { count: s.nights })
+        ) : (
+          <>
+            <Moon className="size-3" aria-hidden />
+            {s.nights}
+          </>
+        )}
+      </span>
     </button>
   );
 }

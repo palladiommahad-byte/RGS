@@ -76,6 +76,7 @@ export class FinanceService {
       expensesByCategory: [...current.expensesByCategory.entries()]
         .map(([categoryId, amount]) => ({
           categoryId,
+          key: catById.get(categoryId)?.key ?? null,
           nameFr: catById.get(categoryId)?.nameFr ?? '?',
           nameAr: catById.get(categoryId)?.nameAr ?? '?',
           amount,
@@ -86,6 +87,7 @@ export class FinanceService {
         .sort((a, b) => b.amount - a.amount),
       alerts: alerts.map((a) => ({
         ...a,
+        key: catById.get(a.categoryId)?.key ?? null,
         nameFr: catById.get(a.categoryId)?.nameFr ?? '?',
         nameAr: catById.get(a.categoryId)?.nameAr ?? '?',
       })),

@@ -17,6 +17,7 @@ import type { AuthPrincipal } from '../common/auth/principal';
 import type { InvoiceBreakdown } from '../invoices/invoice-breakdown';
 import { InvoicePdfService } from '../invoices/invoice-pdf.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { releaseRoom } from '../stays/room-locks';
 import type { CheckoutDto, CreateExtraDto, CreatePaymentDto } from './billing.dto';
 import { TaxRatesService } from './tax-rates.service';
@@ -46,6 +47,7 @@ export class BillingService {
     private readonly audit: AuditService,
     private readonly taxRates: TaxRatesService,
     private readonly pdf: InvoicePdfService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -278,6 +280,9 @@ export class BillingService {
       // The invoice exists; the PDF is regenerated on first download.
       this.logger.error(`PDF for ${result.invoice.number} failed: ${String(e)}`);
     }
+    // The room is now « to clean »: every open screen (housekeeping too) updates at once.
+    this.realtime.staysChanged(p.riadId);
+    this.realtime.roomsChanged(p.riadId);
     const i = result.invoice;
     return {
       invoice: { id: i.id, number: i.number, totalTtc: i.totalTtc, issuedAt: i.issuedAt.toISOString() },
