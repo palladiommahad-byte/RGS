@@ -11,7 +11,8 @@ Internal operations platform for a riad (guesthouse) in Marrakech — multi-tena
 
 ## Local setup
 
-Requirements: Node 20+, pnpm 9, Docker Desktop.
+Requirements: Node 24 with tz data 2026c or newer (`node -p process.versions.tz`; Morocco
+has been on UTC+0 since 20 Sept 2026), pnpm 9, Docker Desktop.
 
 ```bash
 pnpm install
@@ -26,6 +27,22 @@ pnpm dev                    # api on :4000, web on :3100
 - Web: http://localhost:3100 (staff login at `/fr/login` or `/ar/login`)
 - API docs: http://localhost:4000/api/docs
 - MinIO console: http://localhost:9001 (minioadmin / minioadmin)
+
+### Everything in Docker
+
+To run the production builds of the app in Docker too (no Node needed on the machine once
+`.env` exists):
+
+```bash
+pnpm docker:up              # = docker compose up -d --build
+```
+
+- Web: http://localhost:3200 — API: http://localhost:4100/api/docs
+- Same database and files as `pnpm dev`; the API applies migrations on start. On an empty
+  database, seed the demo accounts below once:
+  `docker compose exec -e NODE_ENV=development api npx tsx prisma/seed.ts`.
+- `minio-init` shows as stopped in Docker Desktop: it creates the storage buckets with the
+  AWS S3 command-line tool (MinIO speaks the S3 protocol; nothing goes to Amazon) and exits.
 
 ### Demo accounts (from the seed)
 
@@ -227,4 +244,108 @@ system. Phase 8 delivers spec §5.8 instead.
 | `pnpm db:reset`  | Drops, re-migrates and re-seeds the database |
 | `pnpm db:seed-demo` | Adds 3 months of demo activity for the finance pages |
 
-Deployment (VPS + Docker) is documented in phase 9.
+## Tests
+
+- **Unit** (`pnpm test`): money parsing and rounding, TTC → HT, the bill (taxe de séjour,
+  TPT, TVA per rate) plus 2 000 random bills checked against the balancing rules
+  (`billing.invariants.test.ts`), invoice numbering, KPIs (occupancy, ADR, RevPAR, margin),
+  expense/recurring dates, payroll net and payroll → expense, badge-clock rules, time zones,
+  the default permission matrix and the no-escalation rule.
+- **End-to-end** (`pnpm test:e2e`, real Postgres, storage faked): every module, including
+  HR invisible to reception and housekeeping, riad isolation, and `routes.e2e-spec.ts`,
+  which lists **every** route of the app and fails if one has no access policy, if the
+  public surface changes, or if an HR / finance / settings / users route loses its
+  permission.
+
+## Deployment (VPS + Docker)
+
+One riad = one small VPS (2 vCPU, 4 GB RAM, 40 GB disk is plenty; EU or Morocco region).
+Everything runs in Docker: Caddy (automatic HTTPS), web, api, Postgres 16, MinIO, backups.
+Files are in [`deploy/`](deploy/).
+
+### 1. Server
+
+```bash
+# Ubuntu 24.04, as root
+curl -fsSL https://get.docker.com | sh
+ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw enable
+git clone <this repository> /opt/riad && cd /opt/riad/deploy
+```
+
+DNS: two A records to the server's IP — the app (`riad.example.com`) and the file links
+(`files.riad.example.com`). With Cloudflare, either use "DNS only" (grey cloud) or set SSL
+to "Full (strict)"; behind the orange cloud, rate limits see Cloudflare's IPs unless you
+also restore the client IP.
+
+### 2. Configuration
+
+```bash
+cp .env.production.example .env.production
+nano .env.production        # every CHANGE_ME, the domains, the owner account
+chmod 600 .env.production
+```
+
+Generate secrets with `openssl rand -base64 48` (and `openssl rand -base64 32` for
+`FIELD_ENCRYPTION_KEY`). **Store `FIELD_ENCRYPTION_KEY` and `FIELD_HASH_KEY` in a password
+manager**: passport numbers and CINs in the database and in every backup are unreadable
+without them.
+
+### 3. First start
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+# Riad, roles, rooms, categories, TVA 10 % and the owner account (no demo data):
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api npx tsx prisma/seed.ts
+```
+
+The API applies database migrations on every start. Then sign in at
+`https://riad.example.com/fr/login` as the owner, change the password (key icon), remove
+`SEED_OWNER_PASSWORD` from `.env.production`, and in **Paramètres** fill in the legal IDs,
+Wi-Fi and logo; in **Taxes** enter the rates validated by the accountant; in **Chambres**
+rename the rooms and print the QR codes; in **Utilisateurs** create the staff accounts.
+
+### 4. Updates
+
+```bash
+cd /opt/riad && git pull
+cd deploy
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm backup once
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+```
+
+### 5. Backups
+
+The `backup` service writes every night (03:00 Marrakech time) a `pg_dump` and an archive of
+the stored files to `deploy/backups/`, kept 14 days. **Copy them off the server**, e.g. with
+rclone to Cloudflare R2 / Backblaze in a daily cron:
+
+```bash
+rclone sync /opt/riad/deploy/backups remote:riad-backups
+```
+
+Restore a database dump:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production exec -T postgres \
+  pg_restore --clean --if-exists -U riad -d riad < backups/db_YYYY-MM-DD_HHMM.dump
+```
+
+### Notes
+
+- **Time zone**: dates use the runtime's tz database. Morocco moved to permanent UTC+0 on
+  20 Sept 2026 (tzdata 2026c). The images use `node:24-bookworm-slim`; check the API log
+  after a deploy — it warns at start-up if Node's tz data is older (rebuild on a newer Node
+  image then).
+- **Storage**: MinIO runs in the stack; signed links (5 min) go through
+  `FILES_DOMAIN`. To use Cloudflare R2 instead, drop the `minio*` services and set
+  `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (no `S3_PUBLIC_ENDPOINT` needed).
+- **OCR**: Tesseract downloads its English model once into the `ocrcache` volume (needs
+  outbound HTTPS on first passport scan). With `GOOGLE_VISION_API_KEY`, passport images are
+  sent to Google: mention it in the privacy notice.
+- **Health**: `GET /api/v1/health` (used by the container health check; point an uptime
+  monitor at it).
+- **Internal API address**: the web image routes `/api/v1/*` to `http://api:4000` (the
+  compose service name). Next.js bakes that address in at build time, so changing
+  `API_INTERNAL_URL` needs a rebuild, not just a restart.
+- **Before go-live**: consent text and CNDP declaration (lawyer), tax rates (accountant),
+  and a test restore of a backup.

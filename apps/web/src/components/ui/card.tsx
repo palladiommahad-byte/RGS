@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** min-w-0: inside a grid or flex row, wide content (tables, calendars) scrolls instead of widening the page. */
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('flex flex-col gap-4 rounded-xl border bg-card py-5 text-card-foreground', className)}
+      className={cn('flex min-w-0 flex-col gap-4 rounded-xl border bg-card py-5 text-card-foreground', className)}
       {...props}
     />
   );

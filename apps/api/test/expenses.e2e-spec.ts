@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { addDays, todayIso, type CashWalletDto, type ExpenseDto, type ExpenseListDto } from '@riad/shared';
+import { addDays, addMonths, todayIso, type CashWalletDto, type ExpenseDto, type ExpenseListDto } from '@riad/shared';
 import sharp from 'sharp';
 import type TestAgent from 'supertest/lib/agent';
 import { RecurringService } from '../src/expenses/recurring.service';
@@ -190,9 +190,12 @@ describe('Expenses, suppliers, petty cash, recurring (e2e)', () => {
       const list = (await managerA.get(`${API}/expenses?categoryId=${cat.UTILITIES}`).expect(200)).body as ExpenseListDto;
       expect(list.items[0]).toMatchObject({ amountTtc: 49900, source: 'RECURRING', note: 'Internet', date: todayIso() });
 
-      // Next month the night job creates the next one.
+      // Next month the night job creates the next one: the same day of the month (or the
+      // last day, when next month is shorter).
       const svc = app.get(RecurringService);
-      expect(await svc.generateDue(a.riadId, addDays(todayIso(), 32))).toBe(1);
+      const nextMonth = addMonths(todayIso(), 1);
+      const lastDay = Number(addDays(addMonths(nextMonth, 1), -1).slice(8, 10));
+      expect(await svc.generateDue(a.riadId, addDays(nextMonth, Math.min(day, lastDay) - 1))).toBe(1);
 
       const recurring = await managerA.get(`${API}/recurring-expenses`).expect(200);
       expect(recurring.body.items[0].lastGenerated).not.toBeNull();

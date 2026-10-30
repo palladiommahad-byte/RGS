@@ -53,6 +53,50 @@ services:
         $$S3 s3api put-bucket-policy --bucket riad-public --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::riad-public/*"]}]}'
         echo "buckets ready"
 
+  # --- The app itself, built from the Dockerfiles (production builds) ---
+  # `docker compose up -d --build` (or the Play button in Docker Desktop) runs everything:
+  # web on http://localhost:3200, API on http://localhost:4100. Same database and files as
+  # `pnpm dev`, on other ports so both can run side by side. `pnpm db:up` starts only
+  # postgres + minio for day-to-day development.
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: riad-api:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://riad:riad@postgres:5432/riad?schema=public
+      CORS_ORIGINS: http://localhost:3200
+      COOKIE_SECURE: 'false'
+      TRUST_PROXY: uniquelocal
+      # The API reaches MinIO inside Docker; signed links point the browser to the host port.
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:${MINIO_API_HOST_PORT:-9000}
+    ports:
+      - '${API_DOCKER_HOST_PORT:-4100}:4000'
+    volumes:
+      - ocrcache:/data/ocr
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Live updates go straight to the API container: the Next.js proxy drops the
+        # trailing slash Socket.io needs. (In production Caddy routes them instead.)
+        NEXT_PUBLIC_SOCKET_URL: http://localhost:${API_DOCKER_HOST_PORT:-4100}
+    image: riad-web:local
+    restart: unless-stopped
+    ports:
+      - '${WEB_DOCKER_HOST_PORT:-3200}:3000'
+    depends_on: [api]
+
 volumes:
   pgdata:
   miniodata:
+  ocrcache:

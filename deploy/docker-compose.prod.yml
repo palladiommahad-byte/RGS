@@ -1,0 +1,128 @@
+# Production stack for one riad on one VPS: Caddy (HTTPS) -> web + api, Postgres, MinIO,
+# nightly backups. Run from this folder:
+#   cp .env.production.example .env.production   # then fill it in
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+name: riad
+
+x-db-url: &db-url postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Private object storage (passport photos, receipts, contracts, invoices).
+  # To use Cloudflare R2 instead: remove minio + minio-init, set S3_* in .env.production.
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    volumes:
+      - miniodata:/data
+
+  minio-init:
+    image: amazon/aws-cli:2.27.50
+    depends_on: [minio]
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        S3="aws --endpoint-url http://minio:9000"
+        until $$S3 s3 ls >/dev/null 2>&1; do echo "waiting for minio"; sleep 1; done
+        for b in riad-passports riad-receipts riad-documents; do $$S3 s3 mb s3://$$b 2>/dev/null || true; done
+        echo "buckets ready"
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    image: riad-api:latest
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: *db-url
+      COOKIE_SECURE: 'true'
+      # Trust Caddy (private Docker network) for the client IP used by rate limits.
+      TRUST_PROXY: uniquelocal
+      CORS_ORIGINS: https://${DOMAIN}
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: https://${FILES_DOMAIN}
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
+    volumes:
+      - ocrcache:/data/ocr
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+    image: riad-web:latest
+    restart: unless-stopped
+    depends_on: [api]
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      DOMAIN: ${DOMAIN}
+      FILES_DOMAIN: ${FILES_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web, api]
+
+  # Nightly database dump + file archive into ./backups (kept BACKUP_KEEP_DAYS days).
+  # Copy that folder off the server (see README). Run once now: docker compose ... run --rm backup once
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      TZ: Africa/Casablanca
+    entrypoint: ['/bin/sh', '/backup.sh']
+    command: ['loop']
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - miniodata:/files:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  miniodata:
+  ocrcache:
+  caddy_data:
+  caddy_config:

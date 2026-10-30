@@ -12,3 +12,5 @@ coverage
 .turbo
 next-env.d.ts
 .cache
+.env.production
+deploy/backups/

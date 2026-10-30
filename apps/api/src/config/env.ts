@@ -17,6 +17,8 @@ const envSchema = z.object({
   FIELD_ENCRYPTION_KEY: z.string().min(1),
   FIELD_HASH_KEY: z.string().min(16),
   S3_ENDPOINT: z.string().url().optional(),
+  /** Address browsers use for signed links when S3_ENDPOINT is internal (e.g. http://minio:9000). */
+  S3_PUBLIC_ENDPOINT: z.string().url().optional(),
   S3_REGION: z.string().default('auto'),
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),

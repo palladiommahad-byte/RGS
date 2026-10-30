@@ -1,7 +1,10 @@
 /**
- * Foundation seed: one riad, roles + permissions, one user per role, rooms,
- * expense categories and tax settings. Idempotent — safe to run repeatedly.
- * Later phases extend this with 3 months of demo stays and expenses.
+ * Foundation seed: one riad, roles + permissions, rooms, expense categories and TVA.
+ * Idempotent — safe to run repeatedly.
+ * - development: plus one demo user per role (SEED_DEFAULT_PASSWORD), suppliers, recurring
+ *   expenses and a petty-cash wallet (pnpm db:seed-demo adds 3 months of activity).
+ * - production (NODE_ENV=production): only the owner account, from SEED_OWNER_EMAIL and
+ *   SEED_OWNER_PASSWORD (12+ characters); no demo data, no demo accounts.
  */
 import { PrismaClient, TaxCode, TaxMode } from '@prisma/client';
 import {
@@ -20,6 +23,7 @@ const prisma = new PrismaClient();
 const RIAD_NAME = process.env.SEED_RIAD_NAME ?? 'Riad Demo';
 const ROOM_COUNT = Number(process.env.SEED_ROOM_COUNT ?? 8);
 const DEFAULT_PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? 'Demo1234!';
+const PRODUCTION = process.env.NODE_ENV === 'production';
 
 const USERS: { key: RoleKey; name: string; email: string }[] = [
   { key: 'OWNER', name: 'Propriétaire Demo', email: 'owner@riad.local' },
@@ -39,19 +43,23 @@ const ROOM_TEMPLATES = [
 const token = () => randomBytes(16).toString('base64url');
 
 async function main(): Promise<void> {
+  // Checked before writing anything, so a misconfigured production run changes nothing.
+  const owner = PRODUCTION ? productionOwner() : null;
   const existing = await prisma.riad.findFirst({ where: { name: RIAD_NAME } });
   const riad =
     existing ??
     (await prisma.riad.create({
-      data: {
-        name: RIAD_NAME,
-        address: 'Derb Example, Médina',
-        city: 'Marrakech',
-        phone: '+212 5 24 00 00 00',
-        email: 'contact@riad.local',
-        invoicePrefix: 'RIAD',
-        wifiInfo: 'Réseau: RiadGuest — Mot de passe: (à définir)',
-      },
+      data: PRODUCTION
+        ? { name: RIAD_NAME, invoicePrefix: 'RIAD' }
+        : {
+            name: RIAD_NAME,
+            address: 'Derb Example, Médina',
+            city: 'Marrakech',
+            phone: '+212 5 24 00 00 00',
+            email: 'contact@riad.local',
+            invoicePrefix: 'RIAD',
+            wifiInfo: 'Réseau: RiadGuest — Mot de passe: (à définir)',
+          },
     }));
 
   // Permissions catalogue (global)
@@ -79,9 +87,10 @@ async function main(): Promise<void> {
     });
   }
 
-  // One user per role
-  const passwordHash = await argon2.hash(DEFAULT_PASSWORD);
-  for (const u of USERS) {
+  // Accounts: the owner only in production, one demo user per role otherwise.
+  const accounts = owner ? [owner] : USERS.map((u) => ({ ...u, password: DEFAULT_PASSWORD }));
+  for (const u of accounts) {
+    const passwordHash = await argon2.hash(u.password);
     await prisma.user.upsert({
       where: { email: u.email },
       update: {},
@@ -139,10 +148,30 @@ async function main(): Promise<void> {
     });
   }
 
-  // Expenses demo: suppliers with a default category, two recurring expenses and a
-  // petty-cash wallet for reception.
+  if (!PRODUCTION) await seedExpenseDemo(riad.id);
+
+  console.log(`Seeded riad "${riad.name}" (${riad.id})`);
+  if (PRODUCTION) console.log(`Owner account: ${accounts[0]!.email}`);
+  else {
+    console.log(`Users (password: ${DEFAULT_PASSWORD}):`);
+    for (const u of USERS) console.log(`  ${u.key.padEnd(12)} ${u.email}`);
+  }
+}
+
+function productionOwner(): { key: RoleKey; name: string; email: string; password: string } {
+  const email = process.env.SEED_OWNER_EMAIL?.trim().toLowerCase();
+  const password = process.env.SEED_OWNER_PASSWORD ?? '';
+  if (!email || !email.includes('@')) throw new Error('Set SEED_OWNER_EMAIL for the production seed.');
+  if (password.length < 12 || password === DEFAULT_PASSWORD) {
+    throw new Error('Set SEED_OWNER_PASSWORD (12+ characters, not the demo password) for the production seed.');
+  }
+  return { key: 'OWNER', name: process.env.SEED_OWNER_NAME?.trim() || 'Propriétaire', email, password };
+}
+
+/** Development only: suppliers with a default category, two recurring expenses and a petty-cash wallet for reception. */
+async function seedExpenseDemo(riadId: string): Promise<void> {
   const categoryId = async (key: string) =>
-    (await prisma.expenseCategory.findUniqueOrThrow({ where: { riadId_key: { riadId: riad.id, key } } })).id;
+    (await prisma.expenseCategory.findUniqueOrThrow({ where: { riadId_key: { riadId: riadId, key } } })).id;
   const suppliers: [string, string][] = [
     ['Épicerie du Derb', 'FOOD'],
     ['Boucherie Mouassine', 'FOOD'],
@@ -152,35 +181,31 @@ async function main(): Promise<void> {
   ];
   for (const [name, key] of suppliers) {
     await prisma.supplier.upsert({
-      where: { riadId_name: { riadId: riad.id, name } },
+      where: { riadId_name: { riadId: riadId, name } },
       update: {},
-      create: { riadId: riad.id, name, defaultCategoryId: await categoryId(key) },
+      create: { riadId: riadId, name, defaultCategoryId: await categoryId(key) },
     });
   }
-  if ((await prisma.recurringExpense.count({ where: { riadId: riad.id } })) === 0) {
+  if ((await prisma.recurringExpense.count({ where: { riadId: riadId } })) === 0) {
     await prisma.recurringExpense.createMany({
       data: [
-        { riadId: riad.id, label: 'Internet fibre', categoryId: await categoryId('UTILITIES'), amount: 49900, dayOfMonth: 5 },
-        { riadId: riad.id, label: 'Loyer du riad', categoryId: await categoryId('OTHER'), amount: 1500000, dayOfMonth: 1 },
+        { riadId: riadId, label: 'Internet fibre', categoryId: await categoryId('UTILITIES'), amount: 49900, dayOfMonth: 5 },
+        { riadId: riadId, label: 'Loyer du riad', categoryId: await categoryId('OTHER'), amount: 1500000, dayOfMonth: 1 },
       ],
     });
   }
   const reception = await prisma.user.findUniqueOrThrow({ where: { email: 'reception@riad.local' } });
-  if (!(await prisma.cashWallet.findFirst({ where: { riadId: riad.id, holderId: reception.id } }))) {
+  if (!(await prisma.cashWallet.findFirst({ where: { riadId: riadId, holderId: reception.id } }))) {
     await prisma.cashWallet.create({
       data: {
-        riadId: riad.id,
+        riadId: riadId,
         holderId: reception.id,
         name: 'Caisse réception',
         balance: 150000,
-        movements: { create: { riadId: riad.id, type: 'TOP_UP', amount: 150000, note: 'Fonds de caisse initial' } },
+        movements: { create: { riadId: riadId, type: 'TOP_UP', amount: 150000, note: 'Fonds de caisse initial' } },
       },
     });
   }
-
-  console.log(`Seeded riad "${riad.name}" (${riad.id})`);
-  console.log(`Users (password: ${DEFAULT_PASSWORD}):`);
-  for (const u of USERS) console.log(`  ${u.key.padEnd(12)} ${u.email}`);
 }
 
 main()

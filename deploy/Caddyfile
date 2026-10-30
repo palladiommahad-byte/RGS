@@ -1,0 +1,37 @@
+# HTTPS certificates are obtained automatically (Let's Encrypt) for both names.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Camera: passport photos and the staff badge clock.
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# API (REST + Socket.io under /api/v1/socket.io; WebSocket upgrades pass through).
+	handle /api/v1/* {
+		request_body {
+			max_size 25MB
+		}
+		reverse_proxy api:4000
+	}
+
+	# Staff dashboard and guest check-in pages.
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# Signed, 5-minute links to private files (passport photos, receipts, contracts).
+# The Host header is kept, so MinIO can verify the signature.
+{$FILES_DOMAIN} {
+	reverse_proxy minio:9000
+}

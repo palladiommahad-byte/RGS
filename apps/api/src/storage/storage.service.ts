@@ -20,16 +20,21 @@ export type BucketName = 'passports' | 'receipts' | 'documents';
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
   private readonly s3: S3Client;
+  /** Signs links for browsers; differs from `s3` when the API reaches storage on an internal address. */
+  private readonly signer: S3Client;
   private readonly buckets: Record<BucketName, string>;
 
   constructor() {
     const e = env();
-    this.s3 = new S3Client({
-      endpoint: e.S3_ENDPOINT,
-      region: e.S3_REGION,
-      credentials: { accessKeyId: e.S3_ACCESS_KEY, secretAccessKey: e.S3_SECRET_KEY },
-      forcePathStyle: true, // required by MinIO, harmless for R2
-    });
+    const client = (endpoint: string | undefined) =>
+      new S3Client({
+        endpoint,
+        region: e.S3_REGION,
+        credentials: { accessKeyId: e.S3_ACCESS_KEY, secretAccessKey: e.S3_SECRET_KEY },
+        forcePathStyle: true, // required by MinIO, harmless for R2
+      });
+    this.s3 = client(e.S3_ENDPOINT);
+    this.signer = e.S3_PUBLIC_ENDPOINT ? client(e.S3_PUBLIC_ENDPOINT) : this.s3;
     this.buckets = {
       passports: e.S3_BUCKET_PASSPORTS,
       receipts: e.S3_BUCKET_RECEIPTS,
@@ -69,7 +74,7 @@ export class StorageService {
   }
 
   signedUrl(bucket: BucketName, key: string, ttlSeconds = env().SIGNED_URL_TTL_SECONDS): Promise<string> {
-    return getSignedUrl(this.s3, new GetObjectCommand({ Bucket: this.buckets[bucket], Key: key }), {
+    return getSignedUrl(this.signer, new GetObjectCommand({ Bucket: this.buckets[bucket], Key: key }), {
       expiresIn: ttlSeconds,
     });
   }
