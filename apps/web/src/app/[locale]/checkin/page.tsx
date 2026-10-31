@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-/** Opened from the QR codes: /checkin?r=<riad key> (entrance) or ?room=<room token>. */
+/** Opened from a room QR code: /checkin?room=<room token> (each room has its own). */
 export default async function CheckinPage({
   params,
   searchParams,
@@ -21,5 +21,5 @@ export default async function CheckinPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const q = await searchParams;
-  return <CheckinFlow link={{ r: one(q.r), room: one(q.room) }} />;
+  return <CheckinFlow link={{ room: one(q.room) ?? '' }} />;
 }

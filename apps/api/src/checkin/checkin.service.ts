@@ -1,7 +1,9 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import type { Riad, Room } from '@prisma/client';
 import {
+  accommodationTotal,
   CHECKIN_ALLOWED_IMAGE_TYPES,
+  CHECKIN_ROOM_STATUSES,
   isoToUtcDate,
   nightsBetween,
   todayIso,
@@ -16,14 +18,16 @@ import { AppException } from '../common/app-exception';
 import { FieldEncryption } from '../common/crypto/field-encryption';
 import { env } from '../config/env';
 import { PassportReaderService } from '../ocr/passport-reader.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { StorageService } from '../storage/storage.service';
 import { guestCreateData } from '../stays/guest-data';
+import { bookingsOverlapping } from '../stays/room-availability';
 import { staySummaryInclude, toStaySummary } from '../stays/stay.mapper';
 import type { CheckinLinkDto, CheckinSubmitDto } from './checkin.dto';
 
-type CheckinContext = { riad: Riad; room: Room | null };
+type CheckinContext = { riad: Riad; room: Room };
 
 const MAX_NIGHTS = 365;
 export const PENDING_PREFIX = 'pending/';
@@ -40,6 +44,7 @@ export class CheckinService {
     private readonly enc: FieldEncryption,
     private readonly audit: AuditService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async context(link: CheckinLinkDto): Promise<CheckinContextDto> {
@@ -83,7 +88,7 @@ export class CheckinService {
 
   async submit(link: CheckinLinkDto, dto: CheckinSubmitDto): Promise<CheckinDoneDto> {
     // Honeypot filled: answer like a success so the bot learns nothing.
-    if (dto.website) return { riadName: '', wifiInfo: null };
+    if (dto.website) return { riadName: '', wifiInfo: null, checkedIn: false, roomName: null };
 
     const { riad, room } = await this.resolve(link);
     const today = todayIso();
@@ -116,14 +121,36 @@ export class CheckinService {
     }
 
     const consentAt = new Date();
+    let checkedIn = false;
     try {
-      await this.prisma.$transaction(async (tx) => {
+      checkedIn = await this.prisma.$transaction(async (tx) => {
+        // The QR code says which room: the guest is checked in at once when it is free
+        // (free or being cleaned, nobody booked for these nights). Otherwise reception decides.
+        const bookable =
+          (CHECKIN_ROOM_STATUSES as readonly string[]).includes(room.status) &&
+          (await bookingsOverlapping(tx, riad.id, room.id, today, dto.checkOutDate)).length === 0;
+        const taken =
+          bookable &&
+          (
+            await tx.room.updateMany({
+              where: { id: room.id, riadId: riad.id, isActive: true, status: { in: [...CHECKIN_ROOM_STATUSES] } },
+              data: { status: 'OCCUPIED' },
+            })
+          ).count === 1;
         await tx.stay.create({
           data: {
             id: stayId,
             riadId: riad.id,
-            requestedRoomId: room?.id,
-            source: 'OTHER',
+            ...(taken
+              ? {
+                  status: 'CHECKED_IN',
+                  roomId: room.id,
+                  source: 'DIRECT',
+                  pricePerNight: room.basePrice,
+                  totalAccommodation: accommodationTotal(room.basePrice, nights),
+                  confirmedAt: consentAt,
+                }
+              : { requestedRoomId: room.id, source: 'OTHER' }),
             checkInDate: isoToUtcDate(today),
             checkOutDate: isoToUtcDate(dto.checkOutDate),
             nights,
@@ -151,10 +178,11 @@ export class CheckinService {
             action: 'stay.self_checkin',
             entity: 'Stay',
             entityId: stayId,
-            diff: { guests: dto.guests.length, roomId: room?.id ?? null, locale: dto.locale },
+            diff: { guests: dto.guests.length, roomId: room.id, locale: dto.locale, checkedIn: taken },
           },
           tx,
         );
+        return taken;
       });
     } catch (e) {
       await this.storage.delete('passports', [signatureKey, ...photoKeys]);
@@ -165,26 +193,28 @@ export class CheckinService {
       'passports',
       photoIds.map((pid) => (pid ? `${PENDING_PREFIX}${riad.id}/${pid}.jpg` : null)),
     );
-    const stay = await this.prisma.stay.findUniqueOrThrow({ where: { id: stayId }, include: staySummaryInclude });
-    this.realtime.emitToRiad(riad.id, 'checkin:new', toStaySummary(stay));
-    return { riadName: riad.name, wifiInfo: riad.wifiInfo };
+    if (checkedIn) {
+      this.realtime.staysChanged(riad.id);
+      this.realtime.roomsChanged(riad.id);
+      await this.notifications.stay('CHECKIN', riad.id, stayId, null);
+    } else {
+      // Room occupied, out of service or booked: reception picks a room and confirms.
+      const stay = await this.prisma.stay.findUniqueOrThrow({ where: { id: stayId }, include: staySummaryInclude });
+      this.realtime.emitToRiad(riad.id, 'checkin:new', toStaySummary(stay));
+      await this.notifications.stay('CHECKIN_REQUEST', riad.id, stayId, null, { roomNotFree: true });
+    }
+    return { riadName: riad.name, wifiInfo: riad.wifiInfo, checkedIn, roomName: room.name };
   }
 
+  /** The room QR code tells which room (and riad) the guest is checking into. */
   private async resolve(link: CheckinLinkDto): Promise<CheckinContext> {
-    if (link.room) {
-      const room = await this.prisma.room.findFirst({
-        where: { qrToken: link.room, isActive: true },
-        include: { riad: true },
-      });
-      if (room) {
-        const { riad, ...plain } = room;
-        return { riad, room: plain };
-      }
-    } else if (link.r) {
-      const riad = await this.prisma.riad.findUnique({ where: { checkinKey: link.r } });
-      if (riad) return { riad, room: null };
-    }
-    throw new AppException('INVALID_CHECKIN_LINK', 'This check-in link is not valid', HttpStatus.NOT_FOUND);
+    const room = await this.prisma.room.findFirst({
+      where: { qrToken: link.room, isActive: true },
+      include: { riad: true },
+    });
+    if (!room) throw new AppException('INVALID_CHECKIN_LINK', 'This check-in link is not valid', HttpStatus.NOT_FOUND);
+    const { riad, ...plain } = room;
+    return { riad, room: plain };
   }
 
   /** photoRef = "<uuid>.<hmac>": proves the photo was uploaded through this riad's link. */

@@ -23,7 +23,8 @@ const TOAST_MS = 15_000;
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const { can } = useAuth();
   // Housekeeping (rooms.read only) gets room status changes; guest events need stays.read.
-  const enabled = can('stays.read', 'rooms.read');
+  // Cash box holders and managers connect for their notifications.
+  const enabled = can('stays.read', 'rooms.read', 'expenses.read_all', 'expenses.write_petty_cash');
   const listeners = useRef(new Map<string, Set<Handler>>());
   const [toast, setToast] = useState<StaySummaryDto | null>(null);
 
@@ -42,7 +43,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       navigator.vibrate?.(200);
       dispatch('checkin:new', stay);
     });
-    for (const event of ['rooms:changed', 'stays:changed']) socket.on(event, (payload: unknown) => dispatch(event, payload));
+    for (const event of ['rooms:changed', 'stays:changed', 'notifications:changed']) socket.on(event, (payload: unknown) => dispatch(event, payload));
     // The server drops sockets whose session expired; REST calls refresh the cookie, so
     // try again a little later.
     socket.on('disconnect', (reason) => {

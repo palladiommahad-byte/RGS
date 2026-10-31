@@ -5,7 +5,7 @@ import {
   type ExtraCategory,
   type PaymentMethod,
 } from '@riad/shared';
-import { IsBoolean, IsIn, IsInt, IsISO8601, IsOptional, IsString, Length, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsISO8601, IsOptional, IsString, IsUUID, Length, Max, MaxLength, Min } from 'class-validator';
 import { TrimToUndefined } from '../common/validation';
 
 export class CreateExtraDto {
@@ -30,6 +30,11 @@ export class CreatePaymentDto {
   paidAt?: string;
 
   @ApiPropertyOptional() @IsOptional() @TrimToUndefined() @IsString() @MaxLength(200) note?: string;
+
+  @ApiPropertyOptional({ description: 'Cash only: the cash box it goes into (default: yours, or the only one)' })
+  @IsOptional()
+  @IsUUID()
+  walletId?: string;
 }
 
 export class CheckoutDto {

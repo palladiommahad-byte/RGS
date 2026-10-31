@@ -1,5 +1,6 @@
 import { PERMISSIONS as P, type Permission } from '@riad/shared';
 import {
+  Banknote,
   BedDouble,
   BookUser,
   Briefcase,
@@ -9,9 +10,11 @@ import {
   LayoutDashboard,
   Receipt,
   ScanLine,
+  ScrollText,
   Settings,
   TrendingUp,
   UserCog,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -37,11 +40,14 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Receipt,
     anyOf: [P.EXPENSES_WRITE, P.EXPENSES_WRITE_PETTY_CASH, P.EXPENSES_READ_ALL],
   },
+  { key: 'cashBox', href: '/dashboard/cash-box', icon: Wallet, anyOf: [P.EXPENSES_WRITE, P.EXPENSES_WRITE_PETTY_CASH] },
+  { key: 'payments', href: '/dashboard/payments', icon: Banknote, anyOf: [P.FINANCE_REPORTS, P.PAYMENTS_WRITE] },
   { key: 'finance', href: '/dashboard/finance', icon: TrendingUp, anyOf: [P.FINANCE_REPORTS] },
   { key: 'taxes', href: '/dashboard/taxes', icon: Landmark, anyOf: [P.TAX_SETTINGS] },
   { key: 'hr', href: '/dashboard/hr', icon: Briefcase, anyOf: [P.HR_READ] },
   // Badge clock for the reception tablet: any signed-in staff.
   { key: 'clock', href: '/staff/clock', icon: ScanLine, anyOf: [] },
   { key: 'users', href: '/dashboard/users', icon: UserCog, anyOf: [P.USERS_MANAGE] },
+  { key: 'audit', href: '/dashboard/audit', icon: ScrollText, anyOf: [P.AUDIT_READ] },
   { key: 'settings', href: '/dashboard/settings', icon: Settings, anyOf: [P.SETTINGS_RIAD], bottom: true },
 ];

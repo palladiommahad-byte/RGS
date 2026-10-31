@@ -23,7 +23,8 @@ services:
       retries: 10
 
   # Private object storage (passport photos, receipts, contracts, invoices).
-  # To use Cloudflare R2 instead: remove minio + minio-init, set S3_* in .env.production.
+  # To use Cloudflare R2 instead: remove minio (and the api's depends_on it), create the
+  # three buckets in R2, set S3_* in .env.production.
   minio:
     image: cgr.dev/chainguard/minio:latest
     restart: unless-stopped
@@ -33,21 +34,6 @@ services:
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
     volumes:
       - miniodata:/data
-
-  minio-init:
-    image: amazon/aws-cli:2.27.50
-    depends_on: [minio]
-    environment:
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
-      AWS_DEFAULT_REGION: us-east-1
-    entrypoint: ['/bin/sh', '-c']
-    command:
-      - |
-        S3="aws --endpoint-url http://minio:9000"
-        until $$S3 s3 ls >/dev/null 2>&1; do echo "waiting for minio"; sleep 1; done
-        for b in riad-passports riad-receipts riad-documents; do $$S3 s3 mb s3://$$b 2>/dev/null || true; done
-        echo "buckets ready"
 
   api:
     build:
@@ -67,7 +53,8 @@ services:
       S3_PUBLIC_ENDPOINT: https://${FILES_DOMAIN}
     depends_on:
       postgres: { condition: service_healthy }
-      minio-init: { condition: service_completed_successfully }
+      # The API creates its buckets in MinIO when it starts.
+      minio: { condition: service_started }
     volumes:
       - ocrcache:/data/ocr
 

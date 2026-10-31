@@ -238,8 +238,17 @@ function Done({ result }: { result: CheckinDoneDto }) {
         <CircleCheckBig className="size-9" aria-hidden />
       </span>
       <div>
-        <h1 className="text-2xl font-semibold">{t('title')}</h1>
-        <p className="mt-2 text-muted-foreground">{t('reception')}</p>
+        {result.checkedIn ? (
+          <>
+            <h1 className="text-2xl font-semibold">{t('checkedInTitle')}</h1>
+            <p className="mt-2 text-muted-foreground">{t('checkedIn', { room: result.roomName ?? '' })}</p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-semibold">{t('title')}</h1>
+            <p className="mt-2 text-muted-foreground">{t('reception')}</p>
+          </>
+        )}
       </div>
       {result.wifiInfo && (
         <div className="flex w-full items-start gap-3 rounded-xl bg-primary p-4 text-start text-primary-foreground">

@@ -98,7 +98,9 @@
     "done": {
       "title": "¡Gracias, su check-in se ha enviado!",
       "reception": "Pase por la recepción para recoger su llave.",
-      "wifi": "Wi-Fi"
+      "wifi": "Wi-Fi",
+      "checkedInTitle": "¡Bienvenido! Su llegada está registrada.",
+      "checkedIn": "Su habitación: {room}. ¡Disfrute de su estancia!"
     },
     "errors": {
       "generic": "Se ha producido un error. Inténtelo de nuevo o diríjase a la recepción.",

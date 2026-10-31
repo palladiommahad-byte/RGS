@@ -16,12 +16,11 @@ async function send<T>(path: string, init: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-export type CheckinLink = { r?: string; room?: string };
+export type CheckinLink = { room: string };
 
 export function linkQuery(link: CheckinLink): string {
   const q = new URLSearchParams();
-  if (link.r) q.set('r', link.r);
-  if (link.room) q.set('room', link.room);
+  q.set('room', link.room);
   return q.toString();
 }
 
@@ -29,8 +28,7 @@ export const checkinApi = {
   context: <T>(link: CheckinLink) => send<T>(`/context?${linkQuery(link)}`, { method: 'GET' }),
   scan: <T>(link: CheckinLink, image: Blob) => {
     const form = new FormData();
-    if (link.r) form.set('r', link.r);
-    if (link.room) form.set('room', link.room);
+    form.set('room', link.room);
     form.set('image', image, 'passport.jpg');
     return send<T>('/scan-passport', { method: 'POST', body: form });
   },

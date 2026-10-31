@@ -12,7 +12,7 @@ import { StorageService } from '../storage/storage.service';
 import type { UpdateRiadSettingsDto } from './settings.dto';
 
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const FIELDS = ['name', 'address', 'city', 'phone', 'email', 'invoicePrefix', 'ice', 'fiscalId', 'rcNumber', 'patente', 'wifiInfo'] as const;
+const FIELDS = ['name', 'address', 'city', 'phone', 'email', 'invoicePrefix', 'ice', 'fiscalId', 'rcNumber', 'patente', 'wifiInfo', 'checkoutTime', 'roomReadyTime'] as const;
 
 /** undefined = unchanged, "" = cleared. */
 const clearable = (v: string | undefined) => (v === undefined ? undefined : v || null);
@@ -47,6 +47,8 @@ export class SettingsService {
           rcNumber: clearable(dto.rcNumber),
           patente: clearable(dto.patente),
           wifiInfo: clearable(dto.wifiInfo),
+          checkoutTime: dto.checkoutTime,
+          roomReadyTime: dto.roomReadyTime,
         },
       });
       await this.audit.log(
@@ -115,6 +117,8 @@ export class SettingsService {
       rcNumber: r.rcNumber,
       patente: r.patente,
       wifiInfo: r.wifiInfo,
+      checkoutTime: r.checkoutTime,
+      roomReadyTime: r.roomReadyTime,
       logoVersion: logoVersion(r.logoKey),
       nextInvoiceNumber: formatInvoiceNumber(r.invoicePrefix, year, (seq?.lastValue ?? 0) + 1),
     };

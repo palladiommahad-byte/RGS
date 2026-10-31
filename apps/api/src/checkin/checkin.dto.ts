@@ -20,19 +20,12 @@ import {
 import { IsIsoDate, TrimToUndefined } from '../common/validation';
 import { GuestInputDto } from '../stays/stays.dto';
 
-/** Which riad (entrance QR: `r`) or room (room QR: `room`) the guest scanned. */
+/** The room whose QR code the guest scanned (every room has its own code). */
 export class CheckinLinkDto {
-  @ApiPropertyOptional({ description: 'Riad check-in key (entrance QR)' })
-  @IsOptional()
+  @ApiProperty({ description: 'Room QR token' })
   @IsString()
   @MaxLength(64)
-  r?: string;
-
-  @ApiPropertyOptional({ description: 'Room QR token' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
-  room?: string;
+  room: string;
 }
 
 export class CheckinGuestDto extends GuestInputDto {

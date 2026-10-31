@@ -41,8 +41,8 @@ pnpm docker:up              # = docker compose up -d --build
 - Same database and files as `pnpm dev`; the API applies migrations on start. On an empty
   database, seed the demo accounts below once:
   `docker compose exec -e NODE_ENV=development api npx tsx prisma/seed.ts`.
-- `minio-init` shows as stopped in Docker Desktop: it creates the storage buckets with the
-  AWS S3 command-line tool (MinIO speaks the S3 protocol; nothing goes to Amazon) and exits.
+- The API creates its storage buckets in MinIO when it starts (`pnpm dev` too), so no
+  setup container is needed.
 
 ### Demo accounts (from the seed)
 
@@ -80,16 +80,38 @@ Password for all: value of `SEED_DEFAULT_PASSWORD` in `.env` (default `Demo1234!
   an atomic conditional update, so two receptionists can never put guests in the same room.
   Checkout sets the room to `CLEANING`. Staff can set only `FREE`, `CLEANING` and
   `OUT_OF_SERVICE` by hand.
-- **QR codes**: the entrance encodes `<site>/checkin?r=<riad checkin_key>`, each room
-  `<site>/checkin?room=<room qr_token>`, with no locale so the guest's phone language picks
-  EN/FR/ES/AR. Set `NEXT_PUBLIC_SITE_URL` before printing. "New QR" invalidates a room code.
+- **QR codes**: one per room, `<site>/checkin?room=<room qr_token>` (no riad-wide code: the
+  scan tells which room), with no locale so the guest's phone language picks EN/FR/ES/AR.
+  Set `NEXT_PUBLIC_SITE_URL` before printing. "New QR" invalidates a room code.
 
 ## Guest self check-in (phase 3)
 
 Flow: passport photo → contact & stay → one passport per extra adult → consent (law
-09-08 / CNDP text) + signature → `PENDING` stay, live `checkin:new` Socket.io event to
-staff with `stays.read`, who verify the photo and confirm (or reject, which deletes the
-stay and its files).
+09-08 / CNDP text) + signature. Then:
+
+- **Room free** (free or being cleaned, nobody booked for those nights): the guest is
+  **checked in at once** — stay `CHECKED_IN` in that room at its base price (source
+  Direct, staff can correct it), room `OCCUPIED`, "Guest checked in" notification.
+- **Room not free** (occupied, out of service or booked): `PENDING` stay for that room,
+  live `checkin:new` event and a "room not free — choose a room" notification; reception
+  verifies and confirms in another room (or rejects, which deletes the stay and its files).
+
+## Automatic stay cycle
+
+Each riad sets two times in Settings (riad time): **check-out** (default 12:00) and
+**rooms ready** (default 15:00). A job every 5 minutes (`StayCycleService`, so it also
+catches up after downtime):
+
+- checks out guests still in on their departure day at the check-out time — invoice
+  issued, balance still due flagged on the invoice and in the notification, room « to
+  clean »; logged as done by the system;
+- frees rooms still « to clean » at the room-ready time (rooms that went « to clean » after
+  it wait for the next day). Out-of-service rooms are never touched.
+
+Staff can still check out or mark a room ready earlier by hand. Extra nights: edit the
+departure date; the automatic check-out follows it. If another stay holds the room for any
+of the new nights the change is refused (`ROOM_BOOKED`) with the rooms free for those
+nights, and the edit dialog offers "Move to <room>".
 
 - **Photos**: compressed in the browser (≤1600 px JPEG), re-encoded server side with sharp
   (EXIF/GPS stripped), stored under `pending/` in the private passports bucket and moved
@@ -144,6 +166,13 @@ stay and its files).
 - **Petty cash**: managers open wallets, top them up and correct them after a cash count;
   expenses debit the wallet atomically and a wallet can never go negative. Editing or
   deleting a petty-cash expense re-credits the wallet.
+- **Guest cash in the box**: a cash payment goes into a cash box (`PAYMENT` movement linked
+  to the payment) — the one chosen in the payment dialog, else the receiver's own box, else
+  the riad's only box (none: not tracked in a box). Deleting the payment takes the cash back
+  out (refused if the box no longer holds it). Each movement notifies managers and the holder.
+- **Cash box page** (`/dashboard/cash-box`): balance, money in / out over a period, and every
+  movement (guest payments, top-ups, expenses, corrections) with who did it and the balance
+  right after it; filters by period and type. Reception sees only their own box.
 - **Recurring expenses**: generated every night at 00:15 (Casablanca) on their day of the
   month (last day for short months), never for a month before they were created, and
   idempotent via a unique `(recurring_id, date)` index. "Générer maintenant" runs it on
@@ -232,6 +261,38 @@ system. Phase 8 delivers spec §5.8 instead.
 - **Change my password** (key icon at the bottom of the menu, `POST /auth/change-password`):
   checks the current password, signs out every other device, keeps this one.
 - Role permissions are stored in the database; editing the matrix itself is not in V1.
+
+## Activity log
+
+`/dashboard/audit` (`audit.read` = owner + manager) shows the audit trail newest first,
+grouped by day: who did what (guest self check-ins show as "guest or system"), with the
+recorded changes (before → after) under "Details" and a link to the stay when there is one.
+Filters: area (stays, payments, expenses, rooms, staff, finance, users & settings), person
+and day range (riad time). `GET /audit` and `GET /audit/users` are read-only; areas and
+action kinds live in `packages/shared/src/audit.ts`. A new audit action needs a label under
+`auditAction` in the three message files, otherwise the page shows its raw name.
+
+## Notification center
+
+The bell (top right) lists, live over Socket.io, with a read state per person:
+
+| Notification | When | Who sees it |
+| ------------ | ---- | ----------- |
+| QR check-in, room not free: choose a room | a guest checks in but their room is not free | `stays.read` |
+| Guest checked in | QR check-in into a free room, or staff confirm / check in | `rooms.read` |
+| Room checked out (to clean, or balance due), by staff or automatically | check-out | `rooms.read` |
+| Check-out tomorrow / today | 24 h before the riad check-out time, once per stay and date | `rooms.read` |
+| Cash box topped up / corrected / paid from / expense changed or deleted | every cash box movement | `expenses.read_all` + the box holder |
+
+Nobody is notified about their own action; housekeeping sees rooms, never guest names. A
+job checks the reminders every 15 minutes and deletes notifications after 90 days
+(`apps/api/src/notifications`).
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request: lint, type checks, unit
+tests, the API e2e tests against a throwaway Postgres, and production builds of the API
+and web app. The secrets in it are test-only values.
 
 ## Scripts
 

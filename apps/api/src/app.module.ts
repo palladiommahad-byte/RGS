@@ -14,6 +14,7 @@ import { CryptoModule } from './common/crypto/crypto.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { FinanceModule } from './finance/finance.module';
 import { HrModule } from './hr/hr.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
 import { HealthController } from './health/health.controller';
@@ -33,6 +34,7 @@ import { StorageModule } from './storage/storage.module';
     AuthCoreModule,
     StorageModule,
     RealtimeModule,
+    NotificationsModule,
     ScheduleModule.forRoot(),
     JwtModule.register({ global: true }),
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),

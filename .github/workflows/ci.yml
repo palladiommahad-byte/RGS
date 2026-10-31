@@ -1,0 +1,70 @@
+# Runs on every push and pull request: lint, type checks, unit tests, API e2e tests
+# (against a throwaway Postgres) and a production build of both apps.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: riad
+          POSTGRES_PASSWORD: riad
+          POSTGRES_DB: riad
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U riad -d riad"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Test-only values; nothing here is used outside this job.
+    env:
+      DATABASE_URL: postgresql://riad:riad@localhost:5432/riad?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-at-least-32-characters-long
+      JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters-long
+      FIELD_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      FIELD_HASH_KEY: ci-hash-key-at-least-32-characters-long
+      S3_ACCESS_KEY: ci
+      S3_SECRET_KEY: ci
+      TZ: Africa/Casablanca
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared package and Prisma client
+        run: |
+          pnpm --filter @riad/shared build
+          pnpm --filter @riad/api exec prisma generate
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:e2e
+
+      - name: Production builds
+        run: |
+          pnpm --filter @riad/api build
+          pnpm --filter @riad/web build

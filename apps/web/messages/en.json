@@ -20,7 +20,13 @@
     "pageOf": "Page {page} of {pages}",
     "pagination": "Pagination",
     "results": "{count, plural, =0 {No results} one {# result} other {# results}}",
-    "mainMenu": "Main menu"
+    "mainMenu": "Main menu",
+    "collapseMenu": "Collapse menu",
+    "expandMenu": "Expand menu",
+    "notifications": "Notifications",
+    "account": "My account",
+    "seeAll": "Open the Today page",
+    "noResults": "No results"
   },
   "localeNames": {
     "en": "English",
@@ -43,7 +49,8 @@
     "password_too_short": "At least 8 characters.",
     "password_mismatch": "The two passwords don't match.",
     "invalid_prefix": "Capital letters, digits and \"-\" (12 at most).",
-    "invalid_ice": "The ICE has 15 digits."
+    "invalid_ice": "The ICE has 15 digits.",
+    "invalid_time": "Use the 24 h format, e.g. 12:00."
   },
   "documentType": {
     "PASSPORT": "Passport",
@@ -121,7 +128,9 @@
     "done": {
       "title": "Thank you, your check-in has been sent!",
       "reception": "Please come to reception to collect your key.",
-      "wifi": "Wi-Fi"
+      "wifi": "Wi-Fi",
+      "checkedInTitle": "Welcome! You are checked in.",
+      "checkedIn": "Your room: {room}. Enjoy your stay!"
     },
     "errors": {
       "generic": "Something went wrong. Please try again or ask at reception.",
@@ -180,7 +189,10 @@
     "users": "Users",
     "settings": "Settings",
     "clock": "Time clock",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "audit": "Activity log",
+    "payments": "Payments received",
+    "cashBox": "Cash box"
   },
   "dashboard": {
     "hello": "Hello {name}",
@@ -230,7 +242,8 @@
     "EMAIL_TAKEN": "This email is already used.",
     "ROLE_NOT_ASSIGNABLE": "You can't give a role with more rights than you have.",
     "USER_NOT_MANAGEABLE": "This account has rights you don't have.",
-    "CANNOT_CHANGE_SELF": "You can't change your own role or deactivate yourself."
+    "CANNOT_CHANGE_SELF": "You can't change your own role or deactivate yourself.",
+    "ROOM_BOOKED": "This room is already booked for some of these nights."
   },
   "roomStatus": {
     "FREE": "Free",
@@ -310,7 +323,6 @@
   "qr": {
     "title": "Check-in QR codes",
     "hint": "Print this page: one QR for the entrance, one for each room.",
-    "entrance": "Entrance",
     "scan": "Check-in · Enregistrement · تسجيل الوصول",
     "baseUrl": "Encoded address: {url}"
   },
@@ -374,7 +386,14 @@
     "dates": "Dates",
     "status": "Status",
     "arrivesToday": "Arrives today",
-    "leavesToday": "Leaves today"
+    "leavesToday": "Leaves today",
+    "booked": {
+      "conflict": "This room is booked by {guest} from {from} to {to}.",
+      "anotherGuest": "another guest",
+      "moveHint": "Move the guest to a room that is free for all these nights:",
+      "moveTo": "Move to {room}",
+      "noFreeRoom": "No room is free for all these nights. Shorten the stay or change the other booking."
+    }
   },
   "realtime": {
     "newCheckin": "New online check-in",
@@ -437,7 +456,9 @@
     "note": "Note (optional)",
     "empty": "No payments recorded.",
     "deleteConfirm": "Delete this payment of {amount}?",
-    "receivedBy": "by {name}"
+    "receivedBy": "by {name}",
+    "cashBox": "Cash box",
+    "intoBox": "The cash goes into « {name} »."
   },
   "invoices": {
     "title": "Invoices",
@@ -542,7 +563,8 @@
     "movement": {
       "TOP_UP": "Top-up",
       "EXPENSE": "Expense",
-      "ADJUSTMENT": "Correction"
+      "ADJUSTMENT": "Correction",
+      "PAYMENT": "Guest payment"
     }
   },
   "recurring": {
@@ -839,7 +861,13 @@
     "wifiInfo": "Wi-Fi details",
     "wifiHint": "Shown to the guest at the end of their online check-in.",
     "wifiPlaceholder": "Network: Riad-Guest\nPassword: …",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "stayCycle": "Automatic check-out and cleaning",
+    "checkoutTime": "Check-out time",
+    "checkoutTimeHint": "Guests still in are checked out at this time on their departure day.",
+    "roomReadyTime": "Rooms ready at",
+    "roomReadyTimeHint": "Rooms still « to clean » become free again at this time.",
+    "stayCycleHint": "Staff can still check guests out, or mark a room ready, earlier by hand. Rooms out of service are never changed."
   },
   "users": {
     "subtitle": "Staff accounts and roles. A deactivated account is signed out at once.",
@@ -925,5 +953,217 @@
     "fromQr": "Entered by the guest (QR)",
     "openStay": "Open the stay",
     "openToConfirm": "Review and confirm"
+  },
+  "audit": {
+    "subtitle": "Every sensitive change: who did what, and when.",
+    "all": "All",
+    "everyone": "Everyone",
+    "person": "Person",
+    "from": "From",
+    "to": "To",
+    "clear": "Clear filters",
+    "system": "Guest or system",
+    "empty": "No activity for these filters.",
+    "details": "Details",
+    "open": "Open",
+    "areas": {
+      "stays": "Stays & guests",
+      "billing": "Payments",
+      "expenses": "Expenses",
+      "rooms": "Rooms",
+      "hr": "Staff",
+      "finance": "Finance & taxes",
+      "admin": "Users & settings"
+    }
+  },
+  "auditAction": {
+    "stay": {
+      "create": "Created a stay",
+      "update": "Edited a stay",
+      "confirm": "Checked a guest in",
+      "reject": "Rejected a check-in",
+      "cancel": "Cancelled a stay",
+      "checkout": "Checked a stay out",
+      "self_checkin": "Guest checked in by QR code",
+      "create_checked_in": "Created a stay with the guest already in",
+      "checkout_balance_due": "Checked a stay out with a balance due",
+      "update_room_move": "Moved a stay to another room"
+    },
+    "guest": {
+      "create": "Added a guest",
+      "update": "Edited guest details",
+      "delete": "Removed a guest",
+      "passport_view": "Viewed a passport photo"
+    },
+    "register": {
+      "export": "Exported the police register"
+    },
+    "payment": {
+      "create": "Recorded a payment",
+      "delete": "Deleted a payment"
+    },
+    "extra": {
+      "create": "Added an extra",
+      "delete": "Removed an extra"
+    },
+    "invoice": {
+      "download": "Downloaded an invoice"
+    },
+    "expense": {
+      "create": "Recorded an expense",
+      "update": "Edited an expense",
+      "delete": "Deleted an expense",
+      "recurring_create": "Recorded a recurring expense"
+    },
+    "supplier": {
+      "create": "Added a supplier",
+      "update": "Edited a supplier",
+      "delete": "Deleted a supplier"
+    },
+    "wallet": {
+      "create": "Created a cash box",
+      "update": "Edited a cash box",
+      "top_up": "Topped up a cash box",
+      "adjust": "Adjusted a cash box balance"
+    },
+    "recurring": {
+      "create": "Created a recurring expense",
+      "update": "Edited a recurring expense",
+      "deactivate": "Stopped a recurring expense",
+      "delete": "Deleted a recurring expense"
+    },
+    "room": {
+      "create": "Added a room",
+      "update": "Edited a room",
+      "status": "Changed a room status",
+      "qr_regenerate": "Made a new room QR code",
+      "deactivate": "Deactivated a room",
+      "delete": "Deleted a room"
+    },
+    "employee": {
+      "create": "Added an employee",
+      "update": "Edited an employee",
+      "delete": "Deleted an employee",
+      "contract_view": "Viewed a work contract",
+      "contract_upload": "Uploaded a work contract",
+      "badge_rotate": "Issued a new badge"
+    },
+    "attendance": {
+      "create": "Added a clock entry",
+      "update": "Edited a clock entry",
+      "delete": "Deleted a clock entry"
+    },
+    "leave": {
+      "create": "Added a leave",
+      "update": "Edited a leave",
+      "delete": "Deleted a leave",
+      "approved": "Approved a leave",
+      "rejected": "Refused a leave",
+      "pending": "Set a leave back to pending"
+    },
+    "payroll": {
+      "generate": "Generated the payroll",
+      "update": "Edited a payslip",
+      "pay": "Marked a salary as paid",
+      "unpay": "Cancelled a salary payment",
+      "delete": "Deleted a payslip",
+      "export": "Exported the payroll"
+    },
+    "tax_setting": {
+      "create": "Added a tax rate",
+      "update": "Changed a tax rate",
+      "delete": "Deleted a tax rate"
+    },
+    "tax_report": {
+      "export": "Exported the tax report"
+    },
+    "finance": {
+      "pnl_export": "Exported the profit and loss"
+    },
+    "user": {
+      "create": "Created a user account",
+      "update": "Edited a user account",
+      "password_reset": "Reset a user's password",
+      "password_change": "Changed their password"
+    },
+    "riad": {
+      "update": "Edited the riad settings",
+      "logo_upload": "Uploaded the logo",
+      "logo_remove": "Removed the logo"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "labelUnread": "{count, plural, one {Notifications, # unread} other {Notifications, # unread}}",
+    "markAllRead": "Mark all as read",
+    "all": "All",
+    "unread": "{count, plural, =0 {Unread} other {Unread (#)}}",
+    "empty": "You're all caught up.",
+    "emptyUnread": "No unread notifications.",
+    "new": "New",
+    "by": "by {name}",
+    "noRoom": "No room chosen",
+    "nights": "{count, plural, one {# night} other {# nights}}",
+    "checkinRequest": "New QR check-in — to confirm",
+    "checkin": "Guest checked in",
+    "checkout": "{room} checked out",
+    "toClean": "room to clean",
+    "balanceDue": "balance due {amount}",
+    "checkoutToday": "Check-out today",
+    "checkoutTomorrow": "Check-out tomorrow",
+    "balance": "balance {amount}",
+    "cash": {
+      "TOP_UP": "{wallet} topped up",
+      "ADJUSTMENT": "{wallet} corrected",
+      "EXPENSE": "Paid from {wallet}",
+      "EXPENSE_EDIT": "Expense from {wallet} changed",
+      "EXPENSE_DELETE": "Expense from {wallet} deleted, cash returned",
+      "GUEST_PAYMENT": "Guest cash into {wallet}",
+      "GUEST_PAYMENT_DELETE": "Guest payment removed from {wallet}"
+    },
+    "checkinRoomNotFree": "QR check-in: {room} is not free — choose a room",
+    "checkoutAutomatic": "{room} checked out automatically"
+  },
+  "paymentsPage": {
+    "subtitle": "Every guest payment: cash, card, transfer — and who received it.",
+    "preset": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7": "Last 7 days",
+      "month": "This month",
+      "custom": "Choose dates"
+    },
+    "method": "Method",
+    "allMethods": "All methods",
+    "receivedBy": "Received by",
+    "total": "Total received",
+    "count": "{count, plural, =0 {No payments} one {# payment} other {# payments}}",
+    "empty": "No payments for these filters."
+  },
+  "cashBox": {
+    "subtitle": "The cash in hand: guest payments, top-ups, expenses and corrections.",
+    "none": "No cash box yet.",
+    "create": "Create a cash box",
+    "manage": "Manage cash boxes",
+    "spend": "Pay an expense",
+    "preset": {
+      "today": "Today",
+      "last7": "Last 7 days",
+      "month": "This month",
+      "all": "All time"
+    },
+    "allMovements": "All movements",
+    "type": {
+      "PAYMENT": "Guest payment",
+      "TOP_UP": "Top-up",
+      "EXPENSE": "Expense",
+      "ADJUSTMENT": "Correction"
+    },
+    "in": "Money in",
+    "inHint": "incl. {guests} from guests",
+    "out": "Money out",
+    "outHint": "Expenses and corrections",
+    "net": "Net change",
+    "after": "balance {amount}"
   }
 }

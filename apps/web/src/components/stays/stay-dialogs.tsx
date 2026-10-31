@@ -7,10 +7,11 @@ import {
   STAY_SOURCES,
   stayFormSchema,
   type GuestDto,
+  type RoomBookedDetails,
   type RoomDto,
   type StayDetailDto,
 } from '@riad/shared';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
@@ -25,8 +26,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { api } from '@/lib/api';
-import { centimesToInput } from '@/lib/format';
+import { api, ApiError } from '@/lib/api';
+import { centimesToInput, formatDate } from '@/lib/format';
 import { fieldErrors, type FieldErrors } from '@/lib/forms';
 import { useAction } from '@/lib/use-api';
 import {
@@ -185,12 +186,15 @@ export function EditStayDialog({
   const [values, setValues] = useState<StayValues>(() => stayToValues(stay));
   const [errors, setErrors] = useState<FieldErrors>({});
   const { run, pending, error, setError } = useAction();
+  // Extra nights collide with another stay in this room: who, and the rooms free instead.
+  const [booked, setBooked] = useState<RoomBookedDetails | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setValues(stayToValues(stay));
     setErrors({});
     setError(null);
+    setBooked(null);
   }, [open, stay, setError]);
 
   // A checked-in guest can only move to a room that is free (or their current one).
@@ -199,16 +203,35 @@ export function EditStayDialog({
       ? rooms.filter((r) => r.id === stay.room?.id || CHECKIN_ROOM_STATUSES.includes(r.status))
       : rooms;
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    const parsed = stayFormSchema.safeParse(values);
+  async function save(next: StayValues) {
+    const parsed = stayFormSchema.safeParse(next);
     if (!parsed.success) return setErrors(fieldErrors(parsed.error));
     setErrors({});
-    const ok = await run(() => api(`/stays/${stay.id}`, { method: 'PATCH', body: stayToBody(parsed.data) }));
+    setBooked(null);
+    const ok = await run(async () => {
+      try {
+        return await api(`/stays/${stay.id}`, { method: 'PATCH', body: stayToBody(parsed.data) });
+      } catch (e) {
+        if (e instanceof ApiError && e.code === 'ROOM_BOOKED') setBooked(e.details as RoomBookedDetails);
+        throw e;
+      }
+    });
     if (ok) {
       onOpenChange(false);
       onDone();
     }
+  }
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    void save(values);
+  }
+
+  /** Same dates, another room. */
+  function moveTo(roomId: string) {
+    const next = { ...values, roomId };
+    setValues(next);
+    void save(next);
   }
 
   return (
@@ -226,11 +249,43 @@ export function EditStayDialog({
             rooms={roomChoices}
             roomLabel={stay.status === 'CHECKED_IN' ? t('stays.roomMove') : t('stays.requestedRoom')}
           />
-          <FormError message={error} />
+          {booked ? (
+            <RoomBookedPanel details={booked} pending={pending} onMove={moveTo} />
+          ) : (
+            <FormError message={error} />
+          )}
           <Footer pending={pending} label={t('common.save')} />
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RoomBookedPanel({ details, pending, onMove }: { details: RoomBookedDetails; pending: boolean; onMove: (roomId: string) => void }) {
+  const t = useTranslations('stays.booked');
+  const locale = useLocale();
+  const c = details.conflict;
+  return (
+    <div role="alert" className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+      <p className="font-medium">
+        {t('conflict', { guest: c.guestName ?? t('anotherGuest'), from: formatDate(c.checkInDate, locale), to: formatDate(c.checkOutDate, locale) })}
+      </p>
+      {details.freeRooms.length > 0 ? (
+        <>
+          <p>{t('moveHint')}</p>
+          <div className="flex flex-wrap gap-2">
+            {details.freeRooms.map((r) => (
+              <Button key={r.id} type="button" size="sm" variant="outline" className="bg-white" disabled={pending} onClick={() => onMove(r.id)}>
+                {t('moveTo', { room: r.name })}
+                <span className="text-xs text-muted-foreground">{r.type}</span>
+              </Button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p>{t('noFreeRoom')}</p>
+      )}
+    </div>
   );
 }
 

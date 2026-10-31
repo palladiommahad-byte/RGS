@@ -19,6 +19,9 @@ class FakeRealtime {
   staysChanged(): void {
     this.events.push('stays:changed');
   }
+  notificationsChanged(): void {
+    this.events.push('notifications:changed');
+  }
 }
 
 describe('Room status follows the guest (e2e)', () => {

@@ -181,11 +181,6 @@ export class RoomsService {
     return result;
   }
 
-  async checkinLinks(p: AuthPrincipal): Promise<{ entranceKey: string }> {
-    const riad = await this.prisma.riad.findUniqueOrThrow({ where: { id: p.riadId }, select: { checkinKey: true } });
-    return { entranceKey: riad.checkinKey };
-  }
-
   async findOrThrow(riadId: string, id: string): Promise<Room> {
     const room = await this.prisma.room.findFirst({ where: { id, riadId } });
     if (!room) throw new AppException('NOT_FOUND', 'Room not found', HttpStatus.NOT_FOUND);

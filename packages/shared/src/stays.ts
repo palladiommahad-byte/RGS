@@ -1,4 +1,6 @@
-import type { RoomStatus, StayStatus } from './constants';
+import { TIMEZONE, type RoomStatus, type StayStatus } from './constants';
+import type { IsoDate } from './dates';
+import { zonedMidnight } from './hr';
 import { assertCentimes, type Centimes } from './money';
 
 /** Allowed stay status transitions. Checked-out and cancelled stays are final. */
@@ -31,3 +33,21 @@ export function accommodationTotal(pricePerNight: Centimes, nights: number): Cen
   if (!Number.isInteger(nights) || nights < 0) throw new Error(`Invalid nights: ${nights}`);
   return pricePerNight * nights;
 }
+
+/** A time of day, riad time: "HH:MM" (24 h). */
+export const TIME_OF_DAY = /^([01]\d|2[0-3]):[0-5]\d$/;
+/** Defaults of the automatic stay cycle (each riad can change them in its settings). */
+export const DEFAULT_CHECKOUT_TIME = '12:00';
+export const DEFAULT_ROOM_READY_TIME = '15:00';
+
+/** The instant `date` at `time` ("HH:MM") in the riad's time zone. */
+export function atRiadTime(date: IsoDate, time: string, timeZone: string = TIMEZONE): Date {
+  const [h, m] = time.split(':').map(Number);
+  return new Date(zonedMidnight(date, timeZone).getTime() + ((h ?? 0) * 60 + (m ?? 0)) * 60_000);
+}
+
+/** Error details of ROOM_BOOKED: who has the room, and where the guest could go instead. */
+export type RoomBookedDetails = {
+  conflict: { stayId: string; guestName: string | null; checkInDate: IsoDate; checkOutDate: IsoDate };
+  freeRooms: { id: string; name: string; type: string }[];
+};

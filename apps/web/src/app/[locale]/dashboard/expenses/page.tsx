@@ -2,6 +2,7 @@
 
 import type { CashWalletDto, ExpenseCategoryDto } from '@riad/shared';
 import { Plus } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -24,7 +25,9 @@ export default function ExpensesPage() {
   const manager = can('expenses.write');
   const categories = useApiQuery<ExpenseCategoryDto[]>('/expense-categories');
   const wallets = useApiQuery<CashWalletDto[]>(canAdd ? '/cash-wallets' : null);
-  const [tab, setTab] = useState<Tab>('expenses');
+  // ?tab=wallets opens the cash boxes (links from cash notifications).
+  const params = useSearchParams();
+  const [tab, setTab] = useState<Tab>(params.get('tab') === 'wallets' && canAdd ? 'wallets' : 'expenses');
   const [adding, setAdding] = useState(false);
   const [version, setVersion] = useState(0);
 

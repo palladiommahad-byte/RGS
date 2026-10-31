@@ -21,11 +21,13 @@ import type { AuthPrincipal } from '../common/auth/principal';
 import { FieldEncryption } from '../common/crypto/field-encryption';
 import { diffFields } from '../common/diff';
 import { pageArgs, paginated } from '../common/pagination';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { guestCreateData, guestUpdateData } from './guest-data';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { occupyRoom, releaseRoom } from './room-locks';
+import { assertRoomBookable } from './room-availability';
 import { stayDetailInclude, staySummaryInclude, toGuestDto, toStayDetail, toStaySummary } from './stay.mapper';
 import type {
   ConfirmStayDto,
@@ -64,6 +66,7 @@ export class StaysService {
     private readonly enc: FieldEncryption,
     private readonly storage: StorageService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Open dashboards reload: stays and room statuses may both have changed. */
@@ -215,6 +218,7 @@ export class StaysService {
       return stay.id;
     });
     this.notify(p.riadId);
+    if (dto.checkInNow) await this.notifications.stay('CHECKIN', p.riadId, id, p.userId);
     return this.get(p, id);
   }
 
@@ -245,6 +249,17 @@ export class StaysService {
     if (dto.roomId) await this.assertRoomInRiad(p.riadId, dto.roomId);
     if (before.status === 'PENDING' && dto.roomId !== undefined) data.requestedRoomId = dto.roomId;
     if (moveRoom) data.roomId = dto.roomId;
+
+    // Extra nights or another room: refused if someone else holds that room for any of
+    // the nights; the error lists the rooms free instead (staff can move the guest).
+    const room = moveRoom ? dto.roomId! : before.status === 'PENDING' ? (dto.roomId ?? before.requestedRoomId) : before.roomId;
+    const datesChanged = checkIn !== utcDateToIso(before.checkInDate) || checkOut !== utcDateToIso(before.checkOutDate);
+    const roomChanged = moveRoom || (before.status === 'PENDING' && !!dto.roomId && dto.roomId !== before.requestedRoomId);
+    if (room && (datesChanged || roomChanged)) {
+      // A guest already in: only the nights still to come matter.
+      const from = before.status === 'CHECKED_IN' && checkIn < todayIso() ? todayIso() : checkIn;
+      if (from < checkOut) await assertRoomBookable(this.prisma, p.riadId, room, from, checkOut, id);
+    }
 
     await this.prisma.$transaction(async (tx) => {
       const after = await tx.stay.update({ where: { id }, data });
@@ -309,6 +324,7 @@ export class StaysService {
       );
     });
     this.notify(p.riadId);
+    await this.notifications.stay('CHECKIN', p.riadId, id, p.userId);
     return this.get(p, id);
   }
 

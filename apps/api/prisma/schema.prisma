@@ -70,6 +70,7 @@ enum CashMovementType {
   TOP_UP
   EXPENSE
   ADJUSTMENT
+  PAYMENT // cash paid by a guest, received into the box
 }
 
 enum TaxCode {
@@ -125,8 +126,10 @@ model Riad {
   rcNumber      String?  @map("rc_number")
   patente       String?
   wifiInfo      String?  @map("wifi_info")
-  /// Secret token in the entrance QR code (/checkin?r=...); rotate to invalidate printed codes.
-  checkinKey    String   @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)")) @map("checkin_key")
+  /// Riad time (HH:MM): guests still in are checked out automatically at this hour…
+  checkoutTime  String   @default("12:00") @map("checkout_time")
+  /// …and rooms left « to clean » become free again at this one.
+  roomReadyTime String   @default("15:00") @map("room_ready_time")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -150,6 +153,7 @@ model Riad {
   payrollEntries    PayrollEntry[]
   taxSettings       TaxSetting[]
   auditLogs         AuditLog[]
+  notifications     Notification[]
   invoiceSequences  InvoiceSequence[]
 
   @@map("riads")
@@ -366,8 +370,10 @@ model Payment {
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
 
-  riad Riad @relation(fields: [riadId], references: [id])
-  stay Stay @relation(fields: [stayId], references: [id])
+  riad         Riad          @relation(fields: [riadId], references: [id])
+  stay         Stay          @relation(fields: [stayId], references: [id])
+  /// Set when the cash went into a cash box.
+  cashMovement CashMovement?
 
   @@index([riadId, paidAt])
   @@index([stayId])
@@ -546,6 +552,7 @@ model CashMovement {
   /// Signed centimes: positive for top-ups, negative for spending.
   amount    Int
   expenseId String?          @unique @map("expense_id") @db.Uuid
+  paymentId String?          @unique @map("payment_id") @db.Uuid
   note      String?
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
@@ -554,6 +561,7 @@ model CashMovement {
   riad    Riad       @relation(fields: [riadId], references: [id])
   wallet  CashWallet @relation(fields: [walletId], references: [id])
   expense Expense?   @relation(fields: [expenseId], references: [id])
+  payment Payment?   @relation(fields: [paymentId], references: [id])
 
   @@index([walletId, createdAt])
   @@map("cash_movements")
@@ -697,4 +705,45 @@ model AuditLog {
   @@index([riadId, createdAt])
   @@index([riadId, entity, entityId])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Notification center: check-ins, check-outs (and the 24 h reminder), cash movements
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id         String   @id @default(uuid()) @db.Uuid
+  riadId     String   @map("riad_id") @db.Uuid
+  /// CHECKIN_REQUEST | CHECKIN | CHECKOUT | CHECKOUT_SOON | CASH
+  type       String
+  /// Who sees it: holders of this permission…
+  permission String
+  /// …plus this user (e.g. the holder of a cash box).
+  userId     String?  @map("user_id") @db.Uuid
+  /// Who caused it (never notified about their own action); null for guests and jobs.
+  actorId    String?  @map("actor_id") @db.Uuid
+  entityId   String?  @map("entity_id") @db.Uuid
+  data       Json
+  /// Makes job-created notifications idempotent (e.g. one reminder per stay and date).
+  dedupeKey  String?  @map("dedupe_key")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  riad  Riad               @relation(fields: [riadId], references: [id], onDelete: Cascade)
+  reads NotificationRead[]
+
+  @@unique([riadId, dedupeKey])
+  @@index([riadId, createdAt])
+  @@map("notifications")
+}
+
+model NotificationRead {
+  notificationId String   @map("notification_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  readAt         DateTime @default(now()) @map("read_at")
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+  @@index([userId])
+  @@map("notification_reads")
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEFAULT_CHECKOUT_TIME, DEFAULT_ROOM_READY_TIME, TIME_OF_DAY } from '../stays';
 
 const optionalText = (max: number) =>
   z
@@ -28,6 +29,8 @@ export const riadSettingsFormSchema = z.object({
   rcNumber: optionalText(30),
   patente: optionalText(20),
   wifiInfo: optionalText(300),
+  checkoutTime: z.string().regex(TIME_OF_DAY, 'invalid_time').default(DEFAULT_CHECKOUT_TIME),
+  roomReadyTime: z.string().regex(TIME_OF_DAY, 'invalid_time').default(DEFAULT_ROOM_READY_TIME),
 });
 export type RiadSettingsFormInput = z.infer<typeof riadSettingsFormSchema>;
 
@@ -44,6 +47,10 @@ export type RiadSettingsDto = {
   rcNumber: string | null;
   patente: string | null;
   wifiInfo: string | null;
+  /** Automatic check-out of guests still in (riad time, HH:MM). */
+  checkoutTime: string;
+  /** Rooms « to clean » become free again (riad time, HH:MM). */
+  roomReadyTime: string;
   /** Changes with every upload; null = no logo. */
   logoVersion: string | null;
   /** What the next invoice will be numbered. */

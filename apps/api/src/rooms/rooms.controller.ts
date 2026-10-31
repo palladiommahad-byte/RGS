@@ -27,13 +27,6 @@ export class RoomsController {
     return this.rooms.list(p, q);
   }
 
-  /** Keys for the printable QR sheet (entrance + rooms). */
-  @RequirePermissions(P.ROOMS_WRITE)
-  @Get('checkin-links')
-  checkinLinks(@CurrentUser() p: AuthPrincipal): Promise<{ entranceKey: string }> {
-    return this.rooms.checkinLinks(p);
-  }
-
   @RequirePermissions(P.ROOMS_READ)
   @Get(':id')
   get(@CurrentUser() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string): Promise<RoomDto> {

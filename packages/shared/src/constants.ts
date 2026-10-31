@@ -36,7 +36,7 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const EXPENSE_PAYMENT_METHODS = ['CASH', 'CARD', 'TRANSFER', 'CHEQUE', 'PETTY_CASH'] as const;
 export type ExpensePaymentMethod = (typeof EXPENSE_PAYMENT_METHODS)[number];
 
-export const CASH_MOVEMENT_TYPES = ['TOP_UP', 'EXPENSE', 'ADJUSTMENT'] as const;
+export const CASH_MOVEMENT_TYPES = ['TOP_UP', 'PAYMENT', 'EXPENSE', 'ADJUSTMENT'] as const;
 export type CashMovementType = (typeof CASH_MOVEMENT_TYPES)[number];
 
 export const TAX_CODES = ['TVA_ACCOMMODATION', 'TVA_FOOD', 'TAXE_SEJOUR', 'TPT'] as const;

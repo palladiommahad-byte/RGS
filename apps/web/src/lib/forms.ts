@@ -13,6 +13,7 @@ const KNOWN = new Set([
   'invalid_email',
   'invalid_prefix',
   'invalid_ice',
+  'invalid_time',
   'password_too_short',
   'password_mismatch',
 ]);

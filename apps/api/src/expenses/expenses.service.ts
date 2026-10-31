@@ -13,6 +13,7 @@ import { AuditService } from '../audit/audit.service';
 import { AppException } from '../common/app-exception';
 import type { AuthPrincipal } from '../common/auth/principal';
 import { pageArgs } from '../common/pagination';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { expenseInclude, loadUserNames, toCategoryDto, toExpenseDto } from './expense.mapper';
@@ -36,6 +37,7 @@ export class ExpensesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async categories(p: AuthPrincipal): Promise<ExpenseCategoryDto[]> {
@@ -137,6 +139,7 @@ export class ExpensesService {
       );
       return created;
     });
+    if (walletId) await this.notifications.cash(p.riadId, walletId, p.userId, 'EXPENSE', -dto.amountTtc, cashNote(expense));
     const users = await loadUserNames(this.prisma, p.riadId, [expense.createdBy]);
     return toExpenseDto(expense, users);
   }
@@ -193,6 +196,9 @@ export class ExpensesService {
       );
       return row;
     });
+    if (before.walletId && amount !== before.amountTtc) {
+      await this.notifications.cash(p.riadId, before.walletId, p.userId, 'EXPENSE_EDIT', before.amountTtc - amount, cashNote(updated));
+    }
     const users = await loadUserNames(this.prisma, p.riadId, [updated.createdBy]);
     return toExpenseDto(updated, users);
   }
@@ -218,6 +224,9 @@ export class ExpensesService {
         tx,
       );
     });
+    if (expense.walletId) {
+      await this.notifications.cash(p.riadId, expense.walletId, p.userId, 'EXPENSE_DELETE', expense.amountTtc, expense.note);
+    }
     await this.storage.delete('receipts', [expense.receiptKey]);
   }
 
@@ -319,6 +328,11 @@ export class ExpensesService {
       data: { riadId: p.riadId, walletId, type: 'EXPENSE', amount: -amount, expenseId, createdBy: p.userId },
     });
   }
+}
+
+/** What the cash went on, for the notification: the supplier, else the expense note. */
+function cashNote(e: { note: string | null; supplier: { name: string } | null }): string | null {
+  return e.supplier?.name ?? e.note;
 }
 
 function assertTva(amountTtc: number, tva: number | undefined): void {

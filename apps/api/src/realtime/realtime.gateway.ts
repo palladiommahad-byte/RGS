@@ -25,7 +25,8 @@ function readCookie(header: string | undefined, name: string): string | undefine
  * Staff dashboards connect here with their session cookie. Events are notifications only
  * ("something changed, reload"); data still comes from REST. Two channels per riad:
  * - `riad:<id>` (stays.read): stay events, which may carry guest names;
- * - `rooms:<id>` (rooms.read): room status changes, no guest data — housekeeping too.
+ * - `rooms:<id>` (rooms.read): room status changes, no guest data — housekeeping too;
+ * - `notify:<id>` (everyone connected): "new notifications", no data at all.
  */
 @WebSocketGateway({
   path: REALTIME_PATH,
@@ -49,11 +50,14 @@ export class RealtimeGateway implements OnGatewayConnection {
       });
       const principal = await this.principals.get(payload.sub);
       if (!principal || principal.riadId !== payload.riadId) throw new Error('inactive user');
-      const stays = principal.permissions.includes(PERMISSIONS.STAYS_READ);
-      const rooms = principal.permissions.includes(PERMISSIONS.ROOMS_READ);
-      if (!stays && !rooms) throw new Error('no stays.read or rooms.read');
+      const has = (perm: string) => principal.permissions.includes(perm);
+      const stays = has(PERMISSIONS.STAYS_READ);
+      const rooms = has(PERMISSIONS.ROOMS_READ);
+      const cash = has(PERMISSIONS.EXPENSES_READ_ALL) || has(PERMISSIONS.EXPENSES_WRITE_PETTY_CASH);
+      if (!stays && !rooms && !cash) throw new Error('nothing to follow');
       if (stays) await client.join(`riad:${principal.riadId}`);
       if (rooms) await client.join(`rooms:${principal.riadId}`);
+      await client.join(`notify:${principal.riadId}`);
     } catch (e) {
       this.logger.debug(`Socket rejected: ${String(e)}`);
       client.emit('auth:error');
@@ -68,6 +72,11 @@ export class RealtimeGateway implements OnGatewayConnection {
   /** A room's status or details changed (check-in, check-out, room move, housekeeping…). */
   roomsChanged(riadId: string): void {
     this.server?.to(`rooms:${riadId}`).emit('rooms:changed', {});
+  }
+
+  /** New notifications exist: each person reloads their own (filtered) list over REST. */
+  notificationsChanged(riadId: string): void {
+    this.server?.to(`notify:${riadId}`).emit('notifications:changed', {});
   }
 
   /** A stay was created, edited, confirmed, checked out, cancelled or rejected. */

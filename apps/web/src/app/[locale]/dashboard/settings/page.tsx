@@ -1,7 +1,14 @@
 'use client';
 
-import { formatInvoiceNumber, INVOICE_PREFIX, riadSettingsFormSchema, type RiadSettingsDto } from '@riad/shared';
-import { Hotel, ImageUp, Landmark, QrCode, Trash2 } from 'lucide-react';
+import {
+  DEFAULT_CHECKOUT_TIME,
+  DEFAULT_ROOM_READY_TIME,
+  formatInvoiceNumber,
+  INVOICE_PREFIX,
+  riadSettingsFormSchema,
+  type RiadSettingsDto,
+} from '@riad/shared';
+import { Clock, Hotel, ImageUp, Landmark, QrCode, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -28,10 +35,12 @@ type Form = {
   rcNumber: string;
   patente: string;
   wifiInfo: string;
+  checkoutTime: string;
+  roomReadyTime: string;
 };
-const EMPTY: Form = { name: '', address: '', city: '', phone: '', email: '', invoicePrefix: '', ice: '', fiscalId: '', rcNumber: '', patente: '', wifiInfo: '' };
+const EMPTY: Form = { name: '', address: '', city: '', phone: '', email: '', invoicePrefix: '', ice: '', fiscalId: '', rcNumber: '', patente: '', wifiInfo: '', checkoutTime: DEFAULT_CHECKOUT_TIME, roomReadyTime: DEFAULT_ROOM_READY_TIME };
 
-/** The riad's own profile (owner only): identity on invoices, numbering, Wi-Fi, logo. */
+/** The riad's own profile (owner only): identity on invoices, numbering, Wi-Fi, logo, stay cycle. */
 export default function SettingsPage() {
   const t = useTranslations();
   const { can, refresh } = useAuth();
@@ -59,6 +68,8 @@ export default function SettingsPage() {
       rcNumber: s.rcNumber ?? '',
       patente: s.patente ?? '',
       wifiInfo: s.wifiInfo ?? '',
+      checkoutTime: s.checkoutTime,
+      roomReadyTime: s.roomReadyTime,
     });
   }, [s]);
 
@@ -228,6 +239,24 @@ export default function SettingsPage() {
             <FormField id="st-wifi" label={t('settings.wifiInfo')} error={errors.wifiInfo} hint={t('settings.wifiHint')}>
               <Textarea id="st-wifi" rows={3} value={form.wifiInfo} onChange={(e) => set('wifiInfo', e.target.value)} placeholder={t('settings.wifiPlaceholder')} />
             </FormField>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="size-5 text-muted-foreground" aria-hidden />
+              {t('settings.stayCycle')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <FormField id="st-checkout" label={t('settings.checkoutTime')} error={errors.checkoutTime} hint={t('settings.checkoutTimeHint')}>
+              <Input id="st-checkout" type="time" dir="ltr" value={form.checkoutTime} onChange={(e) => set('checkoutTime', e.target.value)} />
+            </FormField>
+            <FormField id="st-ready" label={t('settings.roomReadyTime')} error={errors.roomReadyTime} hint={t('settings.roomReadyTimeHint')}>
+              <Input id="st-ready" type="time" dir="ltr" value={form.roomReadyTime} onChange={(e) => set('roomReadyTime', e.target.value)} />
+            </FormField>
+            <p className="text-xs text-muted-foreground sm:col-span-2">{t('settings.stayCycleHint')}</p>
           </CardContent>
         </Card>
 

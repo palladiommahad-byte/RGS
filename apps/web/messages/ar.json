@@ -20,7 +20,13 @@
     "pageOf": "الصفحة {page} من {pages}",
     "pagination": "التنقل بين الصفحات",
     "results": "{count, plural, =0 {لا توجد نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} other {# نتيجة}}",
-    "mainMenu": "القائمة الرئيسية"
+    "mainMenu": "القائمة الرئيسية",
+    "collapseMenu": "تصغير القائمة",
+    "expandMenu": "توسيع القائمة",
+    "notifications": "الإشعارات",
+    "account": "حسابي",
+    "seeAll": "فتح صفحة اليوم",
+    "noResults": "لا توجد نتائج"
   },
   "localeNames": {
     "en": "English",
@@ -72,7 +78,10 @@
     "users": "المستخدمون",
     "settings": "الإعدادات",
     "clock": "تسجيل الحضور",
-    "calendar": "التقويم"
+    "calendar": "التقويم",
+    "audit": "سجل النشاط",
+    "payments": "المدفوعات المستلمة",
+    "cashBox": "الصندوق"
   },
   "dashboard": {
     "hello": "مرحبًا {name}",
@@ -122,7 +131,8 @@
     "EMAIL_TAKEN": "هذا البريد مستعمل مسبقًا.",
     "ROLE_NOT_ASSIGNABLE": "لا يمكنك منح دور له صلاحيات أكثر منك.",
     "USER_NOT_MANAGEABLE": "لهذا الحساب صلاحيات لا تملكها.",
-    "CANNOT_CHANGE_SELF": "لا يمكنك تغيير دورك أو تعطيل حسابك."
+    "CANNOT_CHANGE_SELF": "لا يمكنك تغيير دورك أو تعطيل حسابك.",
+    "ROOM_BOOKED": "هذه الغرفة محجوزة لبعض هذه الليالي."
   },
   "validation": {
     "required": "حقل إلزامي.",
@@ -139,7 +149,8 @@
     "password_too_short": "8 أحرف على الأقل.",
     "password_mismatch": "كلمتا المرور غير متطابقتين.",
     "invalid_prefix": "حروف كبيرة وأرقام و«-» (12 كحد أقصى).",
-    "invalid_ice": "يتكون المعرف الموحد للمقاولة من 15 رقمًا."
+    "invalid_ice": "يتكون المعرف الموحد للمقاولة من 15 رقمًا.",
+    "invalid_time": "استعمل صيغة 24 ساعة، مثل 12:00."
   },
   "roomStatus": {
     "FREE": "شاغرة",
@@ -229,7 +240,6 @@
   "qr": {
     "title": "رموز QR لتسجيل الوصول",
     "hint": "اطبع هذه الصفحة: رمز للمدخل ورمز لكل غرفة.",
-    "entrance": "المدخل",
     "scan": "Check-in · Enregistrement · تسجيل الوصول",
     "baseUrl": "العنوان المشفّر: {url}"
   },
@@ -293,7 +303,14 @@
     "dates": "التواريخ",
     "status": "الحالة",
     "arrivesToday": "يصل اليوم",
-    "leavesToday": "يغادر اليوم"
+    "leavesToday": "يغادر اليوم",
+    "booked": {
+      "conflict": "هذه الغرفة محجوزة باسم {guest} من {from} إلى {to}.",
+      "anotherGuest": "ضيف آخر",
+      "moveHint": "انقل الضيف إلى غرفة متاحة لكل هذه الليالي:",
+      "moveTo": "النقل إلى {room}",
+      "noFreeRoom": "لا توجد غرفة متاحة لكل هذه الليالي. قصّر الإقامة أو عدّل الحجز الآخر."
+    }
   },
   "guest": {
     "firstName": "الاسم الشخصي",
@@ -361,7 +378,9 @@
     "done": {
       "title": "شكرًا، تم إرسال تسجيلكم!",
       "reception": "يرجى التوجه إلى الاستقبال لاستلام مفتاحكم.",
-      "wifi": "الواي فاي"
+      "wifi": "الواي فاي",
+      "checkedInTitle": "مرحبًا بك! تم تسجيل وصولك.",
+      "checkedIn": "غرفتك: {room}. إقامة سعيدة!"
     },
     "errors": {
       "generic": "حدث خطأ. حاول مجددًا أو توجّه إلى الاستقبال.",
@@ -437,7 +456,9 @@
     "note": "ملاحظة (اختياري)",
     "empty": "لم يُسجَّل أي أداء.",
     "deleteConfirm": "حذف هذا الأداء بمبلغ {amount}؟",
-    "receivedBy": "بواسطة {name}"
+    "receivedBy": "بواسطة {name}",
+    "cashBox": "الصندوق",
+    "intoBox": "يذهب النقد إلى «{name}»."
   },
   "invoices": {
     "title": "الفواتير",
@@ -542,7 +563,8 @@
     "movement": {
       "TOP_UP": "تزويد",
       "EXPENSE": "مصروف",
-      "ADJUSTMENT": "تصحيح"
+      "ADJUSTMENT": "تصحيح",
+      "PAYMENT": "دفعة ضيف"
     }
   },
   "recurring": {
@@ -839,7 +861,13 @@
     "wifiInfo": "معلومات الواي فاي",
     "wifiHint": "تظهر للنزيل في نهاية تسجيله عبر الإنترنت.",
     "wifiPlaceholder": "الشبكة: Riad-Guest\nكلمة المرور: …",
-    "saved": "تم الحفظ."
+    "saved": "تم الحفظ.",
+    "stayCycle": "المغادرة والتنظيف التلقائيان",
+    "checkoutTime": "وقت المغادرة",
+    "checkoutTimeHint": "يُسجَّل خروج الضيوف المتبقين في هذا الوقت من يوم مغادرتهم.",
+    "roomReadyTime": "الغرف جاهزة على الساعة",
+    "roomReadyTimeHint": "الغرف التي ما زالت «للتنظيف» تصبح متاحة في هذا الوقت.",
+    "stayCycleHint": "يمكن للموظفين دائمًا تسجيل المغادرة أو تجهيز الغرفة قبل ذلك يدويًا. الغرف خارج الخدمة لا تتغير أبدًا."
   },
   "users": {
     "subtitle": "حسابات الموظفين والأدوار. الحساب المعطل يُسجَّل خروجه فورًا.",
@@ -925,5 +953,217 @@
     "fromQr": "أدخلها النزيل (QR)",
     "openStay": "فتح الإقامة",
     "openToConfirm": "التحقق والتأكيد"
+  },
+  "audit": {
+    "subtitle": "كل تعديل حساس: من فعل ماذا ومتى.",
+    "all": "الكل",
+    "everyone": "الجميع",
+    "person": "الشخص",
+    "from": "من",
+    "to": "إلى",
+    "clear": "مسح المرشحات",
+    "system": "ضيف أو النظام",
+    "empty": "لا يوجد نشاط لهذه المرشحات.",
+    "details": "التفاصيل",
+    "open": "فتح",
+    "areas": {
+      "stays": "الإقامات والضيوف",
+      "billing": "المدفوعات",
+      "expenses": "المصاريف",
+      "rooms": "الغرف",
+      "hr": "الموظفون",
+      "finance": "المالية والضرائب",
+      "admin": "المستخدمون والإعدادات"
+    }
+  },
+  "auditAction": {
+    "stay": {
+      "create": "أنشأ إقامة",
+      "update": "عدّل إقامة",
+      "confirm": "أكّد وصول ضيف",
+      "reject": "رفض تسجيل وصول",
+      "cancel": "ألغى إقامة",
+      "checkout": "سجّل مغادرة",
+      "self_checkin": "تسجيل الضيف عبر رمز QR",
+      "create_checked_in": "أنشأ إقامة مع وصول فوري",
+      "checkout_balance_due": "سجّل مغادرة مع رصيد مستحق",
+      "update_room_move": "نقل إقامة إلى غرفة أخرى"
+    },
+    "guest": {
+      "create": "أضاف ضيفًا",
+      "update": "عدّل بيانات ضيف",
+      "delete": "حذف ضيفًا",
+      "passport_view": "اطّلع على صورة جواز"
+    },
+    "register": {
+      "export": "صدّر سجل الشرطة"
+    },
+    "payment": {
+      "create": "سجّل دفعة",
+      "delete": "حذف دفعة"
+    },
+    "extra": {
+      "create": "أضاف خدمة إضافية",
+      "delete": "حذف خدمة إضافية"
+    },
+    "invoice": {
+      "download": "حمّل فاتورة"
+    },
+    "expense": {
+      "create": "سجّل مصروفًا",
+      "update": "عدّل مصروفًا",
+      "delete": "حذف مصروفًا",
+      "recurring_create": "سجّل مصروفًا متكررًا"
+    },
+    "supplier": {
+      "create": "أضاف موردًا",
+      "update": "عدّل موردًا",
+      "delete": "حذف موردًا"
+    },
+    "wallet": {
+      "create": "أنشأ صندوقًا",
+      "update": "عدّل صندوقًا",
+      "top_up": "موّل صندوقًا",
+      "adjust": "عدّل رصيد صندوق"
+    },
+    "recurring": {
+      "create": "أنشأ مصروفًا متكررًا",
+      "update": "عدّل مصروفًا متكررًا",
+      "deactivate": "أوقف مصروفًا متكررًا",
+      "delete": "حذف مصروفًا متكررًا"
+    },
+    "room": {
+      "create": "أضاف غرفة",
+      "update": "عدّل غرفة",
+      "status": "غيّر حالة غرفة",
+      "qr_regenerate": "أنشأ رمز QR جديدًا لغرفة",
+      "deactivate": "عطّل غرفة",
+      "delete": "حذف غرفة"
+    },
+    "employee": {
+      "create": "أضاف موظفًا",
+      "update": "عدّل موظفًا",
+      "delete": "حذف موظفًا",
+      "contract_view": "اطّلع على عقد عمل",
+      "contract_upload": "رفع عقد عمل",
+      "badge_rotate": "أصدر شارة جديدة"
+    },
+    "attendance": {
+      "create": "أضاف تسجيل حضور",
+      "update": "عدّل تسجيل حضور",
+      "delete": "حذف تسجيل حضور"
+    },
+    "leave": {
+      "create": "أضاف إجازة",
+      "update": "عدّل إجازة",
+      "delete": "حذف إجازة",
+      "approved": "وافق على إجازة",
+      "rejected": "رفض إجازة",
+      "pending": "أعاد إجازة إلى الانتظار"
+    },
+    "payroll": {
+      "generate": "أنشأ كشف الرواتب",
+      "update": "عدّل قسيمة راتب",
+      "pay": "سجّل دفع راتب",
+      "unpay": "ألغى دفع راتب",
+      "delete": "حذف قسيمة راتب",
+      "export": "صدّر كشف الرواتب"
+    },
+    "tax_setting": {
+      "create": "أضاف نسبة ضريبة",
+      "update": "عدّل نسبة ضريبة",
+      "delete": "حذف نسبة ضريبة"
+    },
+    "tax_report": {
+      "export": "صدّر التقرير الضريبي"
+    },
+    "finance": {
+      "pnl_export": "صدّر حساب الأرباح والخسائر"
+    },
+    "user": {
+      "create": "أنشأ حساب مستخدم",
+      "update": "عدّل حساب مستخدم",
+      "password_reset": "أعاد تعيين كلمة مرور",
+      "password_change": "غيّر كلمة المرور"
+    },
+    "riad": {
+      "update": "عدّل إعدادات الرياض",
+      "logo_upload": "رفع الشعار",
+      "logo_remove": "حذف الشعار"
+    }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "labelUnread": "{count, plural, other {الإشعارات، # غير مقروءة}}",
+    "markAllRead": "تعليم الكل كمقروء",
+    "all": "الكل",
+    "unread": "{count, plural, =0 {غير المقروءة} other {غير المقروءة (#)}}",
+    "empty": "لا جديد.",
+    "emptyUnread": "لا توجد إشعارات غير مقروءة.",
+    "new": "جديد",
+    "by": "بواسطة {name}",
+    "noRoom": "لم تُحدَّد الغرفة",
+    "nights": "{count, plural, one {ليلة واحدة} two {ليلتان} few {# ليالٍ} many {# ليلة} other {# ليلة}}",
+    "checkinRequest": "تسجيل وصول جديد عبر QR — للتأكيد",
+    "checkin": "وصل ضيف",
+    "checkout": "مغادرة: {room}",
+    "toClean": "الغرفة للتنظيف",
+    "balanceDue": "المتبقي {amount}",
+    "checkoutToday": "مغادرة اليوم",
+    "checkoutTomorrow": "مغادرة غدًا",
+    "balance": "الرصيد {amount}",
+    "cash": {
+      "TOP_UP": "تمويل {wallet}",
+      "ADJUSTMENT": "تصحيح {wallet}",
+      "EXPENSE": "دفع من {wallet}",
+      "EXPENSE_EDIT": "تعديل مصروف من {wallet}",
+      "EXPENSE_DELETE": "حذف مصروف من {wallet} وإرجاع المبلغ",
+      "GUEST_PAYMENT": "نقد ضيف في {wallet}",
+      "GUEST_PAYMENT_DELETE": "حذف دفعة ضيف من {wallet}"
+    },
+    "checkinRoomNotFree": "تسجيل عبر QR: {room} غير متاحة — اختر غرفة",
+    "checkoutAutomatic": "مغادرة تلقائية: {room}"
+  },
+  "paymentsPage": {
+    "subtitle": "كل دفعات الضيوف: نقدًا، بالبطاقة، بالتحويل — ومن استلمها.",
+    "preset": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "last7": "آخر 7 أيام",
+      "month": "هذا الشهر",
+      "custom": "اختيار التواريخ"
+    },
+    "method": "طريقة الدفع",
+    "allMethods": "كل الطرق",
+    "receivedBy": "استلمها",
+    "total": "المجموع المستلم",
+    "count": "{count, plural, =0 {لا توجد دفعات} one {دفعة واحدة} two {دفعتان} few {# دفعات} many {# دفعة} other {# دفعة}}",
+    "empty": "لا توجد دفعات لهذه المرشحات."
+  },
+  "cashBox": {
+    "subtitle": "النقد المتوفر: دفعات الضيوف، التمويل، المصاريف والتصحيحات.",
+    "none": "لا يوجد صندوق بعد.",
+    "create": "إنشاء صندوق",
+    "manage": "إدارة الصناديق",
+    "spend": "دفع مصروف",
+    "preset": {
+      "today": "اليوم",
+      "last7": "آخر 7 أيام",
+      "month": "هذا الشهر",
+      "all": "الكل"
+    },
+    "allMovements": "كل الحركات",
+    "type": {
+      "PAYMENT": "دفعة ضيف",
+      "TOP_UP": "تمويل",
+      "EXPENSE": "مصروف",
+      "ADJUSTMENT": "تصحيح"
+    },
+    "in": "المداخيل",
+    "inHint": "منها {guests} من الضيوف",
+    "out": "المصاريف",
+    "outHint": "مصاريف وتصحيحات",
+    "net": "الفرق",
+    "after": "الرصيد {amount}"
   }
 }

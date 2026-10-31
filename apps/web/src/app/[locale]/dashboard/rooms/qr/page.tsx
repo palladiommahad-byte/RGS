@@ -11,14 +11,13 @@ import { Button } from '@/components/ui/button';
 import { useApiQuery } from '@/lib/use-api';
 
 /**
- * Printable QR sheet: one entrance code plus one per room. Codes point to /checkin without
+ * Printable QR sheet: one code per room (the scan tells which room). Codes point to /checkin without
  * a locale, so each guest's phone language picks EN/FR/ES/AR automatically.
  */
 export default function RoomQrPage() {
   const t = useTranslations();
   const { user, can } = useAuth();
   const rooms = useApiQuery<Paginated<RoomDto>>(can('rooms.write') ? '/rooms?limit=100' : null);
-  const links = useApiQuery<{ entranceKey: string }>(can('rooms.write') ? '/rooms/checkin-links' : null);
   const [base, setBase] = useState('');
 
   useEffect(() => {
@@ -29,17 +28,11 @@ export default function RoomQrPage() {
     return <p className="text-muted-foreground">{t('dashboard.forbidden')}</p>;
   }
 
-  const entranceKey = links.data?.entranceKey;
-  const cards = [
-    ...(entranceKey
-      ? [{ key: 'entrance', title: t('qr.entrance'), url: `${base}/checkin?r=${encodeURIComponent(entranceKey)}` }]
-      : []),
-    ...(rooms.data?.items ?? []).map((r) => ({
-      key: r.id,
-      title: r.name,
-      url: `${base}/checkin?room=${encodeURIComponent(r.qrToken ?? '')}`,
-    })),
-  ];
+  const cards = (rooms.data?.items ?? []).map((r) => ({
+    key: r.id,
+    title: r.name,
+    url: `${base}/checkin?room=${encodeURIComponent(r.qrToken ?? '')}`,
+  }));
 
   return (
     <div className="flex flex-col gap-6">

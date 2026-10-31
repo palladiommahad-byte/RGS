@@ -1,17 +1,23 @@
 import { Body, Controller, Get, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import type { CashWallet, Prisma } from '@prisma/client';
+import { ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import { Prisma, type CashWallet } from '@prisma/client';
 import {
+  addDays,
+  CASH_MOVEMENT_TYPES,
   PERMISSIONS as P,
-  type CashMovementDto,
+  zonedMidnight,
+  type CashBoxReportDto,
+  type CashMovementType,
   type CashWalletDto,
-  type Paginated,
 } from '@riad/shared';
+import { IsIn, IsOptional } from 'class-validator';
 import { AuditService } from '../audit/audit.service';
 import { AppException } from '../common/app-exception';
 import { CurrentUser, RequireAnyPermission, RequirePermissions } from '../common/auth/decorators';
 import type { AuthPrincipal } from '../common/auth/principal';
-import { PaginationQueryDto, pageArgs, paginated } from '../common/pagination';
+import { PaginationQueryDto, pageArgs } from '../common/pagination';
+import { IsIsoDate } from '../common/validation';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { loadUserNames } from './expense.mapper';
 import { AdjustWalletDto, CreateWalletDto, TopUpDto, UpdateWalletDto } from './expenses.dto';
@@ -28,6 +34,12 @@ const toView = (w: WalletRow): CashWalletDto => ({
 
 const manages = (p: AuthPrincipal) => p.permissions.includes(P.EXPENSES_WRITE);
 
+export class ListMovementsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ description: 'First day, YYYY-MM-DD (riad time)' }) @IsOptional() @IsIsoDate() from?: string;
+  @ApiPropertyOptional({ description: 'Last day, YYYY-MM-DD (riad time)' }) @IsOptional() @IsIsoDate() to?: string;
+  @ApiPropertyOptional({ enum: CASH_MOVEMENT_TYPES }) @IsOptional() @IsIn(CASH_MOVEMENT_TYPES) type?: CashMovementType;
+}
+
 /**
  * Petty cash: a manager gives cash to a staff member (top-up); their expenses debit the
  * wallet. The balance is kept in step with the movements inside each transaction.
@@ -38,6 +50,7 @@ export class WalletsController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   @RequireAnyPermission(P.EXPENSES_WRITE, P.EXPENSES_WRITE_PETTY_CASH)
@@ -105,40 +118,99 @@ export class WalletsController {
     return this.move(p, id, 'ADJUSTMENT', dto.amount, dto.note);
   }
 
+  /**
+   * Every movement of the box, newest first: guest cash, top-ups, expenses, corrections.
+   * Each one carries the balance right after it; totals cover the whole period.
+   */
   @RequireAnyPermission(P.EXPENSES_WRITE, P.EXPENSES_WRITE_PETTY_CASH)
   @Get(':id/movements')
   async movements(
     @CurrentUser() p: AuthPrincipal,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query() q: PaginationQueryDto,
-  ): Promise<Paginated<CashMovementDto>> {
+    @Query() q: ListMovementsQueryDto,
+  ): Promise<CashBoxReportDto> {
     await this.findOrThrow(p, id);
-    const where = { walletId: id, riadId: p.riadId };
-    const [rows, total] = await this.prisma.$transaction([
+    const createdAt: Prisma.DateTimeFilter = {};
+    if (q.from) createdAt.gte = zonedMidnight(q.from);
+    if (q.to) createdAt.lt = zonedMidnight(addDays(q.to, 1));
+    const period: Prisma.CashMovementWhereInput = { walletId: id, riadId: p.riadId, ...(q.from || q.to ? { createdAt } : {}) };
+    const where: Prisma.CashMovementWhereInput = { ...period, ...(q.type ? { type: q.type } : {}) };
+
+    const [rows, total, sums] = await this.prisma.$transaction([
       this.prisma.cashMovement.findMany({
         where,
-        include: { expense: { include: { category: true, supplier: { select: { name: true } } } } },
-        orderBy: { createdAt: 'desc' },
+        include: {
+          expense: { include: { category: true, supplier: { select: { name: true } } } },
+          payment: {
+            select: {
+              id: true,
+              stay: {
+                select: {
+                  id: true,
+                  room: { select: { name: true } },
+                  requestedRoom: { select: { name: true } },
+                  guests: { where: { isMain: true }, take: 1, select: { firstName: true, lastName: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         ...pageArgs(q),
       }),
       this.prisma.cashMovement.count({ where }),
+      this.prisma.cashMovement.groupBy({ by: ['type'], where: period, _sum: { amount: true }, orderBy: { type: 'asc' } }),
     ]);
+
+    // The balance is the sum of the box's movements: running total, oldest first.
+    const running = rows.length
+      ? await this.prisma.$queryRaw<{ id: string; after: bigint }[]>`
+          SELECT id, after FROM (
+            SELECT id, SUM(amount) OVER (ORDER BY created_at, id) AS after
+            FROM cash_movements WHERE wallet_id = ${id}::uuid
+          ) t WHERE id IN (${Prisma.join(rows.map((r) => Prisma.sql`${r.id}::uuid`))})`
+      : [];
+    const after = new Map(running.map((r) => [r.id, Number(r.after)]));
+
+    const byType = { TOP_UP: 0, PAYMENT: 0, EXPENSE: 0, ADJUSTMENT: 0 };
+    for (const s of sums) byType[s.type] = s._sum?.amount ?? 0;
+    // Money in = every positive movement (a correction can go either way); out = the rest.
+    const positive = await this.prisma.cashMovement.aggregate({ where: { ...period, amount: { gt: 0 } }, _sum: { amount: true } });
+    const moneyIn = positive._sum.amount ?? 0;
+    const moneyOut = moneyIn - Object.values(byType).reduce((n, v) => n + v, 0);
+
     const users = await loadUserNames(this.prisma, p.riadId, rows.map((r) => r.createdBy));
-    return paginated(
-      rows.map((m) => ({
-        id: m.id,
-        type: m.type,
-        amount: m.amount,
-        note: m.note,
-        createdAt: m.createdAt.toISOString(),
-        createdBy: (m.createdBy && users.get(m.createdBy)) || null,
-        expense: m.expense
-          ? { id: m.expense.id, category: m.expense.category.nameFr, supplier: m.expense.supplier?.name ?? null }
-          : null,
-      })),
+    return {
+      items: rows.map((m) => {
+        const stay = m.payment?.stay;
+        const guest = stay?.guests[0];
+        return {
+          id: m.id,
+          type: m.type,
+          amount: m.amount,
+          note: m.note,
+          createdAt: m.createdAt.toISOString(),
+          createdBy: (m.createdBy && users.get(m.createdBy)) || null,
+          expense: m.expense
+            ? { id: m.expense.id, category: m.expense.category.nameFr, categoryKey: m.expense.category.key, supplier: m.expense.supplier?.name ?? null }
+            : null,
+          payment:
+            m.payment && stay
+              ? {
+                  id: m.payment.id,
+                  stayId: stay.id,
+                  guestName: guest ? `${guest.firstName} ${guest.lastName}` : null,
+                  roomName: (stay.room ?? stay.requestedRoom)?.name ?? null,
+                }
+              : null,
+          balanceAfter: after.get(m.id) ?? 0,
+        };
+      }),
       total,
-      q,
-    );
+      page: q.page,
+      limit: q.limit,
+      totals: { in: moneyIn, out: moneyOut, byType },
+    };
   }
 
   private async move(
@@ -171,6 +243,7 @@ export class WalletsController {
       );
       return tx.cashWallet.findUniqueOrThrow({ where: { id }, include: walletInclude });
     });
+    await this.notifications.cash(p.riadId, id, p.userId, type, amount, note);
     return toView(row);
   }
 

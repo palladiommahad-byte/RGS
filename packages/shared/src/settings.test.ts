@@ -23,3 +23,12 @@ describe('change password form', () => {
     expect(changePasswordSchema.safeParse({ current: 'x', next: 'long enough', confirm: 'long enough' }).success).toBe(true);
   });
 });
+
+describe('stay cycle times in the settings form', () => {
+  const base = { name: 'Riad', invoicePrefix: 'INV' };
+  it('defaults to 12:00 and 15:00 and refuses other formats', () => {
+    expect(riadSettingsFormSchema.parse(base)).toMatchObject({ checkoutTime: '12:00', roomReadyTime: '15:00' });
+    expect(riadSettingsFormSchema.parse({ ...base, checkoutTime: '11:30' }).checkoutTime).toBe('11:30');
+    expect(riadSettingsFormSchema.safeParse({ ...base, roomReadyTime: '3pm' }).success).toBe(false);
+  });
+});

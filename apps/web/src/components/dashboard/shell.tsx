@@ -1,8 +1,8 @@
 'use client';
 
-import { roleLabel, STAFF_LOCALES } from '@riad/shared';
-import { KeyRound, LogOut, Menu, X } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { STAFF_LOCALES } from '@riad/shared';
+import { ChevronsLeft, Menu, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { BrandMark } from '@/components/brand-mark';
@@ -10,25 +10,36 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Button } from '@/components/ui/button';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { ChangePasswordDialog } from '@/components/change-password-dialog';
 import { NAV_ITEMS, type NavItem } from './nav-items';
+import { TopBarActions } from './top-bar';
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
-}
+const COLLAPSED_KEY = 'riad.sidebarCollapsed';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
-  const locale = useLocale();
   const pathname = usePathname();
-  const { user, can, logout } = useAuth();
+  const { user, can } = useAuth();
   const [open, setOpen] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
+  // Computers: the sidebar can fold to icons only; the choice is remembered on this device.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSED_KEY) === '1');
+    } catch {
+      // storage unavailable: keep it open
+    }
+  }, []);
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(COLLAPSED_KEY, c ? '0' : '1');
+      } catch {
+        // not remembered, still toggled
+      }
+      return !c;
+    });
+  };
+  const c = collapsed;
 
   useEffect(() => {
     setOpen(false);
@@ -39,24 +50,26 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const bottom = visible.filter((i) => i.bottom);
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-  const roleName = roleLabel(user.role, locale);
 
   const navLink = (item: NavItem) => {
     const active = isActive(item.href);
+    const label = t(`nav.${item.key}`);
     return (
       <li key={item.key}>
         <Link
           href={item.href}
           aria-current={active ? 'page' : undefined}
+          title={c ? label : undefined}
           className={cn(
             'flex h-11 items-center gap-3 rounded-lg px-3 text-[15px] font-medium transition-colors',
+            c && 'md:justify-center md:px-0',
             active
               ? 'bg-primary text-primary-foreground'
               : 'text-foreground/75 hover:bg-accent hover:text-foreground',
           )}
         >
           <item.icon className="size-5 shrink-0" aria-hidden />
-          {t(`nav.${item.key}`)}
+          <span className={cn('truncate', c && 'md:sr-only')}>{label}</span>
         </Link>
       </li>
     );
@@ -70,11 +83,23 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e bg-card transition-transform print:hidden',
+          'fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e bg-card transition-[transform,width] print:hidden',
+          c && 'md:w-[76px]',
           !open && 'max-md:ltr:-translate-x-full max-md:rtl:translate-x-full',
         )}
       >
-        <div className="flex h-20 items-center justify-between gap-2 px-5">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleCollapsed}
+          aria-label={c ? t('common.expandMenu') : t('common.collapseMenu')}
+          title={c ? t('common.expandMenu') : t('common.collapseMenu')}
+          aria-expanded={!c}
+          className="absolute -end-3.5 top-7 z-10 hidden size-7 rounded-full bg-card shadow-sm max-md:hidden md:flex"
+        >
+          <ChevronsLeft className={cn('size-4 transition-transform', c ? 'rotate-180 rtl:rotate-0' : 'rtl:rotate-180')} />
+        </Button>
+        <div className={cn('flex h-20 items-center justify-between gap-2 px-5', c && 'md:justify-center md:px-0 md:[&>span>span:last-child]:hidden')}>
           <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
           <Button
             variant="ghost"
@@ -87,44 +112,30 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </Button>
         </div>
 
-        <nav className="flex flex-1 flex-col overflow-y-auto px-4 pb-4" aria-label={t('common.mainMenu')}>
+        <nav className={cn('flex flex-1 flex-col overflow-y-auto px-4 pb-4', c && 'md:px-3')} aria-label={t('common.mainMenu')}>
           <ul className="flex flex-col gap-1">{main.map(navLink)}</ul>
           {bottom.length > 0 && <ul className="mt-auto flex flex-col gap-1 pt-4">{bottom.map(navLink)}</ul>}
         </nav>
 
-        <div className="flex flex-col gap-3 border-t p-4">
+        <div className={cn('border-t p-4', c && 'md:hidden')}>
           <LocaleSwitcher locales={STAFF_LOCALES} />
-          <div className="flex items-center gap-3">
-            <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-900"
-              aria-hidden
-            >
-              {initials(user.name)}
-            </span>
-            <div className="min-w-0 flex-1 leading-tight">
-              <div className="truncate text-sm font-medium">{user.name}</div>
-              <div className="truncate text-xs text-muted-foreground">{roleName}</div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setChangingPassword(true)} aria-label={t('account.changePassword')} title={t('account.changePassword')}>
-              <KeyRound />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => void logout()} aria-label={t('common.logout')} title={t('common.logout')}>
-              <LogOut className="rtl:rotate-180" />
-            </Button>
-          </div>
         </div>
       </aside>
 
-      <div className="md:ps-64 print:ps-0">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card px-4 md:hidden print:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label={t('common.openMenu')}>
+      <div className={cn('transition-[padding] md:ps-64 print:ps-0', c && 'md:ps-[76px]')}>
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card px-4 md:h-[72px] md:border-transparent md:bg-background/85 md:px-8 md:backdrop-blur print:hidden">
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(true)} aria-label={t('common.openMenu')}>
             <Menu />
           </Button>
-          <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
+          <div className="min-w-0 md:hidden">
+            <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
+          </div>
+          <div className="ms-auto">
+            <TopBarActions />
+          </div>
         </header>
-        <main className="mx-auto w-full max-w-[1440px] p-4 md:p-8 print:p-0">{children}</main>
+        <main className="mx-auto w-full max-w-[1440px] p-4 md:px-8 md:pt-2 md:pb-8 print:p-0">{children}</main>
       </div>
-      <ChangePasswordDialog open={changingPassword} onOpenChange={setChangingPassword} />
     </div>
   );
 }

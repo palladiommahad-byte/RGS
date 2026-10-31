@@ -32,27 +32,6 @@ services:
     volumes:
       - miniodata:/data
 
-  # Creates the buckets once MinIO answers. Private buckets get no policy, so their
-  # objects are only reachable through signed URLs; riad-public is world-readable.
-  minio-init:
-    image: amazon/aws-cli:2.27.50
-    depends_on:
-      - minio
-    environment:
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      AWS_DEFAULT_REGION: us-east-1
-    entrypoint: ['/bin/sh', '-c']
-    command:
-      - |
-        S3="aws --endpoint-url http://minio:9000"
-        until $$S3 s3 ls >/dev/null 2>&1; do echo "waiting for minio"; sleep 1; done
-        for b in riad-passports riad-receipts riad-documents riad-public; do
-          $$S3 s3 mb s3://$$b 2>/dev/null || true
-        done
-        $$S3 s3api put-bucket-policy --bucket riad-public --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::riad-public/*"]}]}'
-        echo "buckets ready"
-
   # --- The app itself, built from the Dockerfiles (production builds) ---
   # `docker compose up -d --build` (or the Play button in Docker Desktop) runs everything:
   # web on http://localhost:3200, API on http://localhost:4100. Same database and files as
@@ -80,7 +59,8 @@ services:
       - ocrcache:/data/ocr
     depends_on:
       postgres: { condition: service_healthy }
-      minio-init: { condition: service_completed_successfully }
+      # The API creates its (private) buckets in MinIO when it starts.
+      minio: { condition: service_started }
 
   web:
     build:

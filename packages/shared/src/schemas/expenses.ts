@@ -112,7 +112,20 @@ export type CashMovementDto = {
   note: string | null;
   createdAt: string;
   createdBy: Ref | null;
-  expense: { id: string; category: string; supplier: string | null } | null;
+  expense: { id: string; category: string; categoryKey: string | null; supplier: string | null } | null;
+  /** Guest cash payment received into the box. */
+  payment: { id: string; stayId: string; guestName: string | null; roomName: string | null } | null;
+  /** Box balance right after this movement (centimes). */
+  balanceAfter: number;
+};
+
+/** A cash box's movements over a period, with what came in and went out (centimes). */
+export type CashBoxReportDto = {
+  items: CashMovementDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totals: { in: number; out: number; byType: Record<CashMovementType, number> };
 };
 
 export type RecurringExpenseDto = {

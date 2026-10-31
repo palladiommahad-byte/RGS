@@ -56,6 +56,22 @@ export type PaymentDto = {
   receivedBy: { id: string; name: string } | null;
 };
 
+/** One guest payment in the "Payments received" list. */
+export type PaymentListItemDto = PaymentDto & {
+  stay: { id: string; guestName: string | null; roomName: string | null };
+};
+
+/** Payments received over a period, with totals per method (centimes) for the whole filter. */
+export type PaymentsReportDto = {
+  items: PaymentListItemDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totals: Record<PaymentMethod, number> & { all: number; count: number };
+  /** Everyone who received a payment in the period (for the person filter). */
+  receivers: { id: string; name: string }[];
+};
+
 export type InvoiceSummaryDto = { id: string; number: string; totalTtc: number; issuedAt: string };
 
 export type BillDto = {

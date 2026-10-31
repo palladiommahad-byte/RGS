@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ICE, INVOICE_PREFIX } from '@riad/shared';
+import { ICE, INVOICE_PREFIX, TIME_OF_DAY } from '@riad/shared';
 import { Transform } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, Length, Matches, MaxLength, ValidateIf } from 'class-validator';
 import { TrimToUndefined } from '../common/validation';
@@ -26,4 +26,6 @@ export class UpdateRiadSettingsDto {
   @ApiPropertyOptional() @IsOptional() @Trim() @IsString() @MaxLength(30) rcNumber?: string;
   @ApiPropertyOptional() @IsOptional() @Trim() @IsString() @MaxLength(20) patente?: string;
   @ApiPropertyOptional({ description: 'Shown to guests after check-in' }) @IsOptional() @Trim() @IsString() @MaxLength(300) wifiInfo?: string;
+  @ApiPropertyOptional({ description: 'Automatic check-out, riad time HH:MM' }) @IsOptional() @Matches(TIME_OF_DAY) checkoutTime?: string;
+  @ApiPropertyOptional({ description: 'Rooms to clean become free, riad time HH:MM' }) @IsOptional() @Matches(TIME_OF_DAY) roomReadyTime?: string;
 }

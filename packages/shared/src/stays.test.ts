@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, isIsoDate, nightsBetween, todayIso } from './dates';
 import { stayFormSchema } from './schemas/stays';
-import { accommodationTotal, canSetRoomStatusManually, canTransitionStay } from './stays';
+import { accommodationTotal, atRiadTime, canSetRoomStatusManually, canTransitionStay, TIME_OF_DAY } from './stays';
 
 describe('dates', () => {
   it('validates calendar dates', () => {
@@ -73,5 +73,20 @@ describe('stayFormSchema', () => {
   it('rejects check-out on or before check-in', () => {
     const r = stayFormSchema.safeParse({ ...base, checkOutDate: '2026-05-01' });
     expect(r.success).toBe(false);
+  });
+});
+
+describe('automatic stay cycle times', () => {
+  it('accepts HH:MM times only', () => {
+    expect(TIME_OF_DAY.test('12:00')).toBe(true);
+    expect(TIME_OF_DAY.test('23:59')).toBe(true);
+    expect(TIME_OF_DAY.test('24:00')).toBe(false);
+    expect(TIME_OF_DAY.test('9:00')).toBe(false);
+  });
+
+  it('places a time of day in the riad time zone', () => {
+    expect(atRiadTime('2026-10-01', '15:00', 'UTC').toISOString()).toBe('2026-10-01T15:00:00.000Z');
+    // Casablanca was UTC+1 in October 2025.
+    expect(atRiadTime('2025-10-01', '12:00').toISOString()).toBe('2025-10-01T11:00:00.000Z');
   });
 });

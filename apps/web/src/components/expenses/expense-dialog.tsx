@@ -41,6 +41,7 @@ export function ExpenseDialog({
   categories,
   wallets,
   expense,
+  fromWallet,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -48,6 +49,8 @@ export function ExpenseDialog({
   categories: ExpenseCategoryDto[];
   wallets: CashWalletDto[];
   expense?: ExpenseDto;
+  /** Opened from a cash box: the expense is paid from it by default. */
+  fromWallet?: boolean;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -91,7 +94,7 @@ export function ExpenseDialog({
       setDate(todayIso());
       setTva('');
       setNote('');
-      setMethod(full ? 'CASH' : 'PETTY_CASH');
+      setMethod(full && !fromWallet ? 'CASH' : 'PETTY_CASH');
       setWalletId(activeWallets[0]?.id ?? '');
       setMore(false);
     }

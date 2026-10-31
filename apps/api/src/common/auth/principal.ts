@@ -9,6 +9,9 @@ export type AuthPrincipal = {
   permissions: string[];
 };
 
+/** Who does something: a signed-in person, or the system (userId null) for automatic jobs. */
+export type Actor = { riadId: string; userId: string | null };
+
 export type AccessTokenPayload = {
   sub: string;
   riadId: string;

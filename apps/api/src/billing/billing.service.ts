@@ -4,6 +4,7 @@ import {
   computeBill,
   formatInvoiceNumber,
   isoToUtcDate,
+  PERMISSIONS,
   todayIso,
   utcDateToIso,
   type BillDto,
@@ -13,9 +14,10 @@ import {
 } from '@riad/shared';
 import { AuditService } from '../audit/audit.service';
 import { AppException } from '../common/app-exception';
-import type { AuthPrincipal } from '../common/auth/principal';
+import type { Actor, AuthPrincipal } from '../common/auth/principal';
 import type { InvoiceBreakdown } from '../invoices/invoice-breakdown';
 import { InvoicePdfService } from '../invoices/invoice-pdf.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { releaseRoom } from '../stays/room-locks';
@@ -48,6 +50,7 @@ export class BillingService {
     private readonly taxRates: TaxRatesService,
     private readonly pdf: InvoicePdfService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -107,6 +110,8 @@ export class BillingService {
     if (stay.status === 'CANCELLED') {
       throw new AppException('STAY_LOCKED', 'A cancelled stay cannot receive payments', HttpStatus.CONFLICT);
     }
+    // Cash goes into a cash box, so the box balance matches the cash in hand.
+    const walletId = dto.method === 'CASH' ? await this.cashBoxFor(p, dto.walletId) : null;
     const payment = await this.prisma.$transaction(async (tx) => {
       const created = await tx.payment.create({
         data: {
@@ -119,6 +124,12 @@ export class BillingService {
           receivedBy: p.userId,
         },
       });
+      if (walletId) {
+        await tx.cashWallet.update({ where: { id: walletId }, data: { balance: { increment: dto.amount } } });
+        await tx.cashMovement.create({
+          data: { riadId: p.riadId, walletId, type: 'PAYMENT', amount: dto.amount, paymentId: created.id, note: dto.note, createdBy: p.userId },
+        });
+      }
       await this.audit.log(
         {
           riadId: p.riadId,
@@ -126,12 +137,13 @@ export class BillingService {
           action: 'payment.create',
           entity: 'Payment',
           entityId: created.id,
-          diff: { stayId, amount: dto.amount, method: dto.method },
+          diff: { stayId, amount: dto.amount, method: dto.method, walletId },
         },
         tx,
       );
       return created;
     });
+    if (walletId) await this.notifications.cash(p.riadId, walletId, p.userId, 'GUEST_PAYMENT', dto.amount, await this.guestLabel(stayId));
     const user = await this.prisma.user.findUnique({ where: { id: p.userId }, select: { id: true, name: true } });
     return {
       id: payment.id,
@@ -151,7 +163,19 @@ export class BillingService {
     if (stay.status === 'CHECKED_OUT') {
       throw new AppException('PAYMENT_LOCKED', 'Payments on an issued invoice cannot be deleted', HttpStatus.CONFLICT);
     }
+    const movement = await this.prisma.cashMovement.findUnique({ where: { paymentId } });
     await this.prisma.$transaction(async (tx) => {
+      if (movement) {
+        // The cash leaves the box again; refused if it was already spent.
+        const { count } = await tx.cashWallet.updateMany({
+          where: { id: movement.walletId, balance: { gte: movement.amount } },
+          data: { balance: { decrement: movement.amount } },
+        });
+        if (count !== 1) {
+          throw new AppException('INSUFFICIENT_FUNDS', 'The cash box no longer holds this amount', HttpStatus.CONFLICT);
+        }
+        await tx.cashMovement.delete({ where: { id: movement.id } });
+      }
       await tx.payment.delete({ where: { id: paymentId } });
       await this.audit.log(
         {
@@ -160,11 +184,44 @@ export class BillingService {
           action: 'payment.delete',
           entity: 'Payment',
           entityId: paymentId,
-          diff: { stayId, amount: payment.amount, method: payment.method },
+          diff: { stayId, amount: payment.amount, method: payment.method, walletId: movement?.walletId ?? null },
         },
         tx,
       );
     });
+    if (movement) {
+      await this.notifications.cash(p.riadId, movement.walletId, p.userId, 'GUEST_PAYMENT_DELETE', -movement.amount, await this.guestLabel(stayId));
+    }
+  }
+
+  /**
+   * The cash box a cash payment goes into: the one asked for (yours, or any for managers),
+   * else your own box, else the riad's only box. None: the payment is not tracked in a box.
+   */
+  private async cashBoxFor(p: AuthPrincipal, requested?: string): Promise<string | null> {
+    const active = { riadId: p.riadId, isActive: true };
+    if (requested) {
+      const box = await this.prisma.cashWallet.findFirst({ where: { ...active, id: requested } });
+      if (!box) throw notFound('Cash box');
+      if (box.holderId !== p.userId && !p.permissions.includes(PERMISSIONS.EXPENSES_WRITE)) {
+        throw new AppException('FORBIDDEN', 'You can only put cash in your own cash box', HttpStatus.FORBIDDEN);
+      }
+      return box.id;
+    }
+    const own = await this.prisma.cashWallet.findFirst({ where: { ...active, holderId: p.userId }, orderBy: { createdAt: 'asc' } });
+    if (own) return own.id;
+    const boxes = await this.prisma.cashWallet.findMany({ where: active, select: { id: true }, take: 2 });
+    return boxes.length === 1 ? boxes[0]!.id : null;
+  }
+
+  /** "Karim Test · Chambre 1", for cash notifications. */
+  private async guestLabel(stayId: string): Promise<string | null> {
+    const stay = await this.prisma.stay.findUnique({
+      where: { id: stayId },
+      select: { room: { select: { name: true } }, guests: { where: { isMain: true }, take: 1, select: { firstName: true, lastName: true } } },
+    });
+    const g = stay?.guests[0];
+    return [g && `${g.firstName} ${g.lastName}`, stay?.room?.name].filter(Boolean).join(' · ') || null;
   }
 
   // ---------------------------------------------------------------------------
@@ -198,7 +255,8 @@ export class BillingService {
    * CHECKED_IN -> CHECKED_OUT: freezes the bill into a sequentially numbered invoice,
    * frees the room for cleaning, then renders the PDF.
    */
-  async checkout(p: AuthPrincipal, stayId: string, dto: CheckoutDto): Promise<CheckoutResultDto> {
+  /** `p.userId` is null when the system checks the guest out (end of stay). */
+  async checkout(p: Actor, stayId: string, dto: CheckoutDto, opts: { automatic?: boolean } = {}): Promise<CheckoutResultDto> {
     const issuedOn = todayIso();
     const year = Number(issuedOn.slice(0, 4));
 
@@ -283,6 +341,7 @@ export class BillingService {
     // The room is now « to clean »: every open screen (housekeeping too) updates at once.
     this.realtime.staysChanged(p.riadId);
     this.realtime.roomsChanged(p.riadId);
+    await this.notifications.stay('CHECKOUT', p.riadId, stayId, p.userId, { balance: result.balance, automatic: opts.automatic });
     const i = result.invoice;
     return {
       invoice: { id: i.id, number: i.number, totalTtc: i.totalTtc, issuedAt: i.issuedAt.toISOString() },

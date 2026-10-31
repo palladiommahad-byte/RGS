@@ -1,8 +1,9 @@
 'use client';
 
-import { PAYMENT_METHODS, parseMadToCentimes, paymentFormSchema, type PaymentMethod } from '@riad/shared';
+import { PAYMENT_METHODS, parseMadToCentimes, paymentFormSchema, type CashWalletDto, type PaymentMethod } from '@riad/shared';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
+import { useAuth } from '@/components/auth-provider';
 import { FormError, FormField } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +15,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { centimesToInput } from '@/lib/format';
 import { fieldErrors, type FieldErrors } from '@/lib/forms';
-import { useAction } from '@/lib/use-api';
+import { useAction, useApiQuery } from '@/lib/use-api';
 import { cn } from '@/lib/utils';
 
 /** Record a payment; the amount is prefilled with what the guest still owes. */
@@ -38,14 +40,21 @@ export function PaymentDialog({
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [note, setNote] = useState('');
+  const [walletId, setWalletId] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
   const { run, pending, error, setError } = useAction();
+  const { user, can } = useAuth();
+  // Cash goes into a cash box: yours by default; managers, who see every box, can pick.
+  const boxes = useApiQuery<CashWalletDto[]>(open && can('expenses.write', 'expenses.write_petty_cash') ? '/cash-wallets' : null);
+  const active = (boxes.data ?? []).filter((b) => b.isActive);
+  const defaultBox = (active.find((b) => b.holder.id === user.id) ?? active[0])?.id ?? '';
 
   useEffect(() => {
     if (!open) return;
     setAmount(suggested > 0 ? centimesToInput(suggested) : '');
     setMethod('CASH');
     setNote('');
+    setWalletId('');
     setErrors({});
     setError(null);
   }, [open, suggested, setError]);
@@ -58,7 +67,12 @@ export function PaymentDialog({
     const ok = await run(() =>
       api(`/stays/${stayId}/payments`, {
         method: 'POST',
-        body: { amount: parseMadToCentimes(parsed.data.amountMad), method, note: parsed.data.note },
+        body: {
+          amount: parseMadToCentimes(parsed.data.amountMad),
+          method,
+          note: parsed.data.note,
+          ...(method === 'CASH' && (walletId || defaultBox) ? { walletId: walletId || defaultBox } : {}),
+        },
       }),
     );
     if (ok) {
@@ -104,6 +118,20 @@ export function PaymentDialog({
               ))}
             </div>
           </fieldset>
+          {method === 'CASH' && active.length > 1 && (
+            <FormField id="pay-box" label={t('payments.cashBox')}>
+              <Select id="pay-box" value={walletId || defaultBox} onChange={(e) => setWalletId(e.target.value)}>
+                {active.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} · {b.holder.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          )}
+          {method === 'CASH' && active.length === 1 && (
+            <p className="text-sm text-muted-foreground">{t('payments.intoBox', { name: active[0]!.name })}</p>
+          )}
           <FormField id="pay-note" label={t('payments.note')} error={errors.note}>
             <Input id="pay-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </FormField>

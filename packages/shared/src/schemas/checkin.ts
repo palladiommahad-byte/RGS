@@ -30,6 +30,7 @@ export type PassportScanDto = {
   mrz: { valid: boolean; raw: string; fields: MrzFieldsDto } | null;
 };
 
-export type CheckinDoneDto = { riadName: string; wifiInfo: string | null };
+/** `checkedIn`: the guest is in their room now; false = reception confirms (room not free). */
+export type CheckinDoneDto = { riadName: string; wifiInfo: string | null; checkedIn: boolean; roomName: string | null };
 
 export type GuestFilesDto = { passportPhotoUrl: string | null; signatureUrl: string | null };

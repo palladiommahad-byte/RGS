@@ -20,7 +20,13 @@
     "pageOf": "Page {page} sur {pages}",
     "pagination": "Pagination",
     "results": "{count, plural, =0 {Aucun résultat} one {# résultat} other {# résultats}}",
-    "mainMenu": "Menu principal"
+    "mainMenu": "Menu principal",
+    "collapseMenu": "Réduire le menu",
+    "expandMenu": "Agrandir le menu",
+    "notifications": "Notifications",
+    "account": "Mon compte",
+    "seeAll": "Ouvrir la page Aujourd'hui",
+    "noResults": "Aucun résultat"
   },
   "localeNames": {
     "en": "English",
@@ -72,7 +78,10 @@
     "users": "Utilisateurs",
     "settings": "Paramètres",
     "clock": "Pointage",
-    "calendar": "Calendrier"
+    "calendar": "Calendrier",
+    "audit": "Journal d'activité",
+    "payments": "Paiements reçus",
+    "cashBox": "Caisse"
   },
   "dashboard": {
     "hello": "Bonjour {name}",
@@ -122,7 +131,8 @@
     "EMAIL_TAKEN": "Cet e-mail est déjà utilisé.",
     "ROLE_NOT_ASSIGNABLE": "Vous ne pouvez pas donner un rôle qui a plus de droits que vous.",
     "USER_NOT_MANAGEABLE": "Ce compte a des droits que vous n’avez pas.",
-    "CANNOT_CHANGE_SELF": "Vous ne pouvez pas changer votre propre rôle ni vous désactiver."
+    "CANNOT_CHANGE_SELF": "Vous ne pouvez pas changer votre propre rôle ni vous désactiver.",
+    "ROOM_BOOKED": "Cette chambre est déjà réservée pour certaines de ces nuits."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -139,7 +149,8 @@
     "password_too_short": "Au moins 8 caractères.",
     "password_mismatch": "Les deux mots de passe ne correspondent pas.",
     "invalid_prefix": "Lettres majuscules, chiffres et « - » (12 au maximum).",
-    "invalid_ice": "L'ICE comporte 15 chiffres."
+    "invalid_ice": "L'ICE comporte 15 chiffres.",
+    "invalid_time": "Format 24 h, par exemple 12:00."
   },
   "roomStatus": {
     "FREE": "Libre",
@@ -229,7 +240,6 @@
   "qr": {
     "title": "QR codes d'enregistrement",
     "hint": "Imprimez cette page : un QR pour l'entrée, un pour chaque chambre.",
-    "entrance": "Entrée",
     "scan": "Check-in · Enregistrement · تسجيل الوصول",
     "baseUrl": "Adresse encodée : {url}"
   },
@@ -293,7 +303,14 @@
     "dates": "Dates",
     "status": "Statut",
     "arrivesToday": "Arrive aujourd'hui",
-    "leavesToday": "Part aujourd'hui"
+    "leavesToday": "Part aujourd'hui",
+    "booked": {
+      "conflict": "Cette chambre est réservée par {guest} du {from} au {to}.",
+      "anotherGuest": "un autre client",
+      "moveHint": "Déplacer le client dans une chambre libre pour toutes ces nuits :",
+      "moveTo": "Déplacer vers {room}",
+      "noFreeRoom": "Aucune chambre n’est libre pour toutes ces nuits. Raccourcissez le séjour ou modifiez l’autre réservation."
+    }
   },
   "guest": {
     "firstName": "Prénom",
@@ -361,7 +378,9 @@
     "done": {
       "title": "Merci, votre enregistrement est envoyé !",
       "reception": "Présentez-vous à la réception pour recevoir votre clé.",
-      "wifi": "Wi-Fi"
+      "wifi": "Wi-Fi",
+      "checkedInTitle": "Bienvenue ! Votre arrivée est enregistrée.",
+      "checkedIn": "Votre chambre : {room}. Bon séjour !"
     },
     "errors": {
       "generic": "Une erreur est survenue. Réessayez ou adressez-vous à la réception.",
@@ -437,7 +456,9 @@
     "note": "Note (facultatif)",
     "empty": "Aucun paiement enregistré.",
     "deleteConfirm": "Supprimer ce paiement de {amount} ?",
-    "receivedBy": "par {name}"
+    "receivedBy": "par {name}",
+    "cashBox": "Caisse",
+    "intoBox": "Les espèces vont dans « {name} »."
   },
   "invoices": {
     "title": "Factures",
@@ -542,7 +563,8 @@
     "movement": {
       "TOP_UP": "Approvisionnement",
       "EXPENSE": "Dépense",
-      "ADJUSTMENT": "Correction"
+      "ADJUSTMENT": "Correction",
+      "PAYMENT": "Paiement client"
     }
   },
   "recurring": {
@@ -839,7 +861,13 @@
     "wifiInfo": "Informations Wi-Fi",
     "wifiHint": "Affiché au client à la fin de son enregistrement en ligne.",
     "wifiPlaceholder": "Réseau : Riad-Guest\nMot de passe : …",
-    "saved": "Enregistré."
+    "saved": "Enregistré.",
+    "stayCycle": "Départ et ménage automatiques",
+    "checkoutTime": "Heure de départ",
+    "checkoutTimeHint": "Les clients encore présents sont enregistrés au départ à cette heure, le jour de leur départ.",
+    "roomReadyTime": "Chambres prêtes à",
+    "roomReadyTimeHint": "Les chambres encore « à nettoyer » redeviennent libres à cette heure.",
+    "stayCycleHint": "Le personnel peut toujours faire un départ ou marquer une chambre prête plus tôt. Les chambres hors service ne sont jamais modifiées."
   },
   "users": {
     "subtitle": "Comptes du personnel et rôles. Un compte désactivé est déconnecté immédiatement.",
@@ -925,5 +953,217 @@
     "fromQr": "Saisi par le client (QR)",
     "openStay": "Ouvrir le séjour",
     "openToConfirm": "Vérifier et confirmer"
+  },
+  "audit": {
+    "subtitle": "Chaque modification sensible : qui a fait quoi, et quand.",
+    "all": "Tout",
+    "everyone": "Tout le monde",
+    "person": "Personne",
+    "from": "Du",
+    "to": "Au",
+    "clear": "Effacer les filtres",
+    "system": "Client ou système",
+    "empty": "Aucune activité pour ces filtres.",
+    "details": "Détails",
+    "open": "Ouvrir",
+    "areas": {
+      "stays": "Séjours & clients",
+      "billing": "Paiements",
+      "expenses": "Dépenses",
+      "rooms": "Chambres",
+      "hr": "Personnel",
+      "finance": "Finances & taxes",
+      "admin": "Utilisateurs & réglages"
+    }
+  },
+  "auditAction": {
+    "stay": {
+      "create": "A créé un séjour",
+      "update": "A modifié un séjour",
+      "confirm": "A confirmé une arrivée",
+      "reject": "A refusé un enregistrement",
+      "cancel": "A annulé un séjour",
+      "checkout": "A clôturé un séjour (départ)",
+      "self_checkin": "Enregistrement du client par QR code",
+      "create_checked_in": "A créé un séjour avec arrivée immédiate",
+      "checkout_balance_due": "A clôturé un séjour avec un solde dû",
+      "update_room_move": "A changé la chambre d'un séjour"
+    },
+    "guest": {
+      "create": "A ajouté un client",
+      "update": "A modifié un client",
+      "delete": "A retiré un client",
+      "passport_view": "A consulté une photo de passeport"
+    },
+    "register": {
+      "export": "A exporté le registre de police"
+    },
+    "payment": {
+      "create": "A enregistré un paiement",
+      "delete": "A supprimé un paiement"
+    },
+    "extra": {
+      "create": "A ajouté un extra",
+      "delete": "A supprimé un extra"
+    },
+    "invoice": {
+      "download": "A téléchargé une facture"
+    },
+    "expense": {
+      "create": "A enregistré une dépense",
+      "update": "A modifié une dépense",
+      "delete": "A supprimé une dépense",
+      "recurring_create": "A enregistré une dépense récurrente"
+    },
+    "supplier": {
+      "create": "A ajouté un fournisseur",
+      "update": "A modifié un fournisseur",
+      "delete": "A supprimé un fournisseur"
+    },
+    "wallet": {
+      "create": "A créé une caisse",
+      "update": "A modifié une caisse",
+      "top_up": "A alimenté une caisse",
+      "adjust": "A ajusté le solde d'une caisse"
+    },
+    "recurring": {
+      "create": "A créé une dépense récurrente",
+      "update": "A modifié une dépense récurrente",
+      "deactivate": "A arrêté une dépense récurrente",
+      "delete": "A supprimé une dépense récurrente"
+    },
+    "room": {
+      "create": "A ajouté une chambre",
+      "update": "A modifié une chambre",
+      "status": "A changé l'état d'une chambre",
+      "qr_regenerate": "A généré un nouveau QR de chambre",
+      "deactivate": "A désactivé une chambre",
+      "delete": "A supprimé une chambre"
+    },
+    "employee": {
+      "create": "A ajouté un employé",
+      "update": "A modifié un employé",
+      "delete": "A supprimé un employé",
+      "contract_view": "A consulté un contrat",
+      "contract_upload": "A ajouté un contrat",
+      "badge_rotate": "A émis un nouveau badge"
+    },
+    "attendance": {
+      "create": "A ajouté un pointage",
+      "update": "A modifié un pointage",
+      "delete": "A supprimé un pointage"
+    },
+    "leave": {
+      "create": "A ajouté un congé",
+      "update": "A modifié un congé",
+      "delete": "A supprimé un congé",
+      "approved": "A approuvé un congé",
+      "rejected": "A refusé un congé",
+      "pending": "A remis un congé en attente"
+    },
+    "payroll": {
+      "generate": "A généré la paie",
+      "update": "A modifié une fiche de paie",
+      "pay": "A marqué un salaire payé",
+      "unpay": "A annulé le paiement d'un salaire",
+      "delete": "A supprimé une fiche de paie",
+      "export": "A exporté la paie"
+    },
+    "tax_setting": {
+      "create": "A ajouté un taux de taxe",
+      "update": "A modifié un taux de taxe",
+      "delete": "A supprimé un taux de taxe"
+    },
+    "tax_report": {
+      "export": "A exporté le rapport fiscal"
+    },
+    "finance": {
+      "pnl_export": "A exporté le compte de résultat"
+    },
+    "user": {
+      "create": "A créé un compte",
+      "update": "A modifié un compte",
+      "password_reset": "A réinitialisé un mot de passe",
+      "password_change": "A changé son mot de passe"
+    },
+    "riad": {
+      "update": "A modifié les réglages du riad",
+      "logo_upload": "A ajouté le logo",
+      "logo_remove": "A retiré le logo"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "labelUnread": "{count, plural, one {Notifications, # non lue} other {Notifications, # non lues}}",
+    "markAllRead": "Tout marquer comme lu",
+    "all": "Toutes",
+    "unread": "{count, plural, =0 {Non lues} other {Non lues (#)}}",
+    "empty": "Vous êtes à jour.",
+    "emptyUnread": "Aucune notification non lue.",
+    "new": "Nouveau",
+    "by": "par {name}",
+    "noRoom": "Chambre non choisie",
+    "nights": "{count, plural, one {# nuit} other {# nuits}}",
+    "checkinRequest": "Nouvel enregistrement QR — à confirmer",
+    "checkin": "Client arrivé",
+    "checkout": "Départ : {room}",
+    "toClean": "chambre à nettoyer",
+    "balanceDue": "reste à payer {amount}",
+    "checkoutToday": "Départ aujourd'hui",
+    "checkoutTomorrow": "Départ demain",
+    "balance": "solde {amount}",
+    "cash": {
+      "TOP_UP": "{wallet} alimentée",
+      "ADJUSTMENT": "{wallet} corrigée",
+      "EXPENSE": "Payé depuis {wallet}",
+      "EXPENSE_EDIT": "Dépense de {wallet} modifiée",
+      "EXPENSE_DELETE": "Dépense de {wallet} supprimée, l'argent est rendu",
+      "GUEST_PAYMENT": "Espèces client dans {wallet}",
+      "GUEST_PAYMENT_DELETE": "Paiement client retiré de {wallet}"
+    },
+    "checkinRoomNotFree": "Enregistrement QR : {room} n’est pas libre — choisir une chambre",
+    "checkoutAutomatic": "Départ automatique : {room}"
+  },
+  "paymentsPage": {
+    "subtitle": "Chaque paiement client : espèces, carte, virement — et qui l’a reçu.",
+    "preset": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "last7": "7 derniers jours",
+      "month": "Ce mois",
+      "custom": "Choisir les dates"
+    },
+    "method": "Moyen",
+    "allMethods": "Tous les moyens",
+    "receivedBy": "Reçu par",
+    "total": "Total reçu",
+    "count": "{count, plural, =0 {Aucun paiement} one {# paiement} other {# paiements}}",
+    "empty": "Aucun paiement pour ces filtres."
+  },
+  "cashBox": {
+    "subtitle": "L’argent liquide : paiements clients, alimentations, dépenses et corrections.",
+    "none": "Aucune caisse pour l’instant.",
+    "create": "Créer une caisse",
+    "manage": "Gérer les caisses",
+    "spend": "Payer une dépense",
+    "preset": {
+      "today": "Aujourd'hui",
+      "last7": "7 derniers jours",
+      "month": "Ce mois",
+      "all": "Tout"
+    },
+    "allMovements": "Tous les mouvements",
+    "type": {
+      "PAYMENT": "Paiement client",
+      "TOP_UP": "Alimentation",
+      "EXPENSE": "Dépense",
+      "ADJUSTMENT": "Correction"
+    },
+    "in": "Entrées",
+    "inHint": "dont {guests} des clients",
+    "out": "Sorties",
+    "outHint": "Dépenses et corrections",
+    "net": "Variation",
+    "after": "solde {amount}"
   }
 }

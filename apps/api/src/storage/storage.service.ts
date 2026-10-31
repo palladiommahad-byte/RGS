@@ -1,13 +1,15 @@
 import {
   CopyObjectCommand,
+  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { env } from '../config/env';
 
 export type BucketName = 'passports' | 'receipts' | 'documents';
@@ -17,7 +19,7 @@ export type BucketName = 'passports' | 'receipts' | 'documents';
  * Every bucket is private: objects are only reachable through short-lived signed URLs.
  */
 @Injectable()
-export class StorageService {
+export class StorageService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StorageService.name);
   private readonly s3: S3Client;
   /** Signs links for browsers; differs from `s3` when the API reaches storage on an internal address. */
@@ -40,6 +42,42 @@ export class StorageService {
       receipts: e.S3_BUCKET_RECEIPTS,
       documents: e.S3_BUCKET_DOCUMENTS,
     };
+  }
+
+  /** Creates missing buckets in the background, so the API never waits on storage to start. */
+  onApplicationBootstrap(): void {
+    void this.ensureBuckets();
+  }
+
+  /**
+   * Creates each bucket that does not exist yet (fresh MinIO). Retries while storage is
+   * starting; on a provider where buckets are made by hand (R2), a refusal is only logged.
+   */
+  async ensureBuckets(attempts = 15, delayMs = 2000): Promise<void> {
+    for (const name of Object.values(this.buckets)) {
+      for (let i = 1; ; i++) {
+        try {
+          await this.s3.send(new HeadBucketCommand({ Bucket: name }));
+          break;
+        } catch (e) {
+          const status = (e as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+          if (status === 404) {
+            try {
+              await this.s3.send(new CreateBucketCommand({ Bucket: name }));
+              this.logger.log(`Created bucket ${name}`);
+            } catch (err) {
+              this.logger.warn(`Could not create bucket ${name}: ${String(err)}`);
+            }
+            break;
+          }
+          if (status !== undefined || i >= attempts) {
+            this.logger.warn(`Bucket ${name} is not reachable: ${String(e)}`);
+            break;
+          }
+          await new Promise((r) => setTimeout(r, delayMs)); // storage still starting
+        }
+      }
+    }
   }
 
   async put(bucket: BucketName, key: string, body: Buffer, contentType: string): Promise<void> {

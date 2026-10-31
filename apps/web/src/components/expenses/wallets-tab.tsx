@@ -118,7 +118,11 @@ function WalletCard({ wallet, manager, onChanged }: { wallet: CashWalletDto; man
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="truncate">
-                    {mv.expense ? (mv.expense.supplier ?? mv.expense.category) : t(`wallets.movement.${mv.type}`)}
+                    {mv.expense
+                      ? (mv.expense.supplier ?? mv.expense.category)
+                      : mv.payment
+                        ? [mv.payment.guestName, mv.payment.roomName].filter(Boolean).join(' · ') || t(`wallets.movement.${mv.type}`)
+                        : t(`wallets.movement.${mv.type}`)}
                     {mv.note && <span className="text-muted-foreground"> · {mv.note}</span>}
                   </div>
                   <div className="text-xs text-muted-foreground">
