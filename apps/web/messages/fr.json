@@ -133,7 +133,8 @@
     "USER_NOT_MANAGEABLE": "Ce compte a des droits que vous n’avez pas.",
     "CANNOT_CHANGE_SELF": "Vous ne pouvez pas changer votre propre rôle ni vous désactiver.",
     "ROOM_BOOKED": "Cette chambre est déjà réservée pour certaines de ces nuits.",
-    "BACKUP_IN_PROGRESS": "Une sauvegarde est déjà en attente ou en cours."
+    "BACKUP_IN_PROGRESS": "Une sauvegarde est déjà en attente ou en cours.",
+    "ROLE_LOCKED": "Le rôle propriétaire a toujours tous les droits."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -1091,6 +1092,12 @@
       "update": "A modifié les réglages du riad",
       "logo_upload": "A ajouté le logo",
       "logo_remove": "A retiré le logo"
+    },
+    "role": {
+      "update": "A modifié les droits d’un rôle"
+    },
+    "backup": {
+      "request": "A demandé une sauvegarde"
     }
   },
   "notifications": {
@@ -1195,5 +1202,19 @@
       "REQUESTED": "En attente"
     },
     "hint": "Chaque nuit : la base de données et tous les fichiers (photos de passeport, justificatifs, contrats, factures), chiffrés et copiés chez un autre prestataire. Le nom sous chaque sauvegarde sert à la restauration."
+  },
+  "roles": {
+    "hintOwner": "Choisissez ce que chaque rôle peut faire. Les changements s’appliquent tout de suite à tous ceux qui ont ce rôle.",
+    "hintReadOnly": "Ce que chaque rôle peut faire. Seul un propriétaire peut le modifier.",
+    "ownerLocked": "Le propriétaire a toujours tous les droits. Seul un propriétaire peut modifier, désactiver ou réinitialiser un compte propriétaire.",
+    "group": {
+      "stays": "Séjours & chambres",
+      "money": "Argent",
+      "staff": "Personnel",
+      "admin": "Administration"
+    },
+    "save": "Enregistrer le rôle",
+    "reset": "Revenir aux droits par défaut",
+    "appliesTo": "{count, plural, =0 {Personne n’a encore ce rôle} one {S’applique à # personne} other {S’applique à # personnes}}"
   }
 }

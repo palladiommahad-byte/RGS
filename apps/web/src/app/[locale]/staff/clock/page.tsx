@@ -27,7 +27,7 @@ const SAME_BADGE_PAUSE_MS = 5000;
  * Reception-tablet badge clock: employees show their staff QR to the camera (or a USB/
  * Bluetooth scanner types it into the field). One scan = arrival, the next = departure.
  */
-export default function StaffClockPage() {
+function StaffClock() {
   const t = useTranslations();
   const locale = useLocale();
   const { user } = useAuth();
@@ -250,4 +250,12 @@ function beep(frequency: number): void {
   } catch {
     // no audio
   }
+}
+
+/** The badge clock runs on the reception tablet: reception, managers and owners. */
+export default function StaffClockPage() {
+  const t = useTranslations();
+  const { can } = useAuth();
+  if (!can('stays.read', 'hr.read')) return <p className="p-6 text-muted-foreground">{t('dashboard.forbidden')}</p>;
+  return <StaffClock />;
 }

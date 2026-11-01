@@ -31,11 +31,13 @@ export type RoleKey = (typeof ROLE_KEYS)[number];
 
 const P = PERMISSIONS;
 
-const MANAGER_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter((p) => p !== P.SETTINGS_RIAD);
-
+/**
+ * Default rights (the seed, and "Reset to default" in the role editor). The owner always
+ * has everything; a manager too, but only owners can touch owner accounts and edit roles.
+ */
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, Permission[]> = {
   OWNER: [...ALL_PERMISSIONS],
-  MANAGER: MANAGER_PERMISSIONS,
+  MANAGER: [...ALL_PERMISSIONS],
   RECEPTION: [
     P.STAYS_READ,
     P.STAYS_WRITE,
@@ -69,4 +71,46 @@ export function hasAllPermissions(granted: readonly string[], required: readonly
 export function hasAnyPermission(granted: readonly string[], required: readonly string[]): boolean {
   const set = new Set(granted);
   return required.some((r) => set.has(r));
+}
+
+/** The owner role always holds every right: it cannot be edited. */
+export const LOCKED_ROLE_KEYS: readonly string[] = ['OWNER'];
+
+/** Rights that only make sense with another one: granting the first grants the second. */
+export const IMPLIED_PERMISSIONS: Partial<Record<Permission, Permission[]>> = {
+  [P.STAYS_WRITE]: [P.STAYS_READ],
+  [P.CHECKIN_CONFIRM]: [P.STAYS_READ],
+  [P.ROOMS_WRITE]: [P.ROOMS_READ],
+  [P.ROOMS_STATUS_UPDATE]: [P.ROOMS_READ],
+  [P.PAYMENTS_WRITE]: [P.STAYS_READ],
+  [P.EXPENSES_WRITE]: [P.EXPENSES_READ_ALL],
+  [P.HR_WRITE]: [P.HR_READ],
+};
+
+/** A set of rights with everything they imply, in the order of ALL_PERMISSIONS. */
+export function withImplied(codes: readonly string[]): Permission[] {
+  const set = new Set(codes.filter((c): c is Permission => (ALL_PERMISSIONS as string[]).includes(c)));
+  for (const c of [...set]) for (const dep of IMPLIED_PERMISSIONS[c] ?? []) set.add(dep);
+  return ALL_PERMISSIONS.filter((p) => set.has(p));
+}
+
+/** How the role editor groups the rights. */
+export const PERMISSION_GROUPS: { key: 'stays' | 'money' | 'staff' | 'admin'; permissions: Permission[] }[] = [
+  { key: 'stays', permissions: [P.STAYS_READ, P.STAYS_WRITE, P.CHECKIN_CONFIRM, P.ROOMS_READ, P.ROOMS_WRITE, P.ROOMS_STATUS_UPDATE] },
+  { key: 'money', permissions: [P.PAYMENTS_WRITE, P.EXPENSES_WRITE_PETTY_CASH, P.EXPENSES_WRITE, P.EXPENSES_READ_ALL, P.FINANCE_REPORTS, P.TAX_SETTINGS] },
+  { key: 'staff', permissions: [P.HR_READ, P.HR_WRITE] },
+  { key: 'admin', permissions: [P.USERS_MANAGE, P.SETTINGS_RIAD, P.AUDIT_READ] },
+];
+
+/**
+ * May someone with `actor` role/rights give the `target` role, or touch an account that has
+ * it? Owner accounts and the owner role: owners only. Others: no privilege escalation (the
+ * actor must hold every right of the target).
+ */
+export function canManageRole(
+  actor: { key: string; permissions: readonly string[] },
+  target: { key: string; permissions: readonly string[] },
+): boolean {
+  if (target.key === 'OWNER') return actor.key === 'OWNER';
+  return hasAllPermissions(actor.permissions, target.permissions);
 }

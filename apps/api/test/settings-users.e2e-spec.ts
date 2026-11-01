@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import type { AuthUser, Paginated, RiadSettingsDto, RoleDto, UserDto } from '@riad/shared';
+import { DEFAULT_ROLE_PERMISSIONS, type AuthUser, type Paginated, type RiadSettingsDto, type RoleDto, type UserDto } from '@riad/shared';
 import sharp from 'sharp';
 import request from 'supertest';
 import type TestAgent from 'supertest/lib/agent';
@@ -49,10 +49,10 @@ describe('Settings & users (e2e)', () => {
   });
 
   describe('riad settings', () => {
-    it('is reserved to the owner', async () => {
-      await manager.get(`${API}/settings/riad`).expect(403);
-      await manager.patch(`${API}/settings/riad`).send({ name: 'X' }).expect(403);
+    it('is for owner and manager, not reception', async () => {
+      await manager.get(`${API}/settings/riad`).expect(200);
       await reception.get(`${API}/settings/riad`).expect(403);
+      await reception.patch(`${API}/settings/riad`).send({ name: 'X' }).expect(403);
     });
 
     it('updates the profile, normalises the prefix and previews the next invoice number', async () => {
@@ -198,6 +198,48 @@ describe('Settings & users (e2e)', () => {
       await elsewhere.post(`${API}/auth/refresh`).expect(401);
       await login(email, PASSWORD).expect(401);
       await login(email, 'tout-nouveau').expect(200);
+    });
+  });
+
+  describe('role editor', () => {
+    const roleOf = async (agent: TestAgent, key: string) =>
+      ((await agent.get(`${API}/roles`).expect(200)).body as RoleDto[]).find((r) => r.key === key)!;
+
+    it('is for owners, and the owner role is locked', async () => {
+      expect((await roleOf(manager, 'RECEPTION')).editable).toBe(false);
+      expect((await roleOf(owner, 'RECEPTION')).editable).toBe(true);
+      expect((await roleOf(owner, 'OWNER')).editable).toBe(false);
+      // A manager holds every right by default, yet can neither edit roles nor give the owner role.
+      expect((await roleOf(manager, 'OWNER')).assignable).toBe(false);
+      await manager.patch(`${API}/roles/${roles.RECEPTION}`).send({ permissions: [] }).expect(403);
+      expect((await owner.patch(`${API}/roles/${roles.OWNER}`).send({ permissions: [] }).expect(409)).body.code).toBe('ROLE_LOCKED');
+      await owner.patch(`${API}/roles/${roles.RECEPTION}`).send({ permissions: ['rooms.fly'] }).expect(400);
+    });
+
+    it('changes what everyone with the role may do, at once, with what each right needs', async () => {
+      const housekeeping = await loginAs(app, a.emails.HOUSEKEEPING, 'tout-nouveau');
+      await housekeeping.get(`${API}/stays`).expect(403);
+
+      // Editing stays implies seeing them.
+      const edited = (
+        await owner
+          .patch(`${API}/roles/${roles.HOUSEKEEPING}`)
+          .send({ permissions: ['rooms.read', 'rooms.status.update', 'stays.write'] })
+          .expect(200)
+      ).body as RoleDto;
+      expect(edited.permissions).toEqual(['rooms.read', 'rooms.status.update', 'stays.read', 'stays.write']);
+      await housekeeping.get(`${API}/stays`).expect(200);
+
+      const log = await prisma.auditLog.findFirstOrThrow({ where: { action: 'role.update', entityId: roles.HOUSEKEEPING } });
+      expect(log.diff).toEqual({ role: 'HOUSEKEEPING', added: ['stays.read', 'stays.write'], removed: [] });
+
+      // Back to the default: rooms only.
+      await owner.patch(`${API}/roles/${roles.HOUSEKEEPING}`).send({ permissions: DEFAULT_ROLE_PERMISSIONS.HOUSEKEEPING }).expect(200);
+      await housekeeping.get(`${API}/stays`).expect(403);
+    });
+
+    it('isolates riads', async () => {
+      await ownerB.patch(`${API}/roles/${roles.RECEPTION}`).send({ permissions: [] }).expect(404);
     });
   });
 });

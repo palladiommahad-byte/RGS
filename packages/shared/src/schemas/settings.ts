@@ -92,6 +92,8 @@ export type UserDto = {
 export type RoleDto = RoleRef & {
   permissions: string[];
   userCount: number;
-  /** The current user may give this role (no privilege escalation). */
+  /** The current user may give this role (owners only for the owner role; else no privilege escalation). */
   assignable: boolean;
+  /** The current user may change its rights (owners, for every role but the owner one). */
+  editable: boolean;
 };

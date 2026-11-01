@@ -14,6 +14,7 @@ describe('Backups (e2e)', () => {
   let a: RiadFixture;
   let owner: TestAgent;
   let manager: TestAgent;
+  let reception: TestAgent;
   let monitor: BackupsService;
 
   const status = async () => (await owner.get(`${API}/backups`).expect(200)).body as BackupStatusDto;
@@ -28,6 +29,7 @@ describe('Backups (e2e)', () => {
     monitor = app.get(BackupsService);
     owner = await loginAs(app, a.emails.OWNER);
     manager = await loginAs(app, a.emails.MANAGER);
+    reception = await loginAs(app, a.emails.RECEPTION);
   });
 
   afterAll(async () => {
@@ -36,9 +38,10 @@ describe('Backups (e2e)', () => {
     await prisma?.$disconnect();
   });
 
-  it('is for the owner only', async () => {
-    await manager.get(`${API}/backups`).expect(403);
-    await manager.post(`${API}/backups`).expect(403);
+  it('is for riad settings holders (owner, manager), not reception', async () => {
+    await reception.get(`${API}/backups`).expect(403);
+    await reception.post(`${API}/backups`).expect(403);
+    await manager.get(`${API}/backups`).expect(200);
   });
 
   it('stays silent where no backup service ever ran', async () => {
@@ -76,7 +79,7 @@ describe('Backups (e2e)', () => {
     expect(await monitor.check()).toBe(0);
     const notes = (await owner.get(`${API}/notifications`).expect(200)).body as NotificationListDto;
     expect(notes.items[0]).toMatchObject({ type: 'BACKUP', actor: null, data: { kind: 'FAILED', runId: failed.id, error: 'pg_dump: connection refused' } });
-    expect((await manager.get(`${API}/notifications`).expect(200)).body.items.map((n: { type: string }) => n.type)).not.toContain('BACKUP');
+    expect((await reception.get(`${API}/notifications`).expect(200)).body.items.map((n: { type: string }) => n.type)).not.toContain('BACKUP');
   });
 
   it('alerts once a day while the last good backup is too old', async () => {

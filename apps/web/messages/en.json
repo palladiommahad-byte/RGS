@@ -244,7 +244,8 @@
     "USER_NOT_MANAGEABLE": "This account has rights you don't have.",
     "CANNOT_CHANGE_SELF": "You can't change your own role or deactivate yourself.",
     "ROOM_BOOKED": "This room is already booked for some of these nights.",
-    "BACKUP_IN_PROGRESS": "A backup is already waiting or running."
+    "BACKUP_IN_PROGRESS": "A backup is already waiting or running.",
+    "ROLE_LOCKED": "The owner role always has every right."
   },
   "roomStatus": {
     "FREE": "Free",
@@ -1091,6 +1092,12 @@
       "update": "Edited the riad settings",
       "logo_upload": "Uploaded the logo",
       "logo_remove": "Removed the logo"
+    },
+    "role": {
+      "update": "Changed what a role may do"
+    },
+    "backup": {
+      "request": "Asked for a backup"
     }
   },
   "notifications": {
@@ -1195,5 +1202,19 @@
       "REQUESTED": "Waiting"
     },
     "hint": "Every night: the database and every stored file (passport photos, receipts, contracts, invoices), encrypted and copied to another provider. The name under each backup is what the restore needs."
+  },
+  "roles": {
+    "hintOwner": "Choose what each role may do. Changes apply at once to everyone with the role.",
+    "hintReadOnly": "What each role may do. Only an owner can change it.",
+    "ownerLocked": "The owner always has every right. Only an owner can edit, deactivate or reset an owner account.",
+    "group": {
+      "stays": "Stays & rooms",
+      "money": "Money",
+      "staff": "Staff",
+      "admin": "Administration"
+    },
+    "save": "Save the role",
+    "reset": "Reset to default",
+    "appliesTo": "{count, plural, =0 {Nobody has this role yet} one {Applies to # person} other {Applies to # people}}"
   }
 }

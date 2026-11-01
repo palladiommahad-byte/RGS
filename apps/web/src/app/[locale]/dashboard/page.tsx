@@ -24,7 +24,8 @@ import { WeekCalendar, weekStartOf } from '@/components/stays/week-calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from '@/i18n/navigation';
+import { NAV_ITEMS } from '@/components/dashboard/nav-items';
+import { Link, useRouter } from '@/i18n/navigation';
 import { formatDate } from '@/lib/format';
 import { useApiQuery } from '@/lib/use-api';
 
@@ -35,6 +36,12 @@ export default function TodayPage() {
   const locale = useLocale();
   const { can } = useAuth();
   const canStays = can('stays.read');
+  const router = useRouter();
+  // Today is the stays desk: others (housekeeping…) start on the first page they may open.
+  const landing = canStays ? null : NAV_ITEMS.find((i) => i.href !== '/dashboard' && i.anyOf.length > 0 && can(...i.anyOf));
+  useEffect(() => {
+    if (landing) router.replace(landing.href);
+  }, [landing, router]);
   const [weekStart, setWeekStart] = useState<IsoDate>(() => weekStartOf(todayIso()));
   const [openStay, setOpenStay] = useState<string | null>(null);
 

@@ -9,7 +9,7 @@ export const AUDIT_AREAS = {
   rooms: ['room'],
   hr: ['employee', 'attendance', 'leave', 'payroll'],
   finance: ['finance', 'tax_setting', 'tax_report'],
-  admin: ['user', 'riad'],
+  admin: ['user', 'role', 'riad', 'backup'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AuditArea = keyof typeof AUDIT_AREAS;

@@ -3,7 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS as P, type Paginated, type RoleDto, type UserDto } from '@riad/shared';
 import { CurrentUser, RequirePermissions } from '../common/auth/decorators';
 import type { AuthPrincipal } from '../common/auth/principal';
-import { CreateUserDto, ListUsersQueryDto, ResetPasswordDto, UpdateUserDto } from './users.dto';
+import { CreateUserDto, ListUsersQueryDto, ResetPasswordDto, UpdateRoleDto, UpdateUserDto } from './users.dto';
 import { UsersService } from './users.service';
 
 /** Accounts are never deleted (the audit log points to them): deactivate instead. */
@@ -21,6 +21,12 @@ export class UsersController {
   @Get('roles')
   roles(@CurrentUser() p: AuthPrincipal): Promise<RoleDto[]> {
     return this.users.roles(p);
+  }
+
+  /** Owner only (checked in the service). */
+  @Patch('roles/:id')
+  updateRole(@CurrentUser() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateRoleDto): Promise<RoleDto> {
+    return this.users.updateRole(p, id, dto);
   }
 
   @Post('users')

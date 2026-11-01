@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ALL_PERMISSIONS,
   newUserFormSchema,
   resetPasswordSchema,
   roleLabel,
@@ -10,7 +9,7 @@ import {
   type RoleDto,
   type UserDto,
 } from '@riad/shared';
-import { Check, KeyRound, Pencil, Plus, Power, Search, Wand2 } from 'lucide-react';
+import { KeyRound, Pencil, Plus, Power, Search, Wand2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -19,7 +18,7 @@ import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogClose,
@@ -34,12 +33,11 @@ import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
 import { fieldErrors, type FieldErrors } from '@/lib/forms';
 import { useAction, useApiQuery } from '@/lib/use-api';
+import { RolesEditor } from '@/components/users/roles-editor';
 import { cn } from '@/lib/utils';
 
 const LIMIT = 20;
 const roleName = (r: { key: string; nameFr: string; nameAr: string }, locale: string) => roleLabel(r, locale);
-/** Permission codes contain dots, which next-intl reads as nesting. */
-const permKey = (code: string) => `permission.${code.replace(/\./g, '_')}`;
 
 /** Readable temporary password (no look-alike characters), handed to the user in person. */
 function generatePassword(): string {
@@ -179,47 +177,7 @@ export default function UsersPage() {
       </Card>
       {users.data && <Pagination page={page} limit={LIMIT} total={users.data.total} onPage={setPage} />}
 
-      {roles.data && (
-        <Card className="overflow-hidden pb-0">
-          <CardHeader>
-            <CardTitle>{t('users.roles')}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t('users.rolesHint')}</p>
-          </CardHeader>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-muted/60 text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-2.5 text-start font-medium">{t('users.permission')}</th>
-                  {roles.data.map((r) => (
-                    <th key={r.id} className="px-3 py-2.5 text-center font-medium">
-                      {roleName(r, locale)}
-                      <span className="block font-normal">{t('users.count', { count: r.userCount })}</span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {ALL_PERMISSIONS.map((code) => (
-                  <tr key={code}>
-                    <td className="px-5 py-2">{t(permKey(code))}</td>
-                    {roles.data!.map((r) => (
-                      <td key={r.id} className="px-3 py-2 text-center">
-                        {r.permissions.includes(code) ? (
-                          <Check className="mx-auto size-4 text-emerald-700" aria-label={t('users.granted')} />
-                        ) : (
-                          <span className="text-muted-foreground/50" aria-label={t('users.notGranted')}>
-                            —
-                          </span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      {roles.data && <RolesEditor roles={roles.data} onSaved={refresh} />}
 
       <UserDialog
         open={editing !== undefined}

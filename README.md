@@ -249,18 +249,25 @@ system. Phase 8 delivers spec §5.8 instead.
   (versioned URL, cacheable) and drawn on new invoice PDFs. Every change is audit-logged.
 - **Users** (`/dashboard/users`, `users.manage` = owner + manager): create (temporary
   password generated in the browser, handed over in person), edit, deactivate/reactivate,
-  reset password; read-only role × permission matrix. Accounts are never deleted (the audit
-  log points to them).
-  - *No privilege escalation*: a role can only be given, and an account only managed, by
-    someone holding all of its permissions — a manager cannot create, edit or reset an
-    owner.
+  reset password. Accounts are never deleted (the audit log points to them).
+  - *Owners are protected*: only an owner can give the owner role or edit, deactivate or
+    reset an owner account — even a manager holding every right cannot.
+  - *No privilege escalation* otherwise: a role can only be given, and an account only
+    managed, by someone holding all of its permissions.
   - *No self-lockout*: nobody can deactivate themselves or change their own role, so an
     active owner always remains.
   - Deactivation, role change and password reset revoke the user's refresh tokens; the
     principal cache is cleared, so a deactivated user is refused on the next request.
 - **Change my password** (key icon at the bottom of the menu, `POST /auth/change-password`):
   checks the current password, signs out every other device, keeps this one.
-- Role permissions are stored in the database; editing the matrix itself is not in V1.
+- **Roles** (Users page): owners switch each role's rights on and off by group (stays &
+  rooms, money, staff, administration), with "Reset to default"; managers see it read-only.
+  The owner role always has every right. Rights a right needs are added (editing stays →
+  seeing stays). Changes apply at once to everyone with the role and are audit-logged.
+  Defaults: owner and manager everything; reception the front desk (stays, rooms, check-in,
+  payments and the Payments received page, own cash box, time clock — no finance, taxes,
+  staff, users, activity log or settings); housekeeping the Rooms page only (it lands
+  there; Today and the time clock are hidden).
 
 ## Activity log
 
