@@ -26,7 +26,8 @@
     "notifications": "الإشعارات",
     "account": "حسابي",
     "seeAll": "فتح صفحة اليوم",
-    "noResults": "لا توجد نتائج"
+    "noResults": "لا توجد نتائج",
+    "searchStays": "ابحث عن نزيل أو حجز…"
   },
   "localeNames": {
     "en": "English",
@@ -209,7 +210,27 @@
     "legendInHouse": "مقيم",
     "legendPending": "قيد الانتظار",
     "legendCheckedOut": "غادر",
-    "noRoomRow": "بدون غرفة"
+    "noRoomRow": "بدون غرفة",
+    "greeting": {
+      "morning": "صباح الخير، {name}",
+      "afternoon": "مساء الخير، {name}",
+      "evening": "مساء الخير، {name}"
+    },
+    "greetingHint": "{date} · إليك ما يجري اليوم في {riad}.",
+    "revenueOverview": "نظرة على الإيرادات",
+    "revenueOverviewHint": "الإيرادات والمصاريف شهرًا بشهر",
+    "roomStatusTitle": "الإشغال",
+    "occupiedShort": "مشغولة",
+    "roomsCount": "{count, plural, zero {لا غرف} one {غرفة واحدة} two {غرفتان} few {# غرف} many {# غرفة} other {# غرفة}}",
+    "movements": "حركة اليوم",
+    "filter": {
+      "all": "الكل",
+      "arrivals": "الوصول",
+      "departures": "المغادرة",
+      "inHouse": "المقيمون"
+    },
+    "viewAll": "عرض الكل",
+    "noMovements": "لا شيء لعرضه اليوم."
   },
   "rooms": {
     "new": "غرفة جديدة",
@@ -1216,5 +1237,10 @@
     "save": "حفظ الدور",
     "reset": "العودة إلى الصلاحيات الافتراضية",
     "appliesTo": "{count, plural, =0 {لا أحد له هذا الدور بعد} one {يُطبَّق على شخص واحد} two {يُطبَّق على شخصين} few {يُطبَّق على # أشخاص} many {يُطبَّق على # شخصًا} other {يُطبَّق على # شخص}}"
+  },
+  "navSection": {
+    "front": "الاستقبال",
+    "money": "المالية",
+    "team": "الفريق"
   }
 }

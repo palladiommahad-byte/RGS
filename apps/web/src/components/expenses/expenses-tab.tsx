@@ -185,8 +185,8 @@ export function ExpensesTab({
       {d && (
         <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.6fr)]">
           <StatCard highlight icon={Wallet} label={t('expenses.periodTotalLabel')} value={m(d.sumTtc)} footnote={t('expenses.inclVat')} />
-          <StatCard icon={Landmark} label={t('expenses.recoverableVat')} value={m(d.sumTva)} footnote={t('expenses.recoverableVatHint')} />
-          <StatCard icon={Receipt} label={t('expenses.count')} value={d.total} footnote={t('common.results', { count: d.total })} />
+          <StatCard tone="violet" icon={Landmark} label={t('expenses.recoverableVat')} value={m(d.sumTva)} footnote={t('expenses.recoverableVatHint')} />
+          <StatCard tone="sky" icon={Receipt} label={t('expenses.count')} value={d.total} footnote={t('common.results', { count: d.total })} />
           <div className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-5 sm:col-span-3 xl:col-span-1">
             <span className="text-sm font-medium">{t('finance.expensesByCategory')}</span>
             {d.byCategory.length === 0 ? (

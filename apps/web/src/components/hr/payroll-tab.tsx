@@ -101,7 +101,7 @@ export function PayrollTab({ month, canWrite, onChanged }: { month: string; canW
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
-              <thead className="bg-muted/60 text-xs text-muted-foreground">
+              <thead className="bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                 <tr>
                   <th className="px-4 py-2.5 text-start font-medium">{t('hr.employee')}</th>
                   <th className="px-3 py-2.5 text-end font-medium">{t('hr.payroll.base')}</th>

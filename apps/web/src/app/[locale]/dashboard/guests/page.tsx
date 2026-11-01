@@ -158,7 +158,7 @@ export default function GuestRegisterPage() {
       <Card className="overflow-hidden py-0 max-md:hidden">
         <div className="overflow-x-auto">
           <table className={cn('w-full min-w-[760px] text-sm', query.loading && 'opacity-60')}>
-            <thead className="bg-muted/60 text-start text-xs font-medium text-muted-foreground">
+            <thead className="bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               <tr>
                 {['name', 'nationality', 'document', 'birth', 'stay', 'room'].map((k) => (
                   <th key={k} scope="col" className="px-4 py-3 text-start font-medium">

@@ -228,8 +228,8 @@ export default function CashBoxPage() {
 
       {r && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatCard icon={ArrowDownLeft} label={t('cashBox.in')} value={<span className="text-emerald-700">+{m(r.totals.in)}</span>} footnote={t('cashBox.inHint', { guests: m(r.totals.byType.PAYMENT) })} />
-          <StatCard icon={ArrowUpRight} label={t('cashBox.out')} value={<span>−{m(r.totals.out)}</span>} footnote={t('cashBox.outHint')} />
+          <StatCard tone="emerald" icon={ArrowDownLeft} label={t('cashBox.in')} value={<span className="text-emerald-700">+{m(r.totals.in)}</span>} footnote={t('cashBox.inHint', { guests: m(r.totals.byType.PAYMENT) })} />
+          <StatCard tone="rose" icon={ArrowUpRight} label={t('cashBox.out')} value={<span>−{m(r.totals.out)}</span>} footnote={t('cashBox.outHint')} />
           <StatCard icon={Scale} label={t('cashBox.net')} value={m(r.totals.in - r.totals.out)} footnote={t(`cashBox.preset.${preset}`)} />
         </div>
       )}

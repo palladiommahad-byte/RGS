@@ -2,7 +2,9 @@
 
 import {
   addDays,
+  monthStartOf,
   todayIso,
+  type FinanceDashboardDto,
   type IsoDate,
   type Paginated,
   type RoomDto,
@@ -25,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NAV_ITEMS } from '@/components/dashboard/nav-items';
+import { MovementsTable, RevenueOverview, RoomStatusRing } from '@/components/dashboard/today-widgets';
 import { Link, useRouter } from '@/i18n/navigation';
 import { formatDate } from '@/lib/format';
 import { useApiQuery } from '@/lib/use-api';
@@ -34,7 +37,7 @@ const REFRESH_MS = 60_000;
 export default function TodayPage() {
   const t = useTranslations();
   const locale = useLocale();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const canStays = can('stays.read');
   const router = useRouter();
   // Today is the stays desk: others (housekeeping…) start on the first page they may open.
@@ -49,6 +52,9 @@ export default function TodayPage() {
   const rooms = useApiQuery<Paginated<RoomDto>>(can('rooms.read') ? '/rooms?limit=100' : null);
   const week = useApiQuery<Paginated<StaySummaryDto>>(
     canStays ? `/stays?from=${weekStart}&to=${addDays(weekStart, 7)}&limit=100` : null,
+  );
+  const finance = useApiQuery<FinanceDashboardDto>(
+    canStays && can('finance.reports') ? `/finance/dashboard?from=${monthStartOf(todayIso())}&to=${todayIso()}` : null,
   );
   const { reload: reloadToday } = today;
   const { reload: reloadRooms } = rooms;
@@ -79,23 +85,64 @@ export default function TodayPage() {
   const date = d?.date ?? todayIso();
   const roomList = rooms.data?.items ?? [];
   const countRooms = (s: RoomDto['status']) => roomList.filter((r) => r.status === s).length;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  const firstName = user.name.split(/\s+/)[0] ?? user.name;
+
+  const bookings = d && (
+    <Card className="xl:col-span-2">
+      <CardHeader>
+        <CardTitle>{t('today.calendar')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <WeekCalendar
+          weekStart={weekStart}
+          today={d.date}
+          stays={week.data?.items ?? []}
+          rooms={roomList}
+          onWeekChange={setWeekStart}
+          onOpenStay={setOpenStay}
+        />
+      </CardContent>
+    </Card>
+  );
+  const pendingCard = d && (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle>{t('today.pending')}</CardTitle>
+        {d.pending.length > 0 && <Badge tone="amber">{d.pending.length}</Badge>}
+      </CardHeader>
+      <CardContent>
+        <PendingList stays={d.pending} emptyLabel={t('today.noPending')} />
+      </CardContent>
+    </Card>
+  );
+  const ring = rooms.data && <RoomStatusRing rooms={roomList} />;
+  const movements = d && <MovementsTable arrivals={d.arrivals} departures={d.departures} inHouse={d.inHouse} className="xl:col-span-2" />;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('nav.today')}
-        subtitle={formatDate(date, locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        title={
+          <>
+            {t(`today.greeting.${greeting}`, { name: firstName })} <span aria-hidden>👋</span>
+          </>
+        }
+        subtitle={t('today.greetingHint', {
+          date: formatDate(date, locale, { weekday: 'long', day: 'numeric', month: 'long' }),
+          riad: user.riad.name,
+        })}
         actions={
           <>
             <Button
               variant="outline"
-              size="icon"
               onClick={reload}
               disabled={today.loading || rooms.loading}
               aria-label={t('common.refresh')}
               title={t('common.refresh')}
             >
-              <RefreshCw />
+              <RefreshCw aria-hidden />
+              <span className="max-sm:sr-only">{t('common.refresh')}</span>
             </Button>
             {can('stays.write') && (
               <Button asChild>
@@ -113,19 +160,20 @@ export default function TodayPage() {
       {canStays && d ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
-            highlight
             icon={BedDouble}
             label={t('today.occupancyRate')}
             value={`${d.rooms.total ? Math.round((d.rooms.occupied / d.rooms.total) * 100) : 0}%`}
             footnote={t('today.roomsOccupied', { occupied: d.rooms.occupied, total: d.rooms.total })}
           />
           <StatCard
+            tone="sky"
             icon={CalendarCheck}
             label={t('today.arrivals')}
             value={d.arrivals.length}
             footnote={t('today.pendingCount', { count: d.pending.length })}
           />
           <StatCard
+            tone="amber"
             icon={LogOut}
             label={t('today.departures')}
             value={d.departures.length}
@@ -134,6 +182,7 @@ export default function TodayPage() {
             })}
           />
           <StatCard
+            tone="violet"
             icon={Users}
             label={t('today.inHouse')}
             value={d.inHouse.reduce((n, s) => n + s.adults + s.children, 0)}
@@ -144,41 +193,40 @@ export default function TodayPage() {
         !canStays &&
         rooms.data && (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard highlight icon={Brush} label={t('roomStatus.CLEANING')} value={countRooms('CLEANING')} />
-            <StatCard icon={DoorOpen} label={t('roomStatus.FREE')} value={countRooms('FREE')} />
+            <StatCard tone="amber" icon={Brush} label={t('roomStatus.CLEANING')} value={countRooms('CLEANING')} />
+            <StatCard tone="emerald" icon={DoorOpen} label={t('roomStatus.FREE')} value={countRooms('FREE')} />
             <StatCard icon={BedDouble} label={t('roomStatus.OCCUPIED')} value={countRooms('OCCUPIED')} />
-            <StatCard icon={Wrench} label={t('roomStatus.OUT_OF_SERVICE')} value={countRooms('OUT_OF_SERVICE')} />
+            <StatCard tone="rose" icon={Wrench} label={t('roomStatus.OUT_OF_SERVICE')} value={countRooms('OUT_OF_SERVICE')} />
           </div>
         )
       )}
 
       {canStays && d && (
-        <div className="grid gap-6 xl:grid-cols-3">
-          <Card className="xl:col-span-2">
-            <CardHeader>
-              <CardTitle>{t('today.calendar')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WeekCalendar
-                weekStart={weekStart}
-                today={d.date}
-                stays={week.data?.items ?? []}
-                rooms={roomList}
-                onWeekChange={setWeekStart}
-                onOpenStay={setOpenStay}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>{t('today.pending')}</CardTitle>
-              {d.pending.length > 0 && <Badge tone="amber">{d.pending.length}</Badge>}
-            </CardHeader>
-            <CardContent>
-              <PendingList stays={d.pending} emptyLabel={t('today.noPending')} />
-            </CardContent>
-          </Card>
-        </div>
+        finance.data ? (
+          <>
+            {/* Owners and managers: money first, then the desk. */}
+            <div className="grid gap-6 xl:grid-cols-3">
+              <RevenueOverview months={finance.data.months} className="xl:col-span-2" />
+              {ring}
+            </div>
+            <div className="grid gap-6 xl:grid-cols-3">
+              {bookings}
+              {pendingCard}
+            </div>
+            {movements && <div className="grid gap-6 xl:grid-cols-1">{movements}</div>}
+          </>
+        ) : (
+          <>
+            <div className="grid gap-6 xl:grid-cols-3">
+              {bookings}
+              {ring}
+            </div>
+            <div className="grid gap-6 xl:grid-cols-3">
+              {movements}
+              {pendingCard}
+            </div>
+          </>
+        )
       )}
 
       <div className="grid gap-6 xl:grid-cols-3">

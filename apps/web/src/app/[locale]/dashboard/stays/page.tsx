@@ -3,6 +3,7 @@
 import { STAY_STATUSES, todayIso, type Paginated, type StaySummaryDto, type StayStatus } from '@riad/shared';
 import { Plus, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { PageHeader } from '@/components/page-header';
@@ -22,8 +23,11 @@ export default function StaysPage() {
   const t = useTranslations();
   const { can } = useAuth();
   const [status, setStatus] = useState<Filter>('ALL');
-  const [search, setSearch] = useState('');
-  const [debounced, setDebounced] = useState('');
+  // ?q= comes from the top-bar search (also when searching again from this page).
+  const q = useSearchParams().get('q') ?? '';
+  const [search, setSearch] = useState(q);
+  const [debounced, setDebounced] = useState(q.trim());
+  useEffect(() => setSearch(q), [q]);
   const [page, setPage] = useState(1);
 
   useEffect(() => {

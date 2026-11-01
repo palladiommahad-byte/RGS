@@ -94,9 +94,9 @@ export default function TaxesPage() {
                     value={m(Math.abs(r.tvaDue))}
                     footnote={t('tvaDueFormula')}
                   />
-                  <StatCard icon={Receipt} label={t('tvaCollected')} value={m(r.tvaCollected)} footnote={t('invoices', { count: r.invoiceCount })} />
-                  <StatCard icon={Receipt} label={t('tvaDeductible')} value={m(r.tvaDeductible)} footnote={t('expensesWithTva', { count: r.expenseCount })} />
-                  <StatCard icon={Landmark} label={t('taxeSejour')} value={m(r.taxeSejour)} footnote={t('toCommune')} />
+                  <StatCard tone="sky" icon={Receipt} label={t('tvaCollected')} value={m(r.tvaCollected)} footnote={t('invoices', { count: r.invoiceCount })} />
+                  <StatCard tone="violet" icon={Receipt} label={t('tvaDeductible')} value={m(r.tvaDeductible)} footnote={t('expensesWithTva', { count: r.expenseCount })} />
+                  <StatCard tone="amber" icon={Landmark} label={t('taxeSejour')} value={m(r.taxeSejour)} footnote={t('toCommune')} />
                 </div>
                 <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
                   <Row label={t('totalHt')} value={m(r.totalHt)} />

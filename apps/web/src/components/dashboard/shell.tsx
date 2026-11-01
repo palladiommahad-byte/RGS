@@ -1,16 +1,16 @@
 'use client';
 
 import { STAFF_LOCALES } from '@riad/shared';
-import { ChevronsLeft, Menu, X } from 'lucide-react';
+import { ChevronsLeft, Menu, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Button } from '@/components/ui/button';
-import { Link, usePathname } from '@/i18n/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { NAV_ITEMS, type NavItem } from './nav-items';
+import { NAV_ITEMS, NAV_SECTIONS, type NavItem } from './nav-items';
 import { TopBarActions } from './top-bar';
 
 const COLLAPSED_KEY = 'riad.sidebarCollapsed';
@@ -61,10 +61,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           aria-current={active ? 'page' : undefined}
           title={c ? label : undefined}
           className={cn(
-            'flex h-11 items-center gap-3 rounded-lg px-3 text-[15px] font-medium transition-colors',
+            'flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
             c && 'lg:justify-center lg:px-0',
             active
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-foreground/75 hover:bg-accent hover:text-foreground',
           )}
         >
@@ -113,7 +113,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className={cn('flex flex-1 flex-col overflow-y-auto px-4 pb-4', c && 'lg:px-3')} aria-label={t('common.mainMenu')}>
-          <ul className="flex flex-col gap-1">{main.map(navLink)}</ul>
+          {NAV_SECTIONS.map((section) => {
+            const items = main.filter((i) => i.section === section);
+            if (!items.length) return null;
+            return (
+              <div key={section} className="flex flex-col gap-1 pt-4 first:pt-1">
+                <span className={cn('px-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase', c && 'lg:sr-only')}>
+                  {t(`navSection.${section}`)}
+                </span>
+                {c && <span className="mx-3 mb-1 hidden border-t lg:block" aria-hidden />}
+                <ul className="flex flex-col gap-0.5">{items.map(navLink)}</ul>
+              </div>
+            );
+          })}
           {bottom.length > 0 && <ul className="mt-auto flex flex-col gap-1 pt-4">{bottom.map(navLink)}</ul>}
         </nav>
 
@@ -130,6 +142,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="min-w-0 lg:hidden">
             <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
           </div>
+          {can('stays.read') && <TopSearch />}
           <div className="ms-auto">
             <TopBarActions />
           </div>
@@ -137,5 +150,33 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <main className="mx-auto w-full max-w-[1440px] p-4 md:px-8 md:pt-2 md:pb-8 print:p-0">{children}</main>
       </div>
     </div>
+  );
+}
+
+/** Top-bar search (tablets and computers): finds stays by guest name or booking reference. */
+function TopSearch() {
+  const t = useTranslations();
+  const router = useRouter();
+  const [q, setQ] = useState('');
+  return (
+    <form
+      role="search"
+      className="relative hidden w-full max-w-sm md:block"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const term = q.trim();
+        router.push(term ? `/dashboard/stays?q=${encodeURIComponent(term)}` : '/dashboard/stays');
+      }}
+    >
+      <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={t('common.searchStays')}
+        aria-label={t('common.searchStays')}
+        className="h-11 w-full rounded-xl border bg-card ps-10 pe-3 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40"
+      />
+    </form>
   );
 }

@@ -63,8 +63,8 @@ export default function HrPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard highlight icon={Users} label={t('hr.stats.active')} value={staff.data?.total ?? '—'} />
-        <StatCard icon={Wallet} label={t('hr.stats.salaryMass')} value={staff.data ? formatMoney(salaryMass, locale) : '—'} footnote={t('hr.stats.salaryMassHint')} />
-        <StatCard icon={CalendarClock} label={t('hr.stats.pendingLeaves')} value={pending.data?.total ?? '—'} />
+        <StatCard tone="emerald" icon={Wallet} label={t('hr.stats.salaryMass')} value={staff.data ? formatMoney(salaryMass, locale) : '—'} footnote={t('hr.stats.salaryMassHint')} />
+        <StatCard tone="amber" icon={CalendarClock} label={t('hr.stats.pendingLeaves')} value={pending.data?.total ?? '—'} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

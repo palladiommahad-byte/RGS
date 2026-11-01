@@ -26,7 +26,8 @@
     "notifications": "Notifications",
     "account": "Mon compte",
     "seeAll": "Ouvrir la page Aujourd'hui",
-    "noResults": "Aucun résultat"
+    "noResults": "Aucun résultat",
+    "searchStays": "Rechercher un client ou une réservation…"
   },
   "localeNames": {
     "en": "English",
@@ -209,7 +210,27 @@
     "legendInHouse": "En séjour",
     "legendPending": "En attente",
     "legendCheckedOut": "Parti",
-    "noRoomRow": "Sans chambre"
+    "noRoomRow": "Sans chambre",
+    "greeting": {
+      "morning": "Bonjour, {name}",
+      "afternoon": "Bon après-midi, {name}",
+      "evening": "Bonsoir, {name}"
+    },
+    "greetingHint": "{date} · Voici ce qui se passe aujourd'hui au {riad}.",
+    "revenueOverview": "Aperçu des revenus",
+    "revenueOverviewHint": "Revenus et dépenses, mois par mois",
+    "roomStatusTitle": "Occupation",
+    "occupiedShort": "occupées",
+    "roomsCount": "{count, plural, one {# chambre} other {# chambres}}",
+    "movements": "Mouvements du jour",
+    "filter": {
+      "all": "Tous",
+      "arrivals": "Arrivées",
+      "departures": "Départs",
+      "inHouse": "Sur place"
+    },
+    "viewAll": "Tout voir",
+    "noMovements": "Rien à afficher aujourd'hui."
   },
   "rooms": {
     "new": "Nouvelle chambre",
@@ -1216,5 +1237,10 @@
     "save": "Enregistrer le rôle",
     "reset": "Revenir aux droits par défaut",
     "appliesTo": "{count, plural, =0 {Personne n’a encore ce rôle} one {S’applique à # personne} other {S’applique à # personnes}}"
+  },
+  "navSection": {
+    "front": "Réception",
+    "money": "Finances",
+    "team": "Équipe"
   }
 }

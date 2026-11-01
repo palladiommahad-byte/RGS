@@ -26,7 +26,8 @@
     "notifications": "Notifications",
     "account": "My account",
     "seeAll": "Open the Today page",
-    "noResults": "No results"
+    "noResults": "No results",
+    "searchStays": "Search guests or bookings…"
   },
   "localeNames": {
     "en": "English",
@@ -292,7 +293,27 @@
     "legendInHouse": "In house",
     "legendPending": "Pending",
     "legendCheckedOut": "Left",
-    "noRoomRow": "No room"
+    "noRoomRow": "No room",
+    "greeting": {
+      "morning": "Good morning, {name}",
+      "afternoon": "Good afternoon, {name}",
+      "evening": "Good evening, {name}"
+    },
+    "greetingHint": "{date} · Here's what's happening at {riad} today.",
+    "revenueOverview": "Revenue overview",
+    "revenueOverviewHint": "Revenue and expenses, month by month",
+    "roomStatusTitle": "Occupancy",
+    "occupiedShort": "occupied",
+    "roomsCount": "{count, plural, one {# room} other {# rooms}}",
+    "movements": "Today's movements",
+    "filter": {
+      "all": "All",
+      "arrivals": "Arrivals",
+      "departures": "Departures",
+      "inHouse": "In house"
+    },
+    "viewAll": "View all",
+    "noMovements": "Nothing to show here today."
   },
   "rooms": {
     "new": "New room",
@@ -1216,5 +1237,10 @@
     "save": "Save the role",
     "reset": "Reset to default",
     "appliesTo": "{count, plural, =0 {Nobody has this role yet} one {Applies to # person} other {Applies to # people}}"
+  },
+  "navSection": {
+    "front": "Front desk",
+    "money": "Money",
+    "team": "Team"
   }
 }

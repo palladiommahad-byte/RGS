@@ -8,7 +8,7 @@ import { useAuth } from '@/components/auth-provider';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { useRealtimeEvent } from '@/components/realtime-provider';
-import { StatCard } from '@/components/stat-card';
+import { StatCard, type StatTone } from '@/components/stat-card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
@@ -34,6 +34,8 @@ const METHOD_STYLE: Record<PaymentMethod, { icon: LucideIcon; className: string 
   TRANSFER: { icon: Landmark, className: 'bg-violet-50 text-violet-700 ring-violet-200' },
   OTA_COLLECTED: { icon: Globe, className: 'bg-amber-50 text-amber-800 ring-amber-200' },
 };
+
+const METHOD_TONE: Record<PaymentMethod, StatTone> = { CASH: 'emerald', CARD: 'sky', TRANSFER: 'violet', OTA_COLLECTED: 'amber' };
 
 /** Guest payments over a period: who paid, how, to whom — and what should be in the drawer. */
 export default function PaymentsPage() {
@@ -167,7 +169,7 @@ export default function PaymentsPage() {
                 aria-pressed={method === pm}
                 className={cn('min-w-0 rounded-xl text-start outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50', method === pm && 'ring-2 ring-primary')}
               >
-                <StatCard icon={Icon} label={t(`paymentMethod.${pm}`)} value={<Amount value={m(r.totals[pm])} />} className="h-full" />
+                <StatCard tone={METHOD_TONE[pm]} icon={Icon} label={t(`paymentMethod.${pm}`)} value={<Amount value={m(r.totals[pm])} />} className="h-full" />
               </button>
             );
           })}

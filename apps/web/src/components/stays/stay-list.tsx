@@ -37,7 +37,7 @@ export function StayList({ stays, today }: { stays: StaySummaryDto[]; today: str
       {/* Wide screens: table. */}
       <div className="overflow-hidden rounded-2xl border bg-card max-md:hidden">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs text-muted-foreground">
+          <thead className="bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
             <tr>
               <th className="px-4 py-3 text-start font-medium">{t('stays.mainGuest')}</th>
               <th className="px-3 py-3 text-start font-medium">{t('stays.dates')}</th>

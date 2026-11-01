@@ -29,7 +29,7 @@ import { useState } from 'react';
 import { DonutChart, HorizontalBars, RevenueExpensesChart } from '@/components/finance/charts';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
-import { StatCard } from '@/components/stat-card';
+import { StatCard, TrendChip } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -81,21 +81,8 @@ export default function FinancePage() {
     const change = percentChange(d.current[key] as number | null, d.previous[key] as number | null);
     if (change === null) return t('noComparison');
     const good = change === 0 ? null : change > 0 === upIsGood;
-    return (
-      <span>
-        <span
-          className={cn(
-            'font-semibold',
-            good === true && (onDark ? 'text-emerald-300' : 'text-emerald-600'),
-            good === false && (onDark ? 'text-red-300' : 'text-red-600'),
-          )}
-        >
-          {change > 0 ? '+' : ''}
-          {pct(change)}
-        </span>{' '}
-        {t('vsPrevious')}
-      </span>
-    );
+    void onDark; // cards are all light now
+    return <TrendChip change={change} good={good} label={t('vsPrevious')} format={pct} />;
   };
 
   const download = (format: 'xlsx' | 'pdf') =>
@@ -153,18 +140,19 @@ export default function FinancePage() {
         <>
           <div className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-4', query.loading && 'opacity-60')}>
             <StatCard highlight icon={TrendingUp} label={t('revenue')} value={m(d.current.revenue)} footnote={delta('revenue', true, true)} />
-            <StatCard icon={Receipt} label={t('expenses')} value={m(d.current.expenses)} footnote={delta('expenses', false)} />
-            <StatCard icon={PiggyBank} label={t('profit')} value={m(d.current.profit)} footnote={delta('profit')} />
-            <StatCard icon={Percent} label={t('margin')} value={pct(d.current.margin)} footnote={delta('margin')} />
+            <StatCard tone="rose" icon={Receipt} label={t('expenses')} value={m(d.current.expenses)} footnote={delta('expenses', false)} />
+            <StatCard tone="emerald" icon={PiggyBank} label={t('profit')} value={m(d.current.profit)} footnote={delta('profit')} />
+            <StatCard tone="violet" icon={Percent} label={t('margin')} value={pct(d.current.margin)} footnote={delta('margin')} />
             <StatCard
+              tone="sky"
               icon={BedDouble}
               label={t('occupancy')}
               value={pct(d.current.occupancy)}
               footnote={t('nights', { occupied: d.current.occupiedNights, available: d.current.availableNights })}
             />
-            <StatCard icon={CircleDollarSign} label={t('adr')} value={m(d.current.adr)} footnote={delta('adr')} />
-            <StatCard icon={Moon} label={t('revpar')} value={m(d.current.revpar)} footnote={delta('revpar')} />
-            <StatCard icon={Wallet} label={t('costPerNight')} value={m(d.current.costPerOccupiedNight)} footnote={delta('costPerOccupiedNight', false)} />
+            <StatCard tone="amber" icon={CircleDollarSign} label={t('adr')} value={m(d.current.adr)} footnote={delta('adr')} />
+            <StatCard tone="sky" icon={Moon} label={t('revpar')} value={m(d.current.revpar)} footnote={delta('revpar')} />
+            <StatCard tone="rose" icon={Wallet} label={t('costPerNight')} value={m(d.current.costPerOccupiedNight)} footnote={delta('costPerOccupiedNight', false)} />
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t('htNote')}</p>
 
@@ -245,7 +233,7 @@ export default function FinancePage() {
             </CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-muted/60 text-xs text-muted-foreground">
+                <thead className="bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
                   <tr>
                     <th className="px-5 py-2.5 text-start font-medium" />
                     {d.months.map((mo) => (
