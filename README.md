@@ -406,6 +406,12 @@ check **Settings → Backups** after a minute: "copied off the server · encrypt
 now**. The owner gets a red notification when a backup fails, and every day while the last
 good one is older than 26 h. Each run is in the `backup_runs` table.
 
+**Safe by design**: after a reboot the service waits until the database and the file
+storage answer, then runs a missed nightly backup at once. A backup only counts as done
+once the dump is readable, every file is archived and the off-site copy arrived whole;
+otherwise it is recorded as failed with the reason (the owner is alerted) and nothing
+half-made is kept.
+
 **Restore** — the name is the stamp shown under each backup in Settings (or `latest`):
 
 ```bash

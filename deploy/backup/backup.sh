@@ -37,43 +37,63 @@ encrypt() { # $1 -> $1.enc (AES-256, key derived from BACKUP_PASSPHRASE)
   openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSPHRASE -in "$1" -out "$1.enc" && rm -f "$1"
 }
 
-# The backup itself; exits non-zero on the first error (runs in a subshell).
+# Database and file storage both answer (after a reboot they start at the same time).
+ready() {
+  pg_isready -q -t 5 >/dev/null 2>&1 \
+    && sql "SELECT 1 FROM backup_runs LIMIT 1" >/dev/null 2>&1 \
+    && rclone lsd storage: >/dev/null 2>&1
+}
+
+fail() { echo "$*" >&2; exit 1; }
+
+# The backup itself, in a subshell. Every step is checked explicitly: `set -e` does not
+# work here (it is switched off inside a tested command), so a failure must never pass.
 do_backup() {
-  set -e
   stamp="$1"
-  rm -rf "$WORK" && mkdir -p "$WORK/files" "$DIR"
+  rm -rf "$WORK" && mkdir -p "$WORK/files" "$DIR" || fail "cannot prepare $WORK"
   db="$DIR/db_$stamp.dump"
   files="$DIR/files_$stamp.tar.gz"
 
-  pg_dump --format=custom --no-owner --file="$db.partial"
-  mv "$db.partial" "$db"
+  pg_dump --format=custom --no-owner --file="$db.partial" || fail "pg_dump failed"
+  # A readable archive with the app's tables, or it is not a backup.
+  tables=$(pg_restore --list "$db.partial" 2>/dev/null | grep -c ' TABLE DATA ') || true
+  [ "${tables:-0}" -gt 0 ] || fail "database dump is empty or unreadable"
+  mv "$db.partial" "$db" || fail "cannot keep the dump"
+
   # Files object by object, so a backup restores into any S3 storage (MinIO, R2…).
-  for b in $BUCKETS; do rclone copy --quiet "storage:$b" "$WORK/files/$b"; done
-  tar -czf "$files.partial" -C "$WORK/files" .
-  mv "$files.partial" "$files"
+  for b in $BUCKETS; do
+    rclone copy --quiet "storage:$b" "$WORK/files/$b" || fail "cannot copy the files of $b"
+  done
+  objects=$(find "$WORK/files" -type f | wc -l)
+  tar -czf "$files.partial" -C "$WORK/files" . || fail "cannot archive the files"
+  mv "$files.partial" "$files" || fail "cannot keep the archive"
   rm -rf "$WORK"
 
   if [ -n "${BACKUP_PASSPHRASE:-}" ]; then
-    encrypt "$db" && db="$db.enc"
-    encrypt "$files" && files="$files.enc"
+    encrypt "$db" && db="$db.enc" || fail "cannot encrypt the dump"
+    encrypt "$files" && files="$files.enc" || fail "cannot encrypt the archive"
   elif [ -n "${BACKUP_S3_BUCKET:-}" ]; then
-    echo "BACKUP_PASSPHRASE is required to copy backups off the server" >&2
-    exit 1
+    fail "BACKUP_PASSPHRASE is required to copy backups off the server"
   fi
 
   if [ -n "${BACKUP_S3_BUCKET:-}" ]; then
-    rclone copy --quiet "$db" "$REMOTE/daily/"
-    rclone copy --quiet "$files" "$REMOTE/daily/"
+    rclone copy --quiet "$db" "$REMOTE/daily/" || fail "off-site copy of the dump failed"
+    rclone copy --quiet "$files" "$REMOTE/daily/" || fail "off-site copy of the files failed"
+    # Make sure both arrived whole.
+    for f in "$db" "$files"; do
+      remote_size=$(rclone size --json "$REMOTE/daily/$(basename "$f")" 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
+      [ "$remote_size" = "$(stat -c %s "$f")" ] || fail "off-site copy of $(basename "$f") is incomplete"
+    done
     if [ "$(date +%d)" = "01" ]; then
-      rclone copy --quiet "$db" "$REMOTE/monthly/"
-      rclone copy --quiet "$files" "$REMOTE/monthly/"
+      rclone copy --quiet "$db" "$REMOTE/monthly/" || fail "monthly off-site copy failed"
+      rclone copy --quiet "$files" "$REMOTE/monthly/" || fail "monthly off-site copy failed"
     fi
-    rclone delete --quiet --min-age "${REMOTE_KEEP_DAYS}d" "$REMOTE/daily"
-    rclone delete --quiet --min-age "$((REMOTE_KEEP_MONTHS * 31))d" "$REMOTE/monthly"
+    rclone delete --quiet --min-age "${REMOTE_KEEP_DAYS}d" "$REMOTE/daily" || true
+    rclone delete --quiet --min-age "$((REMOTE_KEEP_MONTHS * 31))d" "$REMOTE/monthly" || true
   fi
 
   find "$DIR" -maxdepth 1 -type f \( -name 'db_*' -o -name 'files_*' \) -mtime +"$KEEP_DAYS" -delete
-  echo "$(stat -c %s "$db") $(stat -c %s "$files")" > "$DIR/.last-sizes"
+  echo "$(stat -c %s "$db") $(stat -c %s "$files") $tables $objects" > "$DIR/.last-sizes"
 }
 
 # One recorded run: $1 = backup_runs id ("" when the table is not there yet).
@@ -82,14 +102,21 @@ run() {
   stamp=$(date +%Y-%m-%d_%H%M%S)
   record "$id" "status = 'RUNNING', started_at = now(), name = '$stamp'"
   log "backup $stamp started"
-  if ( do_backup "$stamp" ) > /tmp/backup.log 2>&1; then
-    read -r dbb fb < "$DIR/.last-sizes"
+  rm -f "$DIR/.last-sizes"
+  ( do_backup "$stamp" ) > /tmp/backup.log 2>&1
+  rc=$?
+  if [ "$rc" -eq 0 ] && [ -s "$DIR/.last-sizes" ]; then
+    read -r dbb fb tables objects < "$DIR/.last-sizes"
     enc=false; [ -n "${BACKUP_PASSPHRASE:-}" ] && enc=true
     off=false; [ -n "${BACKUP_S3_BUCKET:-}" ] && off=true
     record "$id" "status = 'OK', finished_at = now(), db_bytes = $dbb, files_bytes = $fb, encrypted = $enc, offsite = $off"
-    log "backup $stamp done ($dbb + $fb bytes, encrypted=$enc, offsite=$off)"
+    log "backup $stamp done ($tables tables, $objects files; $dbb + $fb bytes, encrypted=$enc, offsite=$off)"
   else
-    err=$(tail -n 3 /tmp/backup.log | tr '\n' ' ' | sed "s/'/''/g" | cut -c1-500)
+    # Leave no half-made backup behind (restore "latest" must never pick one).
+    rm -f "$DIR"/db_"$stamp".* "$DIR"/files_"$stamp".*
+    # The plain reason from fail() is the last line; the details stay in the log.
+    err=$(tail -n 1 /tmp/backup.log | sed "s/'/''/g" | cut -c1-300)
+    [ -n "$err" ] || err="backup failed (exit $rc)"
     record "$id" "status = 'FAILED', finished_at = now(), error = '$err'"
     log "backup $stamp FAILED: $err"
     return 1
@@ -102,20 +129,40 @@ new_run() { # $1 = SCHEDULED | MANUAL -> prints the id, or nothing if the table 
 
 case "${1:-loop}" in
   once)
+    i=0
+    until ready; do
+      i=$((i + 1)); [ "$i" -ge 24 ] && { log "database or storage not reachable"; exit 1; }
+      sleep 5
+    done
     run "$(new_run MANUAL)"
     ;;
   loop)
-    # A run cut short by a restart will never finish: say so.
-    sql "UPDATE backup_runs SET status = 'FAILED', finished_at = now(), error = 'Interrupted (backup container restarted)' WHERE status = 'RUNNING'" >/dev/null 2>&1 || true
+    waiting=0
     while true; do
+      # Nothing before the database and the file storage answer (e.g. right after a reboot).
+      if ! ready; then
+        [ "$waiting" = 0 ] && log "waiting for the database and the file storage"
+        waiting=1
+        sleep 10
+        continue
+      fi
+      if [ "$waiting" = 1 ] || [ -z "${started:-}" ]; then
+        started=1; waiting=0
+        # A run cut short by a restart will never finish: say so.
+        sql "UPDATE backup_runs SET status = 'FAILED', finished_at = now(), error = 'Interrupted (backup container restarted)' WHERE status = 'RUNNING'" >/dev/null 2>&1 || true
+      fi
       # "Back up now" from the app.
       id=$(sql "SELECT id FROM backup_runs WHERE status = 'REQUESTED' ORDER BY requested_at LIMIT 1" 2>/dev/null || true)
       [ -n "$id" ] && run "$id"
-      # Nightly, once a day from BACKUP_HOUR (also right after a first start).
+      # Nightly, once a day from BACKUP_HOUR — or as soon as possible after it (server was
+      # off, or restarted). The day counts as done only once a run is recorded.
       today=$(date +%Y-%m-%d)
-      if [ "$(date +%H | sed 's/^0\(.\)/\1/')" -ge "$HOUR" ] &&[ "$(cat "$DIR/.last-scheduled" 2>/dev/null)" != "$today" ]; then
-        mkdir -p "$DIR" && echo "$today" > "$DIR/.last-scheduled"
-        run "$(new_run SCHEDULED)"
+      if [ "$(date +%H | sed 's/^0\(.\)/\1/')" -ge "$HOUR" ] && [ "$(cat "$DIR/.last-scheduled" 2>/dev/null)" != "$today" ]; then
+        id=$(new_run SCHEDULED)
+        if [ -n "$id" ]; then
+          mkdir -p "$DIR" && echo "$today" > "$DIR/.last-scheduled"
+          run "$id"
+        fi
       fi
       sleep 60
     done
