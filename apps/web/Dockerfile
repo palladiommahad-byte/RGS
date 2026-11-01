@@ -24,6 +24,9 @@ ENV NODE_ENV=production \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 RUN pnpm --filter @riad/shared build && cd apps/web && npx next build
+# Not needed at runtime: TypeScript and sharp's Alpine/musl binaries (the image is Debian).
+RUN cd apps/web/.next/standalone/node_modules/.pnpm \
+  && rm -rf typescript@* @img+sharp-libvips-linuxmusl-* @img+sharp-linuxmusl-*
 
 FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production \
