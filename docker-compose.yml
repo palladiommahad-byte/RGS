@@ -76,7 +76,47 @@ services:
       - '${WEB_DOCKER_HOST_PORT:-3200}:3000'
     depends_on: [api]
 
+  # Backups, to try them locally: docker compose --profile backup up -d --build backup
+  # The local MinIO stands in for the off-server storage (bucket riad-offsite-test).
+  backup:
+    profiles: ['backup']
+    build:
+      context: ./deploy/backup
+    image: riad-backup:local
+    restart: unless-stopped
+    environment: &backup-env
+      PGHOST: postgres
+      PGUSER: riad
+      PGPASSWORD: riad
+      PGDATABASE: riad
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      BACKUP_PASSPHRASE: local-test-passphrase
+      BACKUP_S3_ENDPOINT: http://minio:9000
+      BACKUP_S3_REGION: us-east-1
+      BACKUP_S3_BUCKET: riad-offsite-test
+      BACKUP_S3_PREFIX: local
+      BACKUP_S3_ACCESS_KEY: minioadmin
+      BACKUP_S3_SECRET_KEY: minioadmin
+    volumes:
+      - backups:/backups
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_started }
+
+  restore:
+    profiles: ['restore']
+    image: riad-backup:local
+    entrypoint: ['/usr/local/bin/restore.sh']
+    environment: *backup-env
+    volumes:
+      - backups:/backups
+    depends_on:
+      postgres: { condition: service_healthy }
+
 volumes:
   pgdata:
   miniodata:
   ocrcache:
+  backups:

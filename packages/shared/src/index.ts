@@ -19,3 +19,4 @@ export * from './schemas/settings';
 export * from './names';
 export * from './audit';
 export * from './notifications';
+export * from './backups';

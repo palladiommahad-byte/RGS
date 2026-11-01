@@ -2,7 +2,7 @@
 
 import * as Popover from '@radix-ui/react-popover';
 import { todayIso, type NotificationDto, type NotificationListDto } from '@riad/shared';
-import { ArrowDownLeft, ArrowUpRight, Bell, CalendarClock, CheckCheck, DoorOpen, LogIn, QrCode, Wallet, type LucideIcon } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Bell, CalendarClock, CheckCheck, DatabaseBackup, DoorOpen, LogIn, QrCode, Wallet, type LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useRealtimeEvent } from '@/components/realtime-provider';
@@ -20,6 +20,7 @@ const STYLE: Record<NotificationDto['type'], { icon: LucideIcon; className: stri
   CHECKOUT: { icon: DoorOpen, className: 'bg-sky-100 text-sky-800' },
   CHECKOUT_SOON: { icon: CalendarClock, className: 'bg-violet-100 text-violet-800' },
   CASH: { icon: Wallet, className: 'bg-teal-100 text-teal-900' },
+  BACKUP: { icon: DatabaseBackup, className: 'bg-red-100 text-red-800' },
 };
 
 /** The bell: check-ins, check-outs (and tomorrow's), cash box movements. Live. */
@@ -39,7 +40,9 @@ export function NotificationCenter({ buttonClassName, panelClassName }: { button
   const openItem = async (n: NotificationDto) => {
     setOpen(false);
     if (!n.read) void api(`/notifications/${n.id}/read`, { method: 'POST' }).then(() => query.reload());
-    router.push(n.type === 'CASH' ? '/dashboard/expenses?tab=wallets' : `/dashboard/stays/${n.data.stayId}`);
+    router.push(
+      n.type === 'CASH' ? '/dashboard/expenses?tab=wallets' : n.type === 'BACKUP' ? '/dashboard/settings' : `/dashboard/stays/${n.data.stayId}`,
+    );
   };
 
   return (
@@ -138,6 +141,13 @@ function NotificationRow({ n, onOpen }: { n: NotificationDto; onOpen: () => void
 type T = ReturnType<typeof useTranslations<'notifications'>>;
 
 function describe(n: NotificationDto, t: T, locale: string): { title: string; body: string; tone?: 'in' | 'out' } {
+  if (n.type === 'BACKUP') {
+    const d = n.data;
+    const last = d.lastOkAt ? t('backup.lastOk', { when: timeAgo(d.lastOkAt, locale) }) : t('backup.noneOk');
+    return d.kind === 'FAILED'
+      ? { title: t('backup.failed'), body: [d.error, last].filter(Boolean).join(' · ') }
+      : { title: t('backup.stale'), body: last };
+  }
   if (n.type === 'CASH') {
     const d = n.data;
     const amount = `${d.amount > 0 ? '+' : '−'}${formatMoney(Math.abs(d.amount), locale)}`;

@@ -85,25 +85,52 @@ services:
       - caddy_config:/config
     depends_on: [web, api]
 
-  # Nightly database dump + file archive into ./backups (kept BACKUP_KEEP_DAYS days).
-  # Copy that folder off the server (see README). Run once now: docker compose ... run --rm backup once
+  # Nightly backup (database + every stored file) into ./backups, encrypted with
+  # BACKUP_PASSPHRASE and copied off the server (BACKUP_S3_*); "Back up now" in Settings too.
+  # One backup now (before an upgrade): docker compose ... run --rm backup once
   backup:
-    image: postgres:16-alpine
+    build:
+      context: ./backup
+    image: riad-backup:latest
     restart: unless-stopped
-    environment:
+    environment: &backup-env
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_PASSPORTS: ${S3_BUCKET_PASSPORTS:-riad-passports}
+      S3_BUCKET_RECEIPTS: ${S3_BUCKET_RECEIPTS:-riad-receipts}
+      S3_BUCKET_DOCUMENTS: ${S3_BUCKET_DOCUMENTS:-riad-documents}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      BACKUP_S3_PROVIDER: ${BACKUP_S3_PROVIDER:-Cloudflare}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-auto}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-riad}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:-}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:-}
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_REMOTE_KEEP_DAYS: ${BACKUP_REMOTE_KEEP_DAYS:-30}
+      BACKUP_REMOTE_KEEP_MONTHS: ${BACKUP_REMOTE_KEEP_MONTHS:-12}
       BACKUP_HOUR: ${BACKUP_HOUR:-3}
-      TZ: Africa/Casablanca
-    entrypoint: ['/bin/sh', '/backup.sh']
-    command: ['loop']
     volumes:
-      - ./backup.sh:/backup.sh:ro
       - ./backups:/backups
-      - miniodata:/files:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_started }
+
+  # Restore (see README): docker compose ... --profile restore run --rm restore list
+  restore:
+    image: riad-backup:latest
+    profiles: ['restore']
+    entrypoint: ['/usr/local/bin/restore.sh']
+    environment: *backup-env
+    volumes:
+      - ./backups:/backups
     depends_on:
       postgres: { condition: service_healthy }
 

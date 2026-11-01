@@ -376,20 +376,59 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 
 ### 5. Backups
 
-The `backup` service writes every night (03:00 Marrakech time) a `pg_dump` and an archive of
-the stored files to `deploy/backups/`, kept 14 days. **Copy them off the server**, e.g. with
-rclone to Cloudflare R2 / Backblaze in a daily cron:
+**What**: every night at `BACKUP_HOUR` (03:00 Marrakech) the `backup` service
+(`deploy/backup`) saves the database (`pg_dump`) and **every stored file**, object by object
+(passport photos, receipts, contracts, invoices, logo — restorable into MinIO or R2).
+
+**Where — 3 copies, 2 providers, 1 off the server**:
+
+1. on the server, `deploy/backups/` — kept `BACKUP_KEEP_DAYS` (14);
+2. **off the server**, on another provider (Cloudflare R2 recommended: free up to 10 GB, no
+   download fees for restores) — daily copies kept `BACKUP_REMOTE_KEEP_DAYS` (30), copies of
+   the 1st of each month kept `BACKUP_REMOTE_KEEP_MONTHS` (12);
+3. the VPS provider's own weekly snapshots (turn them on in its panel).
+
+Everything leaving the server is **encrypted** (AES-256, `BACKUP_PASSPHRASE`): the storage
+provider cannot read guest data.
+
+**Set up** (once): create an R2 bucket and an API token with read & write on it, fill the
+`BACKUP_*` lines of `.env.production`, then `docker compose ... up -d --build backup` and
+check **Settings → Backups** after a minute: "copied off the server · encrypted".
+
+**Watch**: Settings → Backups (owner) shows the last good backup, the history and **Back up
+now**. The owner gets a red notification when a backup fails, and every day while the last
+good one is older than 26 h. Each run is in the `backup_runs` table.
+
+**Restore** — the name is the stamp shown under each backup in Settings (or `latest`):
 
 ```bash
-rclone sync /opt/riad/deploy/backups remote:riad-backups
+cd /opt/riad/deploy
+alias dc='docker compose -f docker-compose.prod.yml --env-file .env.production'
+dc --profile restore run --rm restore list                       # what can be restored
+dc --profile restore run --rm restore latest --into riad_check   # TEST: into a spare database
+dc stop api web                                                  # REAL restore: stop the app,
+dc --profile restore run --rm restore 2026-10-31_030000 --yes    # replace database + files,
+dc start api web                                                 # start again
 ```
 
-Restore a database dump:
+Add `--offsite` to fetch from off-site storage (a new server after a crash: install the
+stack with the same `.env.production`, then restore with `--offsite --yes`), `--db-only`
+to leave the files alone. A test restore never touches the live data; a real one refuses to
+run without `--yes`. Drop a test database afterwards:
+`dc exec postgres dropdb -U riad riad_check`.
 
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env.production exec -T postgres \
-  pg_restore --clean --if-exists -U riad -d riad < backups/db_YYYY-MM-DD_HHMM.dump
-```
+**Owner checklist**
+
+- [ ] Keep `BACKUP_PASSPHRASE`, `FIELD_ENCRYPTION_KEY` and the R2 keys **off the server**: in
+      a password manager **and** on paper in a safe. Without the passphrase no backup can be
+      read; without the field key passport and CIN numbers stay unreadable.
+- [ ] Turn on the VPS provider's weekly snapshots.
+- [ ] Once a month: a test restore (`--into riad_check`) and a look at Settings → Backups.
+- [ ] Before every upgrade: `dc run --rm backup once`.
+
+Locally: `docker compose --profile backup up -d --build backup` runs the same service, with
+the local MinIO standing in for the off-server storage (bucket `riad-offsite-test`, create it
+first).
 
 ### Notes
 
@@ -409,4 +448,4 @@ docker compose -f docker-compose.prod.yml --env-file .env.production exec -T pos
   compose service name). Next.js bakes that address in at build time, so changing
   `API_INTERNAL_URL` needs a rebuild, not just a restart.
 - **Before go-live**: consent text and CNDP declaration (lawyer), tax rates (accountant),
-  and a test restore of a backup.
+  backups copied off the server and one test restore (see 5).

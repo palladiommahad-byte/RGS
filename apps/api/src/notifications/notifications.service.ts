@@ -16,7 +16,9 @@ import {
   type NotificationListDto,
   type NotificationType,
   type Permission,
+  type BackupNotificationData,
   type StayNotificationData,
+  type StayNotificationType,
 } from '@riad/shared';
 import type { AuthPrincipal } from '../common/auth/principal';
 import { pageArgs, type PaginationQueryDto } from '../common/pagination';
@@ -24,7 +26,7 @@ import { loadUserNames } from '../expenses/expense.mapper';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
-type StayType = Exclude<NotificationType, 'CASH'>;
+type StayType = StayNotificationType;
 type StayExtra = Pick<StayNotificationData, 'balance' | 'roomNotFree' | 'automatic'>;
 
 /** Who sees each kind of notification (plus `userId`, e.g. a cash box holder). */
@@ -34,6 +36,7 @@ const AUDIENCE: Record<NotificationType, Permission> = {
   CHECKOUT: P.ROOMS_READ, // the room is now to clean
   CHECKOUT_SOON: P.ROOMS_READ,
   CASH: P.EXPENSES_READ_ALL,
+  BACKUP: P.SETTINGS_RIAD, // the owner
 };
 
 const HOUR_MS = 3_600_000;
@@ -85,6 +88,15 @@ export class NotificationsService {
     }
   }
 
+  /** Backup failed or too old: the owner of every riad on this server is told, once per key. */
+  async backup(data: BackupNotificationData, dedupeKey: string): Promise<number> {
+    let sent = 0;
+    for (const { id } of await this.prisma.riad.findMany({ select: { id: true } })) {
+      if (await this.create({ riadId: id, type: 'BACKUP', actorId: null, data, dedupeKey })) sent++;
+    }
+    return sent;
+  }
+
   /** "Check-out tomorrow": once per stay and departure date, CHECKOUT_REMINDER_HOURS ahead. */
   @Cron('0 */15 * * * *', { name: 'checkout-reminders', timeZone: TIMEZONE })
   async sendCheckoutReminders(now: Date = new Date()): Promise<number> {
@@ -126,9 +138,9 @@ export class NotificationsService {
     riadId: string;
     type: NotificationType;
     actorId: string | null;
-    entityId: string;
+    entityId?: string;
     userId?: string;
-    data: StayNotificationData | CashNotificationData;
+    data: StayNotificationData | CashNotificationData | BackupNotificationData;
     dedupeKey?: string;
   }): Promise<boolean> {
     try {
@@ -191,7 +203,7 @@ export class NotificationsService {
         createdAt: r.createdAt.toISOString(),
         read: r.reads.length > 0,
         actor: (r.actorId && names.get(r.actorId)?.name) || null,
-        data: r.type !== 'CASH' && !guestNames ? { ...data, guestName: null } : data,
+        data: 'guestName' in data && !guestNames ? { ...data, guestName: null } : data,
       } as NotificationDto;
     });
     return { items, total, unread, page: q.page, limit: q.limit };

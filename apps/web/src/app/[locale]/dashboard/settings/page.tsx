@@ -12,6 +12,7 @@ import { Clock, Hotel, ImageUp, Landmark, QrCode, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { BackupsCard } from '@/components/backups-card';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -268,6 +269,8 @@ export default function SettingsPage() {
           <FormError message={save.error} />
         </div>
       </form>
+
+      <BackupsCard />
     </div>
   );
 }

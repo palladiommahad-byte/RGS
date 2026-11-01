@@ -56,8 +56,9 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
       body.details,
     );
   }
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  // 204, or 202 "accepted" with no body.
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 /** Multipart upload (receipts…), with the same session refresh as `api`. */

@@ -99,4 +99,5 @@ describe('Route access policy (every route)', () => {
   it('puts riad settings behind settings.riad', requireEach(/^settings\//, [P.SETTINGS_RIAD]));
   it('puts users and roles behind users.manage', requireEach(/^(users|roles)/, [P.USERS_MANAGE]));
   it('puts the audit log behind audit.read', requireEach(/^audit/, [P.AUDIT_READ]));
+  it('puts backups behind settings.riad (the owner)', requireEach(/^backups/, [P.SETTINGS_RIAD]));
 });

@@ -1,6 +1,7 @@
+import type { BackupNotificationData } from './backups';
 import type { IsoDate } from './dates';
 
-export const NOTIFICATION_TYPES = ['CHECKIN_REQUEST', 'CHECKIN', 'CHECKOUT', 'CHECKOUT_SOON', 'CASH'] as const;
+export const NOTIFICATION_TYPES = ['CHECKIN_REQUEST', 'CHECKIN', 'CHECKOUT', 'CHECKOUT_SOON', 'CASH', 'BACKUP'] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** The "check-out tomorrow" reminder goes out this long before the riad's check-out time. */
@@ -37,7 +38,10 @@ export type CashNotificationData = {
 
 type Base = { id: string; createdAt: string; read: boolean; actor: string | null };
 export type NotificationDto =
-  | (Base & { type: Exclude<NotificationType, 'CASH'>; data: StayNotificationData })
-  | (Base & { type: 'CASH'; data: CashNotificationData });
+  | (Base & { type: StayNotificationType; data: StayNotificationData })
+  | (Base & { type: 'CASH'; data: CashNotificationData })
+  | (Base & { type: 'BACKUP'; data: BackupNotificationData });
+
+export type StayNotificationType = Exclude<NotificationType, 'CASH' | 'BACKUP'>;
 
 export type NotificationListDto = { items: NotificationDto[]; total: number; unread: number; page: number; limit: number };

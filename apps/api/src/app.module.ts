@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { BackupsModule } from './backups/backups.module';
 import { BillingModule } from './billing/billing.module';
 import { CheckinModule } from './checkin/checkin.module';
 import { AuthCoreModule } from './common/auth/auth-core.module';
@@ -49,6 +50,7 @@ import { StorageModule } from './storage/storage.module';
     HrModule,
     SettingsModule,
     UsersModule,
+    BackupsModule,
   ],
   controllers: [HealthController],
   providers: [

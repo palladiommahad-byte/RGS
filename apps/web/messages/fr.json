@@ -132,7 +132,8 @@
     "ROLE_NOT_ASSIGNABLE": "Vous ne pouvez pas donner un rôle qui a plus de droits que vous.",
     "USER_NOT_MANAGEABLE": "Ce compte a des droits que vous n’avez pas.",
     "CANNOT_CHANGE_SELF": "Vous ne pouvez pas changer votre propre rôle ni vous désactiver.",
-    "ROOM_BOOKED": "Cette chambre est déjà réservée pour certaines de ces nuits."
+    "ROOM_BOOKED": "Cette chambre est déjà réservée pour certaines de ces nuits.",
+    "BACKUP_IN_PROGRESS": "Une sauvegarde est déjà en attente ou en cours."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -1122,7 +1123,13 @@
       "GUEST_PAYMENT_DELETE": "Paiement client retiré de {wallet}"
     },
     "checkinRoomNotFree": "Enregistrement QR : {room} n’est pas libre — choisir une chambre",
-    "checkoutAutomatic": "Départ automatique : {room}"
+    "checkoutAutomatic": "Départ automatique : {room}",
+    "backup": {
+      "failed": "Échec de la sauvegarde",
+      "stale": "Pas de sauvegarde récente",
+      "lastOk": "dernière bonne sauvegarde {when}",
+      "noneOk": "aucune bonne sauvegarde"
+    }
   },
   "paymentsPage": {
     "subtitle": "Chaque paiement client : espèces, carte, virement — et qui l’a reçu.",
@@ -1165,5 +1172,28 @@
     "outHint": "Dépenses et corrections",
     "net": "Variation",
     "after": "solde {amount}"
+  },
+  "backups": {
+    "title": "Sauvegardes",
+    "now": "Sauvegarder maintenant",
+    "running": "Sauvegarde en cours…",
+    "lastOk": "Dernière sauvegarde {when}",
+    "noneOk": "Aucune sauvegarde réussie",
+    "neverRan": "Aucune sauvegarde enregistrée sur ce serveur",
+    "neverRanHint": "Le service de sauvegarde ne tourne pas ici. Sur le serveur en ligne, il sauvegarde chaque nuit.",
+    "stale": "La dernière bonne sauvegarde date de plus d’un jour : vérifiez le service de sauvegarde.",
+    "offsite": "copiée hors du serveur",
+    "notOffsite": "NON copiée hors du serveur",
+    "encrypted": "chiffrée",
+    "nightly": "Nocturne",
+    "manual": "Manuelle",
+    "byPerson": "Par {name}",
+    "status": {
+      "OK": "Terminée",
+      "FAILED": "Échec",
+      "RUNNING": "En cours",
+      "REQUESTED": "En attente"
+    },
+    "hint": "Chaque nuit : la base de données et tous les fichiers (photos de passeport, justificatifs, contrats, factures), chiffrés et copiés chez un autre prestataire. Le nom sous chaque sauvegarde sert à la restauration."
   }
 }

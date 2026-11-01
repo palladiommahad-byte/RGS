@@ -243,7 +243,8 @@
     "ROLE_NOT_ASSIGNABLE": "You can't give a role with more rights than you have.",
     "USER_NOT_MANAGEABLE": "This account has rights you don't have.",
     "CANNOT_CHANGE_SELF": "You can't change your own role or deactivate yourself.",
-    "ROOM_BOOKED": "This room is already booked for some of these nights."
+    "ROOM_BOOKED": "This room is already booked for some of these nights.",
+    "BACKUP_IN_PROGRESS": "A backup is already waiting or running."
   },
   "roomStatus": {
     "FREE": "Free",
@@ -1122,7 +1123,13 @@
       "GUEST_PAYMENT_DELETE": "Guest payment removed from {wallet}"
     },
     "checkinRoomNotFree": "QR check-in: {room} is not free — choose a room",
-    "checkoutAutomatic": "{room} checked out automatically"
+    "checkoutAutomatic": "{room} checked out automatically",
+    "backup": {
+      "failed": "Backup failed",
+      "stale": "No recent backup",
+      "lastOk": "last good backup {when}",
+      "noneOk": "no good backup yet"
+    }
   },
   "paymentsPage": {
     "subtitle": "Every guest payment: cash, card, transfer — and who received it.",
@@ -1165,5 +1172,28 @@
     "outHint": "Expenses and corrections",
     "net": "Net change",
     "after": "balance {amount}"
+  },
+  "backups": {
+    "title": "Backups",
+    "now": "Back up now",
+    "running": "Backing up…",
+    "lastOk": "Last backup {when}",
+    "noneOk": "No successful backup yet",
+    "neverRan": "No backup recorded on this server",
+    "neverRanHint": "The backup service is not running here. On the live server it backs up every night.",
+    "stale": "The last good backup is more than a day old: check the backup service.",
+    "offsite": "copied off the server",
+    "notOffsite": "NOT copied off the server",
+    "encrypted": "encrypted",
+    "nightly": "Nightly",
+    "manual": "Manual",
+    "byPerson": "By {name}",
+    "status": {
+      "OK": "Done",
+      "FAILED": "Failed",
+      "RUNNING": "Running",
+      "REQUESTED": "Waiting"
+    },
+    "hint": "Every night: the database and every stored file (passport photos, receipts, contracts, invoices), encrypted and copied to another provider. The name under each backup is what the restore needs."
   }
 }
