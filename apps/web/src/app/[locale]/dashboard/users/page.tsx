@@ -124,7 +124,7 @@ export default function UsersPage() {
         ) : (
           <ul className="divide-y">
             {users.data?.items.map((u) => (
-              <li key={u.id} className={cn('flex flex-wrap items-center gap-3 px-4 py-3', !u.isActive && 'opacity-60')}>
+              <li key={u.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3', !u.isActive && 'opacity-60')}>
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-900" aria-hidden>
                   {u.name
                     .split(/\s+/)
@@ -132,7 +132,7 @@ export default function UsersPage() {
                     .map((w) => w[0]?.toUpperCase())
                     .join('')}
                 </span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-[calc(100%-3.25rem)] sm:basis-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{u.name}</span>
                     <Badge tone="teal">{roleName(u.role, locale)}</Badge>
@@ -143,7 +143,7 @@ export default function UsersPage() {
                     {u.email}
                   </div>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="me-auto ps-[3.25rem] text-xs text-muted-foreground sm:me-0 sm:ps-0">
                   {u.lastLoginAt ? t('users.lastLogin', { when: timeAgo(u.lastLoginAt, locale) }) : t('users.neverLoggedIn')}
                 </span>
                 {u.manageable && (

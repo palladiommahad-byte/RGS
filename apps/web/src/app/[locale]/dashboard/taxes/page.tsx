@@ -125,8 +125,8 @@ export default function TaxesPage() {
         <p className="px-5 text-sm text-muted-foreground">{t('ratesHint')}</p>
         <ul className="mt-2 divide-y border-t">
           {settings.data?.map((s) => (
-            <li key={s.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-              <div className="min-w-0 flex-1">
+            <li key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3">
+              <div className="min-w-0 flex-1 basis-full sm:basis-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{tc(`taxCode.${s.code}`)}</span>
                   {inForce(s) ? <Badge tone="green">{t('inForce')}</Badge> : <Badge tone="gray">{s.validFrom > today ? t('upcoming') : t('expired')}</Badge>}
@@ -137,7 +137,7 @@ export default function TaxesPage() {
                     : t('validSince', { from: formatDate(s.validFrom, locale) })}
                 </div>
               </div>
-              <span className="font-semibold tabular-nums">{value(s)}</span>
+              <span className="me-auto font-semibold whitespace-nowrap tabular-nums sm:me-0">{value(s)}</span>
               <Button variant="ghost" size="icon" onClick={() => setEditing(s)} aria-label={tc('common.edit')}>
                 <Pencil className="size-4" />
               </Button>

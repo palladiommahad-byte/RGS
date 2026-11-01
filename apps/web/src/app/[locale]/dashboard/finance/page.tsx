@@ -151,7 +151,7 @@ export default function FinancePage() {
 
       {d && (
         <>
-          <div className={cn('grid grid-cols-2 gap-4 lg:grid-cols-4', query.loading && 'opacity-60')}>
+          <div className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-4', query.loading && 'opacity-60')}>
             <StatCard highlight icon={TrendingUp} label={t('revenue')} value={m(d.current.revenue)} footnote={delta('revenue', true, true)} />
             <StatCard icon={Receipt} label={t('expenses')} value={m(d.current.expenses)} footnote={delta('expenses', false)} />
             <StatCard icon={PiggyBank} label={t('profit')} value={m(d.current.profit)} footnote={delta('profit')} />

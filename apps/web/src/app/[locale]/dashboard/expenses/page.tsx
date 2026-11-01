@@ -83,7 +83,7 @@ export default function ExpensesPage() {
         // Thumb-reachable on phones.
         <Button
           size="icon"
-          className="fixed end-5 bottom-5 z-30 size-14 rounded-full shadow-lg md:hidden"
+          className="fixed end-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 size-14 rounded-full shadow-lg md:hidden"
           onClick={() => setAdding(true)}
           aria-label={t('expenses.quickAdd')}
         >

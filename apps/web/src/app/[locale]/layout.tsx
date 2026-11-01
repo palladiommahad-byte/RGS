@@ -21,7 +21,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#b45a3c',
+  // Lets the layout use env(safe-area-inset-*) on phones with a notch / home bar.
+  viewportFit: 'cover',
+  // Phone browser bar in the page background colour.
+  themeColor: '#f3f6f5',
 };
 
 export function generateStaticParams() {

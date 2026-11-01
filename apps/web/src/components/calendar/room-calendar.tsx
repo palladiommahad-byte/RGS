@@ -270,7 +270,8 @@ function StayBar({ bar, top, height, tall, onOpen }: { bar: Bar; top: number; he
       onClick={() => onOpen(s.id)}
       title={`${name} · ${formatDate(s.checkInDate, locale)} → ${formatDate(s.checkOutDate, locale)}`}
       className={cn(
-        'absolute z-10 flex items-center gap-2 overflow-hidden px-2 text-start shadow-sm transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring',
+        // @container: what the bar shows depends on its own width (narrow on phones).
+        '@container absolute z-10 flex items-center gap-2 overflow-hidden px-2 text-start shadow-sm transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring',
         STAY_BAR[s.status],
         bar.cutStart ? 'rounded-s-none' : 'rounded-s-xl',
         bar.cutEnd ? 'rounded-e-none' : 'rounded-e-xl',
@@ -285,7 +286,7 @@ function StayBar({ bar, top, height, tall, onOpen }: { bar: Bar; top: number; he
       <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm', badge.className)} title={t(`source.${s.source}`)}>
         {badge.label}
       </span>
-      <span className="min-w-0 flex-1 leading-tight">
+      <span className="min-w-0 flex-1 leading-tight @max-[9rem]:hidden">
         <span className="block truncate text-sm font-semibold">{name}</span>
         <span className="block truncate text-[11px] opacity-80">
           {s.status === 'PENDING' ? t('calendar.toConfirm') : t('stays.guestsCount', { count: s.guestCount || s.adults + s.children })}
@@ -294,7 +295,7 @@ function StayBar({ bar, top, height, tall, onOpen }: { bar: Bar; top: number; he
       </span>
       <span
         className={cn(
-          'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap tabular-nums',
+          'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap tabular-nums @max-[4.5rem]:hidden',
           s.status === 'CHECKED_IN' ? 'bg-white/20' : 'bg-black/10',
         )}
         title={t('stays.nightsCount', { count: s.nights })}

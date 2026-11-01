@@ -104,7 +104,7 @@ export default function RoomsPage() {
 
       <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {query.data?.items.map((room) => (
-          <li key={room.id}>
+          <li key={room.id} className="min-w-0">
             <RoomCard
               room={room}
               busy={action.pending}

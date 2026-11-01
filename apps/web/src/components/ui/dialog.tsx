@@ -22,7 +22,7 @@ function DialogContent({
       <DialogPrimitive.Content
         className={cn(
           // Bottom sheet on phones, centred card from sm up.
-          'fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col gap-5 overflow-y-auto rounded-t-2xl border bg-card p-5 shadow-lg sm:inset-auto sm:start-1/2 sm:top-1/2 sm:w-full sm:max-w-lg sm:-translate-y-1/2 sm:rounded-2xl sm:p-6 ltr:sm:-translate-x-1/2 rtl:sm:translate-x-1/2',
+          'fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col gap-5 overflow-y-auto rounded-t-2xl border bg-card p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-lg sm:inset-auto sm:pb-6 sm:start-1/2 sm:top-1/2 sm:w-full sm:max-w-lg sm:-translate-y-1/2 sm:rounded-2xl sm:p-6 ltr:sm:-translate-x-1/2 rtl:sm:translate-x-1/2',
           className,
         )}
         {...props}

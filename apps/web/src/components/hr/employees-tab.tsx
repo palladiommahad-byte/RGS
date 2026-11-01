@@ -113,12 +113,12 @@ export function EmployeesTab({ canWrite, onChanged }: { canWrite: boolean; onCha
         ) : (
           <ul className="divide-y">
             {query.data?.items.map((e) => (
-              <li key={e.id} className={cn('flex flex-wrap items-center gap-3 px-4 py-3', !e.isActive && 'opacity-60')}>
+              <li key={e.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3', !e.isActive && 'opacity-60')}>
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-900" aria-hidden>
                   {e.firstName[0]}
                   {e.lastName[0]}
                 </span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-[calc(100%-3.25rem)] sm:basis-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">
                       {e.firstName} {e.lastName}
@@ -129,8 +129,8 @@ export function EmployeesTab({ canWrite, onChanged }: { canWrite: boolean; onCha
                     {e.position} · {t(`contractType.${e.contractType}`)} · {t('hr.employees.since', { date: formatDate(e.hireDate, locale) })}
                   </div>
                 </div>
-                <span className="text-end">
-                  <span className="block font-semibold tabular-nums">{formatMoney(e.baseSalary, locale)}</span>
+                <span className="me-auto ps-[3.25rem] sm:me-0 sm:ps-0 sm:text-end">
+                  <span className="block font-semibold whitespace-nowrap tabular-nums">{formatMoney(e.baseSalary, locale)}</span>
                   <span className="block text-xs text-muted-foreground">{t('hr.employees.perMonth')}</span>
                 </span>
                 <div className="flex">

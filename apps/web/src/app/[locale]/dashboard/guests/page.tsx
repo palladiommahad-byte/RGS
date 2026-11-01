@@ -80,8 +80,8 @@ export default function GuestRegisterPage() {
       />
 
       <Card>
-        <CardContent className="grid gap-4 md:grid-cols-[2fr_1fr_1fr]">
-          <FormField id="reg-search" label={t('common.search')}>
+        <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-[2fr_1fr_1fr]">
+          <FormField id="reg-search" label={t('common.search')} className="col-span-2 md:col-span-1">
             <div className="relative">
               <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
               <Input
@@ -106,7 +106,56 @@ export default function GuestRegisterPage() {
       {!canExport && <p className="text-sm text-muted-foreground">{t('register.exportHint')}</p>}
       <FormError message={exporting.error} />
 
-      <Card className="overflow-hidden py-0">
+      {/* Phones: one card per guest. */}
+      <ul className={cn('flex flex-col gap-2 md:hidden', query.loading && 'opacity-60')}>
+        {query.data?.items.map((r) => (
+          <li key={r.guestId}>
+            <Link href={`/dashboard/stays/${r.stayId}`} className="flex flex-col gap-2 rounded-2xl border bg-card p-3.5">
+              <span className="flex items-start justify-between gap-2">
+                <span className="min-w-0">
+                  <span className="block font-medium">
+                    {r.lastName.toUpperCase()} {r.firstName}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {[r.room, r.nationality].filter(Boolean).join(' · ') || '—'}
+                    {r.isMain && ` · ${t('stays.main')}`}
+                  </span>
+                </span>
+                <StayStatusBadge status={r.status} />
+              </span>
+              <span className="grid grid-cols-2 gap-2 rounded-xl bg-muted/60 p-2.5 text-xs">
+                <span>
+                  <span className="block text-muted-foreground">{t('register.stay')}</span>
+                  <span className="font-medium whitespace-nowrap">
+                    {formatDate(r.checkInDate, locale, short)} → {formatDate(r.checkOutDate, locale, short)}
+                  </span>
+                </span>
+                <span>
+                  <span className="block text-muted-foreground">{t('register.document')}</span>
+                  <span className="block truncate font-mono font-medium" dir="ltr">
+                    {r.documentNumber ?? '—'}
+                  </span>
+                </span>
+                <span>
+                  <span className="block text-muted-foreground">{t('register.birth')}</span>
+                  <span className="font-medium">{r.birthDate ? formatDate(r.birthDate, locale, short) : '—'}</span>
+                </span>
+                {r.documentType && (
+                  <span>
+                    <span className="block text-muted-foreground">&nbsp;</span>
+                    <span className="font-medium">{t(`documentType.${r.documentType}`)}</span>
+                  </span>
+                )}
+              </span>
+            </Link>
+          </li>
+        ))}
+        {query.data?.items.length === 0 && (
+          <li className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">{t('register.empty')}</li>
+        )}
+      </ul>
+
+      <Card className="overflow-hidden py-0 max-md:hidden">
         <div className="overflow-x-auto">
           <table className={cn('w-full min-w-[760px] text-sm', query.loading && 'opacity-60')}>
             <thead className="bg-muted/60 text-start text-xs font-medium text-muted-foreground">

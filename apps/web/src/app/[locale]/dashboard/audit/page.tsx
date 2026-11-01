@@ -229,7 +229,7 @@ function AuditRow({ entry }: { entry: AuditLogDto }) {
           </time>
           <div className="flex items-center gap-1">
             {href && (
-              <Link href={href} className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent">
+              <Link href={href} className="inline-flex min-h-9 items-center rounded-md px-3 text-xs font-medium text-primary hover:bg-accent sm:min-h-0 sm:px-2 sm:py-1">
                 {t('audit.open')}
               </Link>
             )}
@@ -238,7 +238,7 @@ function AuditRow({ entry }: { entry: AuditLogDto }) {
                 type="button"
                 onClick={() => setOpen((o) => !o)}
                 aria-expanded={open}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent"
+                className="inline-flex min-h-9 items-center gap-1 rounded-md px-3 text-xs font-medium text-muted-foreground hover:bg-accent sm:min-h-0 sm:px-2 sm:py-1"
               >
                 {t('audit.details')}
                 <ChevronDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} aria-hidden />

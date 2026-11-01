@@ -103,8 +103,8 @@ export function LeavesTab({ canWrite, onChanged }: { canWrite: boolean; onChange
         ) : (
           <ul className="divide-y">
             {query.data?.items.map((l) => (
-              <li key={l.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <div className="min-w-0 flex-1">
+              <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+                <div className="min-w-0 flex-1 basis-full sm:basis-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{l.employee.name}</span>
                     <Badge tone={STATUS_TONE[l.status]}>{t(`leaveStatus.${l.status}`)}</Badge>

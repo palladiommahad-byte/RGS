@@ -91,7 +91,8 @@ export function RecurringTab({ categories, onChanged }: { categories: ExpenseCat
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border text-teal-900">
                   <CategoryIcon icon={r.category.icon} className="size-5" />
                 </span>
-                <div className="min-w-0 flex-1">
+                {/* Phones: name and details take the row; amount and actions go below. */}
+                <div className="min-w-0 flex-1 basis-[calc(100%-3.25rem)] sm:basis-0">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium">{r.label}</span>
                     {!r.isActive && <Badge tone="gray">{t('recurring.paused')}</Badge>}
@@ -107,7 +108,8 @@ export function RecurringTab({ categories, onChanged }: { categories: ExpenseCat
                     </div>
                   )}
                 </div>
-                <span className="font-semibold tabular-nums">{formatMoney(r.amount, locale)}</span>
+                <div className="flex w-full items-center justify-between gap-2 ps-[3.25rem] sm:w-auto sm:ps-0">
+                <span className="font-semibold whitespace-nowrap tabular-nums">{formatMoney(r.amount, locale)}</span>
                 <div className="flex">
                   <Button variant="ghost" size="icon" onClick={() => setEditing(r)} aria-label={t('common.edit')}>
                     <Pencil className="size-4" />
@@ -118,6 +120,7 @@ export function RecurringTab({ categories, onChanged }: { categories: ExpenseCat
                   <Button variant="ghost" size="icon" className="text-destructive" onClick={() => void remove(r)} aria-label={t('common.delete')}>
                     <Trash2 className="size-4" />
                   </Button>
+                </div>
                 </div>
               </li>
             ))}

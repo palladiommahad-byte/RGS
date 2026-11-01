@@ -140,7 +140,8 @@ function WeekBar({ bar, top, onOpen }: { bar: Bar; top: number; onOpen: (id: str
       onClick={() => onOpen(s.id)}
       title={`${name} · ${formatDate(s.checkInDate, locale)} → ${formatDate(s.checkOutDate, locale)} · ${t('stays.nightsCount', { count: s.nights })}`}
       className={cn(
-        'absolute z-10 flex items-center gap-1.5 overflow-hidden px-1.5 text-start text-xs shadow-sm transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring',
+        // @container: short bars on narrow screens show the badge only, then the name.
+        '@container absolute z-10 flex items-center gap-1.5 overflow-hidden px-1.5 text-start text-xs shadow-sm transition-transform hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-ring',
         STAY_BAR[s.status],
         bar.cutStart ? 'rounded-s-none' : 'rounded-s-lg',
         bar.cutEnd ? 'rounded-e-none' : 'rounded-e-lg',
@@ -155,11 +156,11 @@ function WeekBar({ bar, top, onOpen }: { bar: Bar; top: number; onOpen: (id: str
       {width >= 0.9 && (
         <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold', badge.className)}>{badge.label}</span>
       )}
-      <span className="min-w-0 flex-1 truncate font-semibold">{width >= 1.5 ? name : (s.mainGuest?.firstName ?? name)}</span>
+      <span className="min-w-0 flex-1 truncate font-semibold @max-[4.5rem]:hidden">{width >= 1.5 ? name : (s.mainGuest?.firstName ?? name)}</span>
       {width >= 1.5 && (
         <span
           className={cn(
-            'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+            'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums @max-[8rem]:hidden',
             s.status === 'CHECKED_IN' ? 'bg-white/20' : 'bg-black/10',
           )}
         >
