@@ -27,12 +27,12 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { DonutChart, HorizontalBars, RevenueExpensesChart } from '@/components/finance/charts';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { StatCard, TrendChip } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { apiDownload } from '@/lib/api';
 import { formatDate, formatMoney, intlLocale } from '@/lib/format';
 import { useAction, useApiQuery } from '@/lib/use-api';
@@ -127,10 +127,7 @@ export default function FinancePage() {
           ))}
         </div>
         {preset === 'custom' && (
-          <div className="flex gap-2">
-            <Input type="date" aria-label={tc('register.from')} value={range.from} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="w-44" />
-            <Input type="date" aria-label={tc('register.to')} value={range.to} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="w-44" />
-          </div>
+          <DateRangePicker label={tc('datePicker.period')} value={range} onChange={(r) => setRange({ from: r.from as IsoDate, to: r.to as IsoDate })} className="sm:w-80" />
         )}
       </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import type { BillDto, GuestDto, Paginated, RoomDto, StayDetailDto } from '@riad/shared';
-import { ArrowLeft, Ban, CheckCircle2, Pencil, Plus, ShieldCheck, Trash2, XCircle } from 'lucide-react';
+import { ArrowLeft, Ban, BedDouble, CalendarDays, CheckCircle2, Pencil, Plus, Receipt, ShieldCheck, Trash2, Wallet, XCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { useAuth } from '@/components/auth-provider';
 import { StayBilling } from '@/components/billing/stay-billing';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
+import { StatCard } from '@/components/stat-card';
 import { StayStatusBadge } from '@/components/status-badges';
 import { CheckoutButton } from '@/components/stays/checkout-button';
 import { GuestDocuments } from '@/components/stays/guest-documents';
@@ -148,6 +149,36 @@ export default function StayDetailPage() {
           {t('stays.verifyHint')}
         </p>
       )}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          tone="sky"
+          icon={BedDouble}
+          label={s.room ? t('stays.room') : t('stays.requestedRoom')}
+          value={s.room?.name ?? s.requestedRoom?.name ?? '—'}
+          footnote={`${t('stays.adultsCount', { count: s.adults })} · ${t('stays.childrenCount', { count: s.children })}`}
+        />
+        <StatCard
+          tone="violet"
+          icon={CalendarDays}
+          label={t('stays.nights')}
+          value={s.nights}
+          footnote={`${formatDate(s.checkInDate, locale)} → ${formatDate(s.checkOutDate, locale)}`}
+        />
+        <StatCard
+          icon={Receipt}
+          label={t('bill.totalTtc')}
+          value={formatMoney(bill.data?.totals.totalTtc ?? s.totalAccommodation, locale)}
+          footnote={t('stays.pricePerNightValue', { price: formatMoney(s.pricePerNight, locale) })}
+        />
+        <StatCard
+          tone={bill.data && bill.data.balance > 0 ? 'rose' : 'emerald'}
+          icon={Wallet}
+          label={t('bill.balance')}
+          value={bill.data ? formatMoney(Math.max(bill.data.balance, 0), locale) : '—'}
+          footnote={bill.data && (bill.data.balance > 0 ? `${t('bill.paid')}: ${formatMoney(bill.data.paid, locale)}` : t('bill.settled'))}
+        />
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-5">
         <Card className="xl:col-span-2">

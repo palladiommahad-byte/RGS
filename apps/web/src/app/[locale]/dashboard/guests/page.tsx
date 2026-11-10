@@ -4,6 +4,7 @@ import { addDays, todayIso, type GuestRegisterRowDto, type Paginated } from '@ri
 import { FileSpreadsheet, FileText, Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
@@ -80,8 +81,8 @@ export default function GuestRegisterPage() {
       />
 
       <Card>
-        <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-[2fr_1fr_1fr]">
-          <FormField id="reg-search" label={t('common.search')} className="col-span-2 md:col-span-1">
+        <CardContent className="grid gap-4 md:grid-cols-[3fr_2fr]">
+          <FormField id="reg-search" label={t('common.search')}>
             <div className="relative">
               <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
               <Input
@@ -94,11 +95,17 @@ export default function GuestRegisterPage() {
               />
             </div>
           </FormField>
-          <FormField id="reg-from" label={t('register.from')}>
-            <Input id="reg-from" type="date" value={from} onChange={(e) => (setRange((r) => ({ ...r, from: e.target.value })), setPage(1))} />
-          </FormField>
-          <FormField id="reg-to" label={t('register.to')}>
-            <Input id="reg-to" type="date" value={to} min={from ? addDays(from, 1) : undefined} onChange={(e) => (setRange((r) => ({ ...r, to: e.target.value })), setPage(1))} />
+          <FormField id="reg-period" label={t('datePicker.period')}>
+            <DateRangePicker
+              id="reg-period"
+              label={t('datePicker.period')}
+              className="h-12"
+              value={{ from, to: to ? addDays(to, -1) : '' }}
+              onChange={(r) => {
+                setRange({ from: r.from, to: r.to ? addDays(r.to, 1) : '' });
+                setPage(1);
+              }}
+            />
           </FormField>
         </CardContent>
       </Card>

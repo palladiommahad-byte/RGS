@@ -17,12 +17,12 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { CHART_COLORS } from '@/components/finance/charts';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { FormError } from '@/components/form-field';
 import { Pagination } from '@/components/pagination';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -144,10 +144,15 @@ export function ExpensesTab({
             ))}
           </div>
           {preset === 'custom' && (
-            <div className="flex gap-2">
-              <Input type="date" aria-label={t('register.from')} value={range.from} onChange={(e) => set((v) => setRange((r) => ({ ...r, from: v })))(e.target.value)} className="w-40" />
-              <Input type="date" aria-label={t('register.to')} value={range.to} onChange={(e) => set((v) => setRange((r) => ({ ...r, to: v })))(e.target.value)} className="w-40" />
-            </div>
+            <DateRangePicker
+              label={t('datePicker.period')}
+              value={range}
+              onChange={(r) => {
+                setRange(r);
+                setPage(1);
+              }}
+              className="sm:w-80"
+            />
           )}
         </div>
         <div className={cn('grid gap-2', manager ? 'sm:grid-cols-3' : 'sm:grid-cols-1 sm:max-w-xs')}>

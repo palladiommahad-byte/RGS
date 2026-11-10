@@ -164,7 +164,7 @@
   "stayStatus": {
     "PENDING": "En attente",
     "CHECKED_IN": "En séjour",
-    "CHECKED_OUT": "Parti",
+    "CHECKED_OUT": "Départ effectué",
     "CANCELLED": "Annulé"
   },
   "source": {
@@ -209,7 +209,7 @@
     "nextWeek": "Semaine suivante",
     "legendInHouse": "En séjour",
     "legendPending": "En attente",
-    "legendCheckedOut": "Parti",
+    "legendCheckedOut": "Départ effectué",
     "noRoomRow": "Sans chambre",
     "greeting": {
       "morning": "Bonjour, {name}",
@@ -258,7 +258,9 @@
     "tapWhenClean": "Touchez quand elle est prête",
     "toClean": "Départ : à nettoyer",
     "arrivalToday": "Arrivée : {name}",
-    "outOfServiceHint": "Indisponible à la réservation"
+    "outOfServiceHint": "Indisponible à la réservation",
+    "subtitle": "{count, plural, one {# chambre} other {# chambres}} · les statuts changent seuls à l’arrivée et au départ.",
+    "ofTotal": "sur {total}"
   },
   "qr": {
     "title": "QR codes d'enregistrement",
@@ -310,7 +312,7 @@
     "confirmedBy": "Arrivée confirmée par {name} le {date}",
     "checkout": "Faire le départ",
     "checkoutConfirm": "Confirmer le départ de {name} ? La chambre {room} passera « À nettoyer ».",
-    "checkedOutAt": "Parti le {date}",
+    "checkedOutAt": "Départ effectué le {date}",
     "edit": "Modifier le séjour",
     "cancelStay": "Annuler le séjour",
     "cancelConfirm": "Annuler ce séjour ? Cette action est définitive.",
@@ -333,7 +335,9 @@
       "moveHint": "Déplacer le client dans une chambre libre pour toutes ces nuits :",
       "moveTo": "Déplacer vers {room}",
       "noFreeRoom": "Aucune chambre n’est libre pour toutes ces nuits. Raccourcissez le séjour ou modifiez l’autre réservation."
-    }
+    },
+    "earlyArrival": "Arrivée anticipée : réservé à partir du {booked}. Le séjour commencera aujourd’hui, {nights, plural, one {# nuit} other {# nuits}} au total, et le prix suit.",
+    "pricePerNightValue": "{price} / nuit"
   },
   "guest": {
     "firstName": "Prénom",
@@ -890,7 +894,14 @@
     "checkoutTimeHint": "Les clients encore présents sont enregistrés au départ à cette heure, le jour de leur départ.",
     "roomReadyTime": "Chambres prêtes à",
     "roomReadyTimeHint": "Les chambres encore « à nettoyer » redeviennent libres à cette heure.",
-    "stayCycleHint": "Le personnel peut toujours faire un départ ou marquer une chambre prête plus tôt. Les chambres hors service ne sont jamais modifiées."
+    "stayCycleHint": "Le personnel peut toujours faire un départ ou marquer une chambre prête plus tôt. Les chambres hors service ne sont jamais modifiées.",
+    "sectionHint": {
+      "logo": "Affiché dans le menu et sur les factures.",
+      "identity": "Imprimé sur chaque facture et reçu.",
+      "invoicing": "Numérotation des factures et identifiants légaux exigés au Maroc.",
+      "wifi": "Affiché aux clients après leur enregistrement en ligne.",
+      "stayCycle": "Heure de départ automatique et heure à laquelle les chambres sont prêtes."
+    }
   },
   "users": {
     "subtitle": "Comptes du personnel et rôles. Un compte désactivé est déconnecté immédiatement.",
@@ -922,7 +933,8 @@
     "generate": "Générer",
     "resetFor": "Nouveau mot de passe pour {name}",
     "resetDone": "Mot de passe changé et sessions fermées. Remettez-lui ce mot de passe provisoire :",
-    "resetHint": "Ses sessions en cours seront fermées."
+    "resetHint": "Ses sessions en cours seront fermées.",
+    "team": "Membres de l’équipe"
   },
   "permission": {
     "stays_read": "Voir les séjours",
@@ -1242,5 +1254,22 @@
     "front": "Réception",
     "money": "Finances",
     "team": "Équipe"
+  },
+  "datePicker": {
+    "placeholder": "Choisir une date",
+    "hint": "Faites défiler chaque colonne jusqu’à la bonne valeur.",
+    "confirm": "Valider",
+    "clear": "Effacer",
+    "year": "Année",
+    "month": "Mois",
+    "day": "Jour",
+    "period": "Période",
+    "anyDate": "Toutes les dates",
+    "rangeHint": "Touchez le premier jour, puis le dernier.",
+    "pickStart": "Touchez le premier jour",
+    "apply": "Appliquer",
+    "prevMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "daysCount": "{count, plural, one {# jour} other {# jours}}"
   }
 }

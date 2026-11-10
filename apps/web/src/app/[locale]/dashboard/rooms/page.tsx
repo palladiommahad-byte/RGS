@@ -1,7 +1,7 @@
 'use client';
 
 import type { Paginated, RoomDto, RoomStatus } from '@riad/shared';
-import { Plus, QrCode } from 'lucide-react';
+import { BedDouble, Brush, DoorOpen, Plus, QrCode, Wrench } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -11,6 +11,7 @@ import { useRealtimeEvent } from '@/components/realtime-provider';
 import { Pagination } from '@/components/pagination';
 import { RoomCard } from '@/components/rooms/room-card';
 import { RoomFormDialog } from '@/components/rooms/room-form-dialog';
+import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -59,10 +60,14 @@ export default function RoomsPage() {
     if (await action.run(() => api(`/rooms/${room.id}`, { method: 'PATCH', body }))) query.reload();
   }
 
+  const active = query.data?.items.filter((r) => r.isActive) ?? [];
+  const count = (status: RoomStatus) => active.filter((r) => r.status === status).length;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t('nav.rooms')}
+        subtitle={query.data && t('rooms.subtitle', { count: active.length })}
         actions={
           canWrite && (
             <>
@@ -80,6 +85,15 @@ export default function RoomsPage() {
           )
         }
       />
+
+      {query.data && active.length > 0 && (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard icon={BedDouble} label={t('roomStatus.OCCUPIED')} value={count('OCCUPIED')} footnote={t('rooms.ofTotal', { total: active.length })} />
+          <StatCard tone="emerald" icon={DoorOpen} label={t('roomStatus.FREE')} value={count('FREE')} footnote={t('rooms.ofTotal', { total: active.length })} />
+          <StatCard tone="amber" icon={Brush} label={t('roomStatus.CLEANING')} value={count('CLEANING')} footnote={t('rooms.ofTotal', { total: active.length })} />
+          <StatCard tone="rose" icon={Wrench} label={t('roomStatus.OUT_OF_SERVICE')} value={count('OUT_OF_SERVICE')} footnote={t('rooms.ofTotal', { total: active.length })} />
+        </div>
+      )}
 
       {canWrite && (
         <label className="flex min-h-11 items-center gap-3 text-sm">
@@ -102,7 +116,7 @@ export default function RoomsPage() {
         <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">{t('rooms.empty')}</p>
       )}
 
-      <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {query.data?.items.map((room) => (
           <li key={room.id} className="min-w-0">
             <RoomCard

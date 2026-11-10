@@ -114,5 +114,14 @@
       "INVALID_CHECKIN_LINK": "Este enlace de check-in ya no es válido.",
       "VALIDATION_ERROR": "Algunos datos no son válidos. Revise los pasos anteriores."
     }
+  },
+  "datePicker": {
+    "placeholder": "Elegir una fecha",
+    "hint": "Desliza cada columna hasta el valor correcto.",
+    "confirm": "Confirmar",
+    "clear": "Borrar",
+    "year": "Año",
+    "month": "Mes",
+    "day": "Día"
   }
 }

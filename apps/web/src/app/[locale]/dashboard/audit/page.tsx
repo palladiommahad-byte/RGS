@@ -14,10 +14,10 @@ import { ChevronDown, Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
 import { formatDate, formatMoney, formatTime } from '@/lib/format';
@@ -118,7 +118,7 @@ export default function AuditPage() {
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+        <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,20rem)_auto]">
           <label className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-1">
             <span className="text-muted-foreground">{t('audit.person')}</span>
             <Select value={userId} onChange={(e) => change(setUserId)(e.target.value)} className="h-11">
@@ -130,14 +130,18 @@ export default function AuditPage() {
               ))}
             </Select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">{t('audit.from')}</span>
-            <Input type="date" value={from} max={to || undefined} onChange={(e) => change(setFrom)(e.target.value)} className="h-11" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">{t('audit.to')}</span>
-            <Input type="date" value={to} min={from || undefined} onChange={(e) => change(setTo)(e.target.value)} className="h-11" />
-          </label>
+          <div className="col-span-2 flex flex-col gap-1 text-sm sm:col-span-1">
+            <span className="text-muted-foreground">{t('datePicker.period')}</span>
+            <DateRangePicker
+              label={t('datePicker.period')}
+              clearable
+              value={{ from, to }}
+              onChange={(r) => {
+                setFrom(r.from);
+                change(setTo)(r.to);
+              }}
+            />
+          </div>
           <Button variant="ghost" onClick={clear} disabled={!filtered} className="col-span-2 h-11 sm:col-span-1">
             <X aria-hidden />
             {t('audit.clear')}

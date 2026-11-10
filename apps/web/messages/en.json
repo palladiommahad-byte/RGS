@@ -257,7 +257,7 @@
   "stayStatus": {
     "PENDING": "Pending",
     "CHECKED_IN": "In house",
-    "CHECKED_OUT": "Left",
+    "CHECKED_OUT": "Checked out",
     "CANCELLED": "Cancelled"
   },
   "source": {
@@ -292,7 +292,7 @@
     "nextWeek": "Next week",
     "legendInHouse": "In house",
     "legendPending": "Pending",
-    "legendCheckedOut": "Left",
+    "legendCheckedOut": "Checked out",
     "noRoomRow": "No room",
     "greeting": {
       "morning": "Good morning, {name}",
@@ -341,7 +341,9 @@
     "tapWhenClean": "Tap when it's ready",
     "toClean": "Departure: to clean",
     "arrivalToday": "Arriving: {name}",
-    "outOfServiceHint": "Not available for booking"
+    "outOfServiceHint": "Not available for booking",
+    "subtitle": "{count, plural, one {# room} other {# rooms}} · statuses update by themselves on check-in and check-out.",
+    "ofTotal": "of {total}"
   },
   "qr": {
     "title": "Check-in QR codes",
@@ -393,7 +395,7 @@
     "confirmedBy": "Check-in confirmed by {name} on {date}",
     "checkout": "Check out",
     "checkoutConfirm": "Check out {name}? Room {room} becomes \"To clean\".",
-    "checkedOutAt": "Left on {date}",
+    "checkedOutAt": "Checked out on {date}",
     "edit": "Edit stay",
     "cancelStay": "Cancel stay",
     "cancelConfirm": "Cancel this stay? This can't be undone.",
@@ -416,7 +418,9 @@
       "moveHint": "Move the guest to a room that is free for all these nights:",
       "moveTo": "Move to {room}",
       "noFreeRoom": "No room is free for all these nights. Shorten the stay or change the other booking."
-    }
+    },
+    "earlyArrival": "Early arrival: booked from {booked}. The stay will start today, {nights, plural, one {# night} other {# nights}} in total, and the price follows.",
+    "pricePerNightValue": "{price} / night"
   },
   "realtime": {
     "newCheckin": "New online check-in",
@@ -890,7 +894,14 @@
     "checkoutTimeHint": "Guests still in are checked out at this time on their departure day.",
     "roomReadyTime": "Rooms ready at",
     "roomReadyTimeHint": "Rooms still « to clean » become free again at this time.",
-    "stayCycleHint": "Staff can still check guests out, or mark a room ready, earlier by hand. Rooms out of service are never changed."
+    "stayCycleHint": "Staff can still check guests out, or mark a room ready, earlier by hand. Rooms out of service are never changed.",
+    "sectionHint": {
+      "logo": "Shown in the menu and on invoices.",
+      "identity": "Printed on every invoice and receipt.",
+      "invoicing": "Invoice numbering and the legal IDs Moroccan invoices must show.",
+      "wifi": "Shown to guests after their online check-in.",
+      "stayCycle": "When guests are checked out and rooms become ready, automatically."
+    }
   },
   "users": {
     "subtitle": "Staff accounts and roles. A deactivated account is signed out at once.",
@@ -922,7 +933,8 @@
     "generate": "Generate",
     "resetFor": "New password for {name}",
     "resetDone": "Password changed and sessions ended. Give them this temporary password:",
-    "resetHint": "Their current sessions will end."
+    "resetHint": "Their current sessions will end.",
+    "team": "Team members"
   },
   "permission": {
     "stays_read": "See stays",
@@ -1242,5 +1254,22 @@
     "front": "Front desk",
     "money": "Money",
     "team": "Team"
+  },
+  "datePicker": {
+    "placeholder": "Choose a date",
+    "hint": "Scroll each column to the right value.",
+    "confirm": "Confirm",
+    "clear": "Clear",
+    "year": "Year",
+    "month": "Month",
+    "day": "Day",
+    "period": "Period",
+    "anyDate": "Any date",
+    "rangeHint": "Tap the first day, then the last day.",
+    "pickStart": "Tap the first day",
+    "apply": "Apply",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "daysCount": "{count, plural, one {# day} other {# days}}"
   }
 }

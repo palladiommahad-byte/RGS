@@ -2,6 +2,8 @@
 
 import {
   CHECKIN_ROOM_STATUSES,
+  nightsBetween,
+  todayIso,
   guestFormSchema,
   parseMadToCentimes,
   STAY_SOURCES,
@@ -72,7 +74,11 @@ export function ConfirmStayDialog({
   onDone,
 }: DialogProps & { stay: StayDetailDto; rooms: RoomDto[] }) {
   const t = useTranslations();
+  const locale = useLocale();
   const available = rooms.filter((r) => CHECKIN_ROOM_STATUSES.includes(r.status));
+  // Here before the booked day: the stay will start today, so it gets longer.
+  const today = todayIso();
+  const early = stay.checkInDate > today;
   const [roomId, setRoomId] = useState('');
   const [source, setSource] = useState<string>(stay.source);
   const [externalRef, setExternalRef] = useState('');
@@ -131,6 +137,14 @@ export function ConfirmStayDialog({
           <DialogDescription>{t('stays.confirmDescription')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+          {early && (
+            <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+              {t('stays.earlyArrival', {
+                booked: formatDate(stay.checkInDate, locale),
+                nights: nightsBetween(today, stay.checkOutDate),
+              })}
+            </p>
+          )}
           <FormField id="confirm-room" label={t('stays.room')} error={errors.roomId}>
             <Select id="confirm-room" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
               <option value="">—</option>

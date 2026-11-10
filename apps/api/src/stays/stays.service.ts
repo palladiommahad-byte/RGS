@@ -9,6 +9,7 @@ import {
   utcDateToIso,
   type GuestDto,
   type GuestFilesDto,
+  type IsoDate,
   type Paginated,
   type StayDetailDto,
   type StayStatus,
@@ -165,7 +166,9 @@ export class StaysService {
 
   /** Staff-created stay (walk-in, guest without a phone…). Optionally checked in at once. */
   async create(p: AuthPrincipal, dto: CreateStayDto): Promise<StayDetailDto> {
-    const nights = nightsOrThrow(dto.checkInDate, dto.checkOutDate);
+    // Checked in now: the stay starts today, whatever arrival day was typed.
+    const checkInDate = dto.checkInNow ? arrivalOnCheckIn(dto.checkInDate) : dto.checkInDate;
+    const nights = nightsOrThrow(checkInDate, dto.checkOutDate);
     if (dto.checkInNow) {
       if (!p.permissions.includes(PERMISSIONS.CHECKIN_CONFIRM)) {
         throw new AppException('FORBIDDEN', 'Missing permission', HttpStatus.FORBIDDEN, {
@@ -182,7 +185,7 @@ export class StaysService {
           riadId: p.riadId,
           source: dto.source,
           externalRef: dto.externalRef,
-          checkInDate: isoToUtcDate(dto.checkInDate),
+          checkInDate: isoToUtcDate(checkInDate),
           checkOutDate: isoToUtcDate(dto.checkOutDate),
           nights,
           adults: dto.adults,
@@ -288,6 +291,12 @@ export class StaysService {
     const before = await this.findOrThrow(p.riadId, id);
     assertStatus(before, 'PENDING', 'CHECKED_IN');
     await this.assertRoomInRiad(p.riadId, dto.roomId);
+    // Guest here before the booked day: the stay starts today (nights and total follow),
+    // so it never "starts" after the guest has already left. The added nights must be free.
+    const bookedIn = utcDateToIso(before.checkInDate);
+    const checkIn = arrivalOnCheckIn(bookedIn);
+    const nights = checkIn === bookedIn ? before.nights : nightsOrThrow(checkIn, utcDateToIso(before.checkOutDate));
+    if (checkIn !== bookedIn) await assertRoomBookable(this.prisma, p.riadId, dto.roomId, checkIn, bookedIn, id);
 
     await this.prisma.$transaction(async (tx) => {
       const { count } = await tx.stay.updateMany({
@@ -297,8 +306,9 @@ export class StaysService {
           roomId: dto.roomId,
           source: dto.source,
           externalRef: dto.externalRef,
+          ...(checkIn !== bookedIn ? { checkInDate: isoToUtcDate(checkIn), nights } : {}),
           pricePerNight: dto.pricePerNight,
-          totalAccommodation: accommodationTotal(dto.pricePerNight, before.nights),
+          totalAccommodation: accommodationTotal(dto.pricePerNight, nights),
           otaCommission: dto.otaCommission ?? 0,
           confirmedBy: p.userId,
           confirmedAt: new Date(),
@@ -318,6 +328,7 @@ export class StaysService {
             roomId: dto.roomId,
             pricePerNight: dto.pricePerNight,
             source: dto.source,
+            ...(checkIn !== bookedIn ? { checkInDate: [bookedIn, checkIn], nights: [before.nights, nights] } : {}),
           },
         },
         tx,
@@ -492,6 +503,12 @@ export class StaysService {
 }
 
 // -----------------------------------------------------------------------------
+
+/** Arrival date to record when the guest checks in today: an early arrival starts today. */
+function arrivalOnCheckIn(booked: IsoDate): IsoDate {
+  const today = todayIso();
+  return booked > today ? today : booked;
+}
 
 function nightsOrThrow(checkIn: string, checkOut: string): number {
   const nights = nightsBetween(checkIn, checkOut);

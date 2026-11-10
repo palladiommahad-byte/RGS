@@ -5,11 +5,11 @@ import { Banknote, ChevronRight, CreditCard, Globe, Landmark, Wallet, type Lucid
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { DateRangePicker } from '@/components/date-range-picker';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { useRealtimeEvent } from '@/components/realtime-provider';
 import { StatCard, type StatTone } from '@/components/stat-card';
-import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
 import { formatDate, formatMoney, formatTime } from '@/lib/format';
@@ -61,10 +61,6 @@ export default function PaymentsPage() {
 
   const r = query.data;
   const m = (c: number) => formatMoney(c, locale);
-  const setDay = (key: 'from' | 'to', value: string) => {
-    setRange((x) => ({ ...x, [key]: value }));
-    setPage(1);
-  };
   const choose = (p: Preset) => {
     setPreset(p);
     if (p !== 'custom') setRange(presetRange(p));
@@ -132,16 +128,17 @@ export default function PaymentsPage() {
             </Select>
           </label>
           {preset === 'custom' && (
-            <>
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-muted-foreground">{t('audit.from')}</span>
-                <Input type="date" value={range.from} max={range.to || undefined} onChange={(e) => setDay('from', e.target.value)} className="h-11" />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-muted-foreground">{t('audit.to')}</span>
-                <Input type="date" value={range.to} min={range.from || undefined} onChange={(e) => setDay('to', e.target.value)} className="h-11" />
-              </label>
-            </>
+            <div className="flex flex-col gap-1 text-sm">
+              <span className="text-muted-foreground">{t('datePicker.period')}</span>
+              <DateRangePicker
+                label={t('datePicker.period')}
+                value={range}
+                onChange={(r) => {
+                  setRange(r);
+                  setPage(1);
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

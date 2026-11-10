@@ -8,7 +8,7 @@ import {
   riadSettingsFormSchema,
   type RiadSettingsDto,
 } from '@riad/shared';
-import { Clock, Hotel, ImageUp, Landmark, QrCode, Trash2 } from 'lucide-react';
+import { Clock, FileText, Hotel, ImageIcon, ImageUp, Landmark, QrCode, Trash2, Wifi } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -16,7 +16,6 @@ import { BackupsCard } from '@/components/backups-card';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from '@/i18n/navigation';
@@ -137,11 +136,7 @@ export default function SettingsPage() {
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.logo')}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-5">
+      <Section icon={ImageIcon} title={t('settings.logo')} hint={t('settings.sectionHint.logo')} className="flex flex-wrap items-center gap-5">
           <span className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-muted">
             {s?.logoVersion ? (
               <img src={`/api/v1/riad/logo?v=${s.logoVersion}`} alt={t('settings.logo')} className="size-full object-contain" />
@@ -176,15 +171,10 @@ export default function SettingsPage() {
             />
             <FormError message={logo.error} />
           </div>
-        </CardContent>
-      </Card>
+      </Section>
 
       <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.identity')}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <Section icon={Hotel} title={t('settings.identity')} hint={t('settings.sectionHint.identity')} className="grid gap-4 sm:grid-cols-2">
             <FormField id="st-name" label={t('settings.name')} error={errors.name}>
               <Input id="st-name" value={form.name} onChange={(e) => set('name', e.target.value)} />
             </FormField>
@@ -200,14 +190,9 @@ export default function SettingsPage() {
             <FormField id="st-email" label={t('settings.email')} error={errors.email}>
               <Input id="st-email" type="email" dir="ltr" value={form.email} onChange={(e) => set('email', e.target.value)} />
             </FormField>
-          </CardContent>
-        </Card>
+        </Section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.invoicing')}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <Section icon={FileText} title={t('settings.invoicing')} hint={t('settings.sectionHint.invoicing')} className="grid gap-4 sm:grid-cols-2">
             <FormField
               id="st-prefix"
               label={t('settings.invoicePrefix')}
@@ -229,28 +214,15 @@ export default function SettingsPage() {
               <Input id="st-patente" dir="ltr" value={form.patente} onChange={(e) => set('patente', e.target.value)} />
             </FormField>
             <p className="self-end text-xs text-muted-foreground sm:col-span-2">{t('settings.invoicingHint')}</p>
-          </CardContent>
-        </Card>
+        </Section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.wifi')}</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Section icon={Wifi} title={t('settings.wifi')} hint={t('settings.sectionHint.wifi')}>
             <FormField id="st-wifi" label={t('settings.wifiInfo')} error={errors.wifiInfo} hint={t('settings.wifiHint')}>
               <Textarea id="st-wifi" rows={3} value={form.wifiInfo} onChange={(e) => set('wifiInfo', e.target.value)} placeholder={t('settings.wifiPlaceholder')} />
             </FormField>
-          </CardContent>
-        </Card>
+        </Section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="size-5 text-muted-foreground" aria-hidden />
-              {t('settings.stayCycle')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <Section icon={Clock} title={t('settings.stayCycle')} hint={t('settings.sectionHint.stayCycle')} className="grid gap-4 sm:grid-cols-2">
             <FormField id="st-checkout" label={t('settings.checkoutTime')} error={errors.checkoutTime} hint={t('settings.checkoutTimeHint')}>
               <Input id="st-checkout" type="time" dir="ltr" value={form.checkoutTime} onChange={(e) => set('checkoutTime', e.target.value)} />
             </FormField>
@@ -258,10 +230,9 @@ export default function SettingsPage() {
               <Input id="st-ready" type="time" dir="ltr" value={form.roomReadyTime} onChange={(e) => set('roomReadyTime', e.target.value)} />
             </FormField>
             <p className="text-xs text-muted-foreground sm:col-span-2">{t('settings.stayCycleHint')}</p>
-          </CardContent>
-        </Card>
+        </Section>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <Button type="submit" size="lg" disabled={save.pending || !s}>
             {save.pending ? t('common.saving') : t('common.save')}
           </Button>
@@ -272,5 +243,35 @@ export default function SettingsPage() {
 
       <BackupsCard />
     </div>
+  );
+}
+
+/** Settings block: icon, title and what it is for on the left (computers), fields on the right. */
+function Section({
+  icon: Icon,
+  title,
+  hint,
+  className,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  hint: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="grid gap-5 rounded-2xl border bg-card p-5 shadow-xs md:p-6 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-10">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-900" aria-hidden>
+          <Icon className="size-[18px]" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-semibold">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+        </div>
+      </div>
+      <div className={className}>{children}</div>
+    </section>
   );
 }

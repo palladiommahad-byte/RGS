@@ -271,4 +271,46 @@ describe('Rooms & stays (e2e)', () => {
       await receptionA.get(`${API}/stays?roomId=not-a-uuid`).expect(400);
     });
   });
+
+  describe('early arrival', () => {
+    // Riad B: its rooms are untouched by the lifecycle tests above.
+    it('starts the stay today when a booked guest checks in early', async () => {
+      const booked = await ownerB
+        .post(`${API}/stays`)
+        .send(stayBody({ checkInDate: addDays(today, 2), checkOutDate: addDays(today, 4) }))
+        .expect(201);
+      expect(booked.body.nights).toBe(2);
+      const res = await ownerB
+        .post(`${API}/stays/${booked.body.id}/confirm`)
+        .send({ roomId: b.rooms[0]!.id, source: 'BOOKING', pricePerNight: 90000 })
+        .expect(200);
+      expect(res.body).toMatchObject({ status: 'CHECKED_IN', checkInDate: today, checkOutDate: addDays(today, 4), nights: 4, totalAccommodation: 360000 });
+      const log = await prisma.auditLog.findFirstOrThrow({ where: { entityId: booked.body.id, action: 'stay.confirm' } });
+      expect(log.diff).toMatchObject({ checkInDate: [addDays(today, 2), today], nights: [2, 4] });
+    });
+
+    it('refuses an early check-in when the added nights are booked by someone else', async () => {
+      const room = b.rooms[1]!;
+      await ownerB.post(`${API}/stays`).send(stayBody({ roomId: room.id, checkOutDate: addDays(today, 1) })).expect(201);
+      const later = await ownerB
+        .post(`${API}/stays`)
+        .send(stayBody({ checkInDate: addDays(today, 1), checkOutDate: addDays(today, 3) }))
+        .expect(201);
+      const res = await ownerB
+        .post(`${API}/stays/${later.body.id}/confirm`)
+        .send({ roomId: room.id, source: 'DIRECT', pricePerNight: 90000 })
+        .expect(409);
+      expect(res.body.code).toBe('ROOM_BOOKED');
+      const still = await ownerB.get(`${API}/stays/${later.body.id}`).expect(200);
+      expect(still.body).toMatchObject({ status: 'PENDING', checkInDate: addDays(today, 1), nights: 2 });
+    });
+
+    it('starts a walk-in checked in now today, whatever arrival day was typed', async () => {
+      const res = await ownerB
+        .post(`${API}/stays`)
+        .send(stayBody({ roomId: b.rooms[2]!.id, checkInNow: true, checkInDate: addDays(today, 2), checkOutDate: addDays(today, 5) }))
+        .expect(201);
+      expect(res.body).toMatchObject({ status: 'CHECKED_IN', checkInDate: today, nights: 5, totalAccommodation: 95050 * 5 });
+    });
+  });
 });

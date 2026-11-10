@@ -17,6 +17,7 @@ import {
 } from '@riad/shared';
 import { useLocale, useTranslations } from 'next-intl';
 import { NationalitySelect } from '@/components/country-select';
+import { BirthDatePicker } from '@/components/birth-date-picker';
 import { FormField } from '@/components/form-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -292,7 +293,13 @@ export function GuestFields({
         </Select>
       </FormField>
       <FormField id={id('birth')} label={t('guest.birthDate')} error={err('birthDate')}>
-        <Input id={id('birth')} type="date" value={values.birthDate} onChange={set('birthDate')} />
+        <BirthDatePicker
+          id={id('birth')}
+          title={t('guest.birthDate')}
+          value={values.birthDate}
+          onChange={(birthDate) => onChange({ ...values, birthDate })}
+          invalid={!!err('birthDate')}
+        />
       </FormField>
       <FormField id={id('doctype')} label={t('guest.documentType')} error={err('documentType')}>
         <Select id={id('doctype')} value={values.documentType} onChange={set('documentType')}>

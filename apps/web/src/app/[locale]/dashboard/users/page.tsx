@@ -118,13 +118,17 @@ export default function UsersPage() {
       </div>
       <FormError message={action.error} />
 
-      <Card className="py-0">
+      <Card className="gap-0 py-0">
+        <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
+          <h2 className="font-semibold">{t('users.team')}</h2>
+          {users.data && <Badge>{users.data.total}</Badge>}
+        </div>
         {users.data?.items.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">{t('users.empty')}</p>
         ) : (
           <ul className="divide-y">
             {users.data?.items.map((u) => (
-              <li key={u.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3', !u.isActive && 'opacity-60')}>
+              <li key={u.id} className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3.5', !u.isActive && 'opacity-60')}>
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-900" aria-hidden>
                   {u.name
                     .split(/\s+/)
