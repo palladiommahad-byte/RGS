@@ -34,7 +34,10 @@ export function TopBarActions() {
     <div className="flex items-center gap-2">
       <LanguageMenu />
       {can('stays.read', 'rooms.read', 'expenses.read_all', 'expenses.write_petty_cash') && (
-        <NotificationCenter buttonClassName={roundButton} panelClassName={panel} />
+        <NotificationCenter
+          buttonClassName={cn(roundButton, 'bg-amber-50 text-amber-600 hover:bg-amber-100 data-[state=open]:bg-amber-100')}
+          panelClassName={panel}
+        />
       )}
       <UserMenu />
     </div>
@@ -84,17 +87,23 @@ function UserMenu() {
             {menuLinks.map((l) => (
               <DropdownMenu.Item key={l.key} asChild className={item}>
                 <Link href={l.href}>
-                  <l.icon className="size-4 text-muted-foreground" aria-hidden />
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700" aria-hidden>
+                    <l.icon className="size-4" />
+                  </span>
                   {t(`nav.${l.key}`)}
                 </Link>
               </DropdownMenu.Item>
             ))}
             <DropdownMenu.Item className={item} onSelect={() => setChangingPassword(true)}>
-              <KeyRound className="size-4 text-muted-foreground" aria-hidden />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-700" aria-hidden>
+                <KeyRound className="size-4" />
+              </span>
               {t('account.changePassword')}
             </DropdownMenu.Item>
             <DropdownMenu.Item className={cn(item, 'text-destructive data-[highlighted]:bg-red-50')} onSelect={() => void logout()}>
-              <LogOut className="size-4 rtl:rotate-180" aria-hidden />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600" aria-hidden>
+                <LogOut className="size-4 rtl:rotate-180" />
+              </span>
               {t('common.logout')}
             </DropdownMenu.Item>
           </DropdownMenu.Content>

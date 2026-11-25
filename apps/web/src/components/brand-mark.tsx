@@ -1,7 +1,6 @@
-import { Hotel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Riad logo (uploaded in Settings) or a default icon, next to the riad name. */
+/** Riad logo (uploaded in Settings), else the Riad Manager emblem, next to the name. */
 export function BrandMark({
   name,
   className,
@@ -19,13 +18,14 @@ export function BrandMark({
       {logoVersion ? (
         <img src={`/api/v1/riad/logo?v=${logoVersion}`} alt="" className="size-9 shrink-0 rounded-lg object-contain" />
       ) : (
+        // On a white tile: the navy emblem must stay visible on dark backgrounds too.
         <span
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-lg',
-            inverted ? 'bg-white text-primary' : 'bg-primary text-primary-foreground',
+            'flex size-9 shrink-0 items-center justify-center rounded-lg bg-white p-0.5',
+            !inverted && 'ring-1 ring-border',
           )}
         >
-          <Hotel className="size-5" aria-hidden />
+          <img src="/brand/riad-manager-mark.png" alt="" className="size-full object-contain" />
         </span>
       )}
       <span data-brand-name className="truncate text-lg font-semibold tracking-tight">{name}</span>

@@ -4,7 +4,6 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { BrandMark } from '@/components/brand-mark';
 import { FormError } from '@/components/form-field';
 import { LanguageMenu } from '@/components/language-menu';
 import { Button } from '@/components/ui/button';
@@ -47,9 +46,9 @@ export function LoginForm() {
 
   return (
     <div className="relative flex w-full max-w-sm flex-col gap-8">
-      <div className="flex items-center justify-between gap-3">
-        <BrandMark name={t('appName')} className="lg:invisible" />
-        <LanguageMenu className="h-10 border bg-card shadow-xs hover:bg-accent sm:h-10" />
+      <div className="flex items-start justify-between gap-3">
+        <img src="/brand/riad-manager-logo.png" alt={t('appName')} className="h-16 w-auto sm:h-20" />
+        <LanguageMenu className="h-10 shadow-xs sm:h-10" />
       </div>
 
       <div>

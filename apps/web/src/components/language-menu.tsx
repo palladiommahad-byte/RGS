@@ -30,7 +30,7 @@ export function LanguageMenu({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className={cn(roundButton, 'gap-1.5 sm:w-auto sm:px-3.5', className)}
+        className={cn(roundButton, 'gap-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 data-[state=open]:bg-sky-100 sm:w-auto sm:px-3.5', className)}
         aria-label={`${t('common.language')}: ${t(`localeNames.${current}`)}`}
         title={t('common.language')}
       >

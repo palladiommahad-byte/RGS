@@ -95,7 +95,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           aria-expanded={!c}
           className="absolute -end-3.5 top-7 z-10 hidden size-7 rounded-full bg-card shadow-sm max-lg:hidden lg:flex"
         >
-          <ChevronsLeft className={cn('size-4 transition-transform', c ? 'rotate-180 rtl:rotate-0' : 'rtl:rotate-180')} />
+          <ChevronsLeft className={cn('size-4 text-primary transition-transform', c ? 'rotate-180 rtl:rotate-0' : 'rtl:rotate-180')} />
         </Button>
         <div className={cn('flex h-20 items-center justify-between gap-2 px-5', c && 'lg:justify-center lg:px-0 lg:[&>span>span:last-child]:hidden')}>
           <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
@@ -129,7 +129,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className={cn('transition-[padding] lg:ps-64 print:ps-0', c && 'lg:ps-[76px]')}>
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card px-4 lg:h-[72px] lg:border-transparent lg:bg-background/85 lg:px-8 lg:backdrop-blur print:hidden">
+        {/* A bar of its own: white, with a line and a soft shadow, above the grey page. */}
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card/95 px-4 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] backdrop-blur lg:h-[72px] lg:px-8 print:hidden">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label={t('common.openMenu')}>
             <Menu />
           </Button>
@@ -163,14 +164,14 @@ function TopSearch() {
         router.push(term ? `/dashboard/stays?q=${encodeURIComponent(term)}` : '/dashboard/stays');
       }}
     >
-      <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-primary" aria-hidden />
       <input
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={t('common.searchStays')}
         aria-label={t('common.searchStays')}
-        className="h-11 w-full rounded-xl border bg-card ps-10 pe-3 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40"
+        className="h-11 w-full rounded-xl border border-transparent bg-muted/60 ps-10 pe-3 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:bg-muted focus-visible:border-ring focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/40"
       />
     </form>
   );

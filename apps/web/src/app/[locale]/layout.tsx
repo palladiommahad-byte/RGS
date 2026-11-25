@@ -15,7 +15,7 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Riad', template: '%s · Riad' },
+  title: { default: 'Riad Manager', template: '%s · Riad Manager' },
 };
 
 export const viewport: Viewport = {
