@@ -1,6 +1,12 @@
 # HTTPS certificates are obtained and renewed automatically (Let's Encrypt) for both names.
 # No account email needed: Let's Encrypt no longer sends expiry emails and Caddy renews on time.
 
+{
+	# RSA key: Let's Encrypt then signs through its long-trusted RSA chain. The newer ECDSA
+	# chain (2026 "Root YE") is refused by some iPhones ("This Connection Is Not Private").
+	key_type rsa2048
+}
+
 {$DOMAIN} {
 	encode zstd gzip
 
