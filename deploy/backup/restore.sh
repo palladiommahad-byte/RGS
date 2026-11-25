@@ -10,6 +10,8 @@ set -eu
 DIR=/backups
 TMP=/tmp/restore
 BUCKETS="${S3_BUCKET_PASSPORTS:-riad-passports} ${S3_BUCKET_RECEIPTS:-riad-receipts} ${S3_BUCKET_DOCUMENTS:-riad-documents}"
+# Once each, even when the three are one bucket (e.g. a single R2 bucket with prefixes).
+BUCKETS=$(printf '%s\n' $BUCKETS | sort -u | tr '\n' ' ')
 
 export RCLONE_CONFIG_STORAGE_TYPE=s3 RCLONE_CONFIG_STORAGE_PROVIDER=Other
 export RCLONE_CONFIG_STORAGE_ENDPOINT="${S3_ENDPOINT:-http://minio:9000}"

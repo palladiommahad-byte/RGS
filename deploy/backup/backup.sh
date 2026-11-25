@@ -12,6 +12,8 @@ REMOTE_KEEP_DAYS="${BACKUP_REMOTE_KEEP_DAYS:-30}"     # off-server, daily copies
 REMOTE_KEEP_MONTHS="${BACKUP_REMOTE_KEEP_MONTHS:-12}" # off-server, 1st-of-month copies
 HOUR="${BACKUP_HOUR:-3}"
 BUCKETS="${S3_BUCKET_PASSPORTS:-riad-passports} ${S3_BUCKET_RECEIPTS:-riad-receipts} ${S3_BUCKET_DOCUMENTS:-riad-documents}"
+# Once each, even when the three are one bucket (e.g. a single R2 bucket with prefixes).
+BUCKETS=$(printf '%s\n' $BUCKETS | sort -u | tr '\n' ' ')
 
 # --- rclone remotes, from the environment (no config file) ---
 # storage: the app's own object storage (MinIO in the stack, or R2)
