@@ -40,10 +40,14 @@ encrypt() { # $1 -> $1.enc (AES-256, key derived from BACKUP_PASSPHRASE)
 }
 
 # Database and file storage both answer (after a reboot they start at the same time).
+# Each bucket is checked itself: a token limited to one bucket (R2) may not list all buckets.
 ready() {
   pg_isready -q -t 5 >/dev/null 2>&1 \
     && sql "SELECT 1 FROM backup_runs LIMIT 1" >/dev/null 2>&1 \
-    && rclone lsd storage: >/dev/null 2>&1
+    || return 1
+  for b in $BUCKETS; do
+    rclone lsf --max-depth 1 "storage:$b" >/dev/null 2>&1 || return 1
+  done
 }
 
 fail() { echo "$*" >&2; exit 1; }
