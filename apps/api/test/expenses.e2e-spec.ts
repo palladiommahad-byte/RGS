@@ -85,13 +85,13 @@ describe('Expenses, suppliers, petty cash, recurring (e2e)', () => {
       expect(res.body.code).toBe('NO_WALLET');
     });
 
-    it('lets the manager open and top up a wallet', async () => {
+    it('lets the manager open a wallet, and any cash user top it up', async () => {
       const users = await managerA.get(`${API}/cash-wallets/holders`).expect(200);
       const receptionUser = (users.body as { id: string; name: string }[]).find((u) => u.name.includes('RECEPTION'))!;
       const w = await managerA.post(`${API}/cash-wallets`).send({ holderId: receptionUser.id, name: 'Caisse réception' }).expect(201);
       walletId = w.body.id;
-      await receptionA.post(`${API}/cash-wallets/${walletId}/top-up`).send({ amount: 50000 }).expect(403);
-      const topped = await managerA.post(`${API}/cash-wallets/${walletId}/top-up`).send({ amount: 50000, note: 'Fonds' }).expect(201);
+      await housekeepingA.post(`${API}/cash-wallets/${walletId}/top-up`).send({ amount: 50000 }).expect(403);
+      const topped = await receptionA.post(`${API}/cash-wallets/${walletId}/top-up`).send({ amount: 50000, note: 'Fonds' }).expect(201);
       expect((topped.body as CashWalletDto).balance).toBe(50000);
       const mine = await receptionA.get(`${API}/cash-wallets`).expect(200);
       expect(mine.body.map((x: CashWalletDto) => x.id)).toEqual([walletId]);

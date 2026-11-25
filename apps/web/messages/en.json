@@ -103,7 +103,8 @@
       "retake": "Retake photo",
       "usePhoto": "Use a photo",
       "unsupported": "Unsupported image format. Please take a new photo.",
-      "uploadError": "The photo could not be sent. Check your connection and try again."
+      "uploadError": "The photo could not be sent. Check your connection and try again.",
+      "required": "A photo of the passport or ID card is required for each guest."
     },
     "contact": {
       "title": "Contact & stay",
@@ -131,7 +132,9 @@
       "reception": "Please come to reception to collect your key.",
       "wifi": "Wi-Fi",
       "checkedInTitle": "Welcome! You are checked in.",
-      "checkedIn": "Your room: {room}. Enjoy your stay!"
+      "checkedIn": "Your room: {room}. Enjoy your stay!",
+      "alreadyTitle": "You are already checked in",
+      "already": "Your check-in is done. Enjoy your stay! For any change, please see reception."
     },
     "errors": {
       "generic": "Something went wrong. Please try again or ask at reception.",
@@ -143,7 +146,9 @@
       "INVALID_SIGNATURE": "The signature could not be read. Please sign again.",
       "TOO_MANY_GUESTS": "There are more documents than adults.",
       "INVALID_CHECKIN_LINK": "This check-in link is no longer valid.",
-      "VALIDATION_ERROR": "Some details are invalid. Please check the previous steps."
+      "VALIDATION_ERROR": "Some details are invalid. Please check the previous steps.",
+      "DOCUMENT_REQUIRED": "Each guest must photograph their passport or ID card.",
+      "ALREADY_CHECKED_IN": "You are already checked in. Enjoy your stay!"
     }
   },
   "auth": {
@@ -249,7 +254,10 @@
     "ROLE_LOCKED": "The owner role always has every right.",
     "OWNER_ONLY": "Only an owner can do this.",
     "CONFIRM_REQUIRED": "Type the confirmation word exactly.",
-    "BACKUP_NOT_FOUND": "This backup no longer exists."
+    "BACKUP_NOT_FOUND": "This backup no longer exists.",
+    "ALREADY_PAID": "This stay is already fully paid.",
+    "OVERPAYMENT": "This is more than the guest still owes.",
+    "PAYMENTS_EXIST": "The guest paid for this stay: choose to refund or keep the money."
   },
   "roomStatus": {
     "FREE": "Free",
@@ -423,7 +431,11 @@
       "noFreeRoom": "No room is free for all these nights. Shorten the stay or change the other booking."
     },
     "earlyArrival": "Early arrival: booked from {booked}. The stay will start today, {nights, plural, one {# night} other {# nights}} in total, and the price follows.",
-    "pricePerNightValue": "{price} / night"
+    "pricePerNightValue": "{price} / night",
+    "cancelPaidTitle": "The guest already paid",
+    "cancelPaidText": "{amount} was received for this stay. What should happen to it?",
+    "cancelRefund": "Refund the money and cancel",
+    "cancelKeep": "Keep the money and cancel"
   },
   "realtime": {
     "newCheckin": "New online check-in",
@@ -521,7 +533,12 @@
     "birth": "Born",
     "stay": "Stay",
     "room": "Room",
-    "empty": "No guests in this period."
+    "empty": "No guests in this period.",
+    "view": "View",
+    "delete": "Delete",
+    "actions": "Actions",
+    "deleteTitle": "Delete this stay?",
+    "deleteText": "The stay of {name} is deleted for good, with all its guests, extras, payments and invoice. Cash taken for it leaves the cash box."
   },
   "expenseMethod": {
     "CASH": "Cash",
@@ -579,7 +596,7 @@
     "empty": "No cash boxes. Create one for staff who pay for small purchases.",
     "balance": "Available balance",
     "topUp": "Top up",
-    "topUpTitle": "Give money to {name}",
+    "topUpTitle": "Add money to {name}",
     "adjust": "Correct",
     "adjustTitle": "Correct after counting",
     "adjustHint": "Use the difference between the cash counted and the balance shown.",

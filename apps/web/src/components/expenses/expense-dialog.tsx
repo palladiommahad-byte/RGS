@@ -57,6 +57,7 @@ export function ExpenseDialog({
   const { can } = useAuth();
   const full = can('expenses.write');
   const activeWallets = wallets.filter((w) => w.isActive);
+  // The main box (listed first) unless another is chosen.
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [amount, setAmount] = useState('');
@@ -130,7 +131,7 @@ export function ExpenseDialog({
       supplierName: v.supplierName,
       date: v.date,
       note: v.note,
-      ...(expense ? {} : full ? { paymentMethod: v.paymentMethod, walletId: v.walletId } : {}),
+      ...(expense ? {} : full ? { paymentMethod: v.paymentMethod, walletId: v.walletId } : { walletId: v.walletId }),
     };
     const saved = await run(async () => {
       const row = expense
@@ -232,6 +233,17 @@ export function ExpenseDialog({
             </Button>
           )}
 
+          {!full && !expense && activeWallets.length > 1 && (
+            <FormField id="exp-box" label={t('expenses.wallet')} error={errors.walletId}>
+              <Select id="exp-box" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+                {activeWallets.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name} ({formatMoney(w.balance, locale)})
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          )}
           {!full && wallet && (
             <p className="rounded-lg bg-teal-100/60 px-3 py-2 text-sm text-teal-900">
               {t('expenses.fromWallet', { wallet: wallet.name, balance: formatMoney(wallet.balance, locale) })}
@@ -271,7 +283,7 @@ export function ExpenseDialog({
                   <Select id="exp-wallet" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
                     {activeWallets.map((w) => (
                       <option key={w.id} value={w.id}>
-                        {w.name} — {w.holder.name} ({formatMoney(w.balance, locale)})
+                        {w.name} ({formatMoney(w.balance, locale)})
                       </option>
                     ))}
                   </Select>

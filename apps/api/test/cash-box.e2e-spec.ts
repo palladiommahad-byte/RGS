@@ -117,14 +117,42 @@ describe('Cash box: every movement, guest cash included (e2e)', () => {
     await pay(manager, 5000, 'CASH').expect(201);
     expect(await balance()).toBe(before + 5000);
 
-    // Two boxes: the manager's own is used; reception may not pick someone else's.
+    // Two boxes: without a choice cash goes to the main box (the first created); anyone
+    // handling cash may pick the other one.
     const managerUser = await prisma.user.findUniqueOrThrow({ where: { email: a.emails.MANAGER } });
     const other = ((await manager.post(`${API}/cash-wallets`).send({ holderId: managerUser.id, name: 'Coffre' }).expect(201)).body as CashWalletDto).id;
     await pay(manager, 7000, 'CASH').expect(201);
-    expect(await balance(other)).toBe(7000);
-    await pay(manager, 3000, 'CASH', { walletId: boxId }).expect(201);
-    expect(await balance()).toBe(before + 8000);
-    const refused = await pay(reception, 1000, 'CASH', { walletId: other }).expect(403);
-    expect(refused.body.code).toBe('FORBIDDEN');
+    expect(await balance()).toBe(before + 12000);
+    await pay(manager, 3000, 'CASH', { walletId: other }).expect(201);
+    expect(await balance(other)).toBe(3000);
+    await pay(reception, 1000, 'CASH', { walletId: other }).expect(201);
+    expect(await balance(other)).toBe(4000);
+  });
+
+  it('shows every active box to reception, with its movements, and lets them pay expenses from it', async () => {
+    const managerUser = await prisma.user.findUniqueOrThrow({ where: { email: a.emails.MANAGER } });
+    const boxes = (await reception.get(`${API}/cash-wallets`).expect(200)).body as CashWalletDto[];
+    const coffre = boxes.find((b) => b.name === 'Coffre');
+    expect(coffre?.holder.id).toBe(managerUser.id);
+    // Its movements, although reception does not hold it.
+    const r = await report('', reception, coffre!.id);
+    expect(r.items.length).toBeGreaterThan(0);
+
+    // A small expense paid from the manager's box, chosen by reception.
+    const category = await prisma.expenseCategory.findFirstOrThrow({ where: { riadId: a.riadId } });
+    const before = await balance(coffre!.id);
+    const exp = await reception
+      .post(`${API}/expenses`)
+      .send({ amountTtc: 2000, categoryId: category.id, walletId: coffre!.id })
+      .expect(201);
+    expect(exp.body).toMatchObject({ paymentMethod: 'PETTY_CASH', wallet: { id: coffre!.id } });
+    expect(await balance(coffre!.id)).toBe(before - 2000);
+
+    // A closed box is hidden from reception and cannot be used.
+    await manager.patch(`${API}/cash-wallets/${coffre!.id}`).send({ isActive: false }).expect(200);
+    const after = (await reception.get(`${API}/cash-wallets`).expect(200)).body as CashWalletDto[];
+    expect(after.some((b) => b.id === coffre!.id)).toBe(false);
+    await reception.get(`${API}/cash-wallets/${coffre!.id}/movements`).expect(404);
+    await pay(reception, 1000, 'CASH', { walletId: coffre!.id }).expect(404);
   });
 });

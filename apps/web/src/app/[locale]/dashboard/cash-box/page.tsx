@@ -53,7 +53,7 @@ const TYPE_STYLE: Record<CashMovementType, { icon: LucideIcon; className: string
 export default function CashBoxPage() {
   const t = useTranslations();
   const locale = useLocale();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const allowed = can('expenses.write', 'expenses.write_petty_cash');
   const manager = can('expenses.write');
   const wallets = useApiQuery<CashWalletDto[]>(allowed ? '/cash-wallets' : null);
@@ -156,13 +156,14 @@ export default function CashBoxPage() {
             </span>
             <div>
               <div className="font-medium">{box.name}</div>
-              <div className="text-sm text-white/75">{box.holder.name}</div>
+              {/* Shared box: the name shown is whoever is signed in (on shift). */}
+              <div className="text-sm text-white/75">{user.name}</div>
               <div className="mt-3 text-sm text-white/75">{t('wallets.balance')}</div>
               <div className="text-4xl font-semibold tracking-tight tabular-nums">{m(box.balance)}</div>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {manager && (
+            {allowed && (
               <>
                 <Button variant="secondary" onClick={() => setDialog('topup')}>
                   <ArrowDownLeft aria-hidden />
@@ -184,7 +185,7 @@ export default function CashBoxPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm">
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
           {PRESETS.map((p) => (
             <button
@@ -243,7 +244,7 @@ export default function CashBoxPage() {
               <h2 className="text-sm font-semibold text-muted-foreground first-letter:uppercase">
                 {formatDate(day, locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </h2>
-              <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+              <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-sm">
                 {items.map((mv) => (
                   <li key={mv.id}>
                     <MovementRow mv={mv} />
@@ -262,7 +263,7 @@ export default function CashBoxPage() {
           <AmountDialog
             open={dialog === 'topup'}
             onOpenChange={(o) => setDialog(o ? 'topup' : null)}
-            title={t('wallets.topUpTitle', { name: box.holder.name })}
+            title={t('wallets.topUpTitle', { name: box.name })}
             onSubmit={move('top-up')}
           />
           <AmountDialog

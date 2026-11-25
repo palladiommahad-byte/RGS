@@ -138,7 +138,10 @@
     "ROLE_LOCKED": "Le rôle propriétaire a toujours tous les droits.",
     "OWNER_ONLY": "Seul un propriétaire peut faire cela.",
     "CONFIRM_REQUIRED": "Tapez exactement le mot de confirmation.",
-    "BACKUP_NOT_FOUND": "Cette sauvegarde n’existe plus."
+    "BACKUP_NOT_FOUND": "Cette sauvegarde n’existe plus.",
+    "ALREADY_PAID": "Ce séjour est déjà entièrement payé.",
+    "OVERPAYMENT": "C’est plus que ce que le client doit encore.",
+    "PAYMENTS_EXIST": "Le client a payé ce séjour : choisissez de rembourser ou de garder l’argent."
   },
   "validation": {
     "required": "Champ obligatoire.",
@@ -340,7 +343,11 @@
       "noFreeRoom": "Aucune chambre n’est libre pour toutes ces nuits. Raccourcissez le séjour ou modifiez l’autre réservation."
     },
     "earlyArrival": "Arrivée anticipée : réservé à partir du {booked}. Le séjour commencera aujourd’hui, {nights, plural, one {# nuit} other {# nuits}} au total, et le prix suit.",
-    "pricePerNightValue": "{price} / nuit"
+    "pricePerNightValue": "{price} / nuit",
+    "cancelPaidTitle": "Le client a déjà payé",
+    "cancelPaidText": "{amount} ont été encaissés pour ce séjour. Que faire de cet argent ?",
+    "cancelRefund": "Rembourser et annuler",
+    "cancelKeep": "Garder l’argent et annuler"
   },
   "guest": {
     "firstName": "Prénom",
@@ -382,7 +389,8 @@
       "retake": "Reprendre la photo",
       "usePhoto": "Utiliser une photo",
       "unsupported": "Format d'image non pris en charge. Prenez une nouvelle photo.",
-      "uploadError": "La photo n'a pas pu être envoyée. Vérifiez votre connexion et réessayez."
+      "uploadError": "La photo n'a pas pu être envoyée. Vérifiez votre connexion et réessayez.",
+      "required": "Une photo du passeport ou de la carte d’identité est obligatoire pour chaque voyageur."
     },
     "contact": {
       "title": "Coordonnées et séjour",
@@ -410,7 +418,9 @@
       "reception": "Présentez-vous à la réception pour recevoir votre clé.",
       "wifi": "Wi-Fi",
       "checkedInTitle": "Bienvenue ! Votre arrivée est enregistrée.",
-      "checkedIn": "Votre chambre : {room}. Bon séjour !"
+      "checkedIn": "Votre chambre : {room}. Bon séjour !",
+      "alreadyTitle": "Vous êtes déjà enregistré",
+      "already": "Votre enregistrement est fait. Bon séjour ! Pour toute modification, adressez-vous à la réception."
     },
     "errors": {
       "generic": "Une erreur est survenue. Réessayez ou adressez-vous à la réception.",
@@ -422,7 +432,9 @@
       "INVALID_SIGNATURE": "La signature n'a pas pu être lue. Merci de signer à nouveau.",
       "TOO_MANY_GUESTS": "Il y a plus de documents que d'adultes.",
       "INVALID_CHECKIN_LINK": "Ce lien d'enregistrement n'est plus valide.",
-      "VALIDATION_ERROR": "Certaines informations sont invalides. Vérifiez les étapes précédentes."
+      "VALIDATION_ERROR": "Certaines informations sont invalides. Vérifiez les étapes précédentes.",
+      "DOCUMENT_REQUIRED": "Chaque voyageur doit photographier son passeport ou sa carte d’identité.",
+      "ALREADY_CHECKED_IN": "Vous êtes déjà enregistré. Bon séjour !"
     }
   },
   "realtime": {
@@ -521,7 +533,12 @@
     "birth": "Naissance",
     "stay": "Séjour",
     "room": "Chambre",
-    "empty": "Aucun client sur cette période."
+    "empty": "Aucun client sur cette période.",
+    "view": "Voir",
+    "delete": "Supprimer",
+    "actions": "Actions",
+    "deleteTitle": "Supprimer ce séjour ?",
+    "deleteText": "Le séjour de {name} est supprimé définitivement, avec tous ses clients, extras, paiements et sa facture. Les espèces encaissées sortent de la caisse."
   },
   "expenseMethod": {
     "CASH": "Espèces",
@@ -579,7 +596,7 @@
     "empty": "Aucune caisse. Créez-en une pour le personnel qui paie les petits achats.",
     "balance": "Solde disponible",
     "topUp": "Alimenter",
-    "topUpTitle": "Remettre de l’argent à {name}",
+    "topUpTitle": "Ajouter de l’argent à « {name} »",
     "adjust": "Corriger",
     "adjustTitle": "Corriger après comptage",
     "adjustHint": "Utilisez la différence entre l’argent compté et le solde affiché.",

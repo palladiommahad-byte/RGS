@@ -10,6 +10,6 @@ import { TaxRatesService } from './tax-rates.service';
 @Module({
   controllers: [BillingController, InvoicesController, PaymentsController],
   providers: [BillingService, TaxRatesService, InvoicePdfService, StayCycleService],
-  exports: [TaxRatesService],
+  exports: [TaxRatesService, BillingService],
 })
 export class BillingModule {}

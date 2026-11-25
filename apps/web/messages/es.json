@@ -72,7 +72,8 @@
       "retake": "Repetir la foto",
       "usePhoto": "Usar una foto",
       "unsupported": "Formato de imagen no compatible. Haga una nueva foto.",
-      "uploadError": "No se ha podido enviar la foto. Compruebe su conexión e inténtelo de nuevo."
+      "uploadError": "No se ha podido enviar la foto. Compruebe su conexión e inténtelo de nuevo.",
+      "required": "Se necesita una foto del pasaporte o del documento de identidad de cada huésped."
     },
     "contact": {
       "title": "Contacto y estancia",
@@ -100,7 +101,9 @@
       "reception": "Pase por la recepción para recoger su llave.",
       "wifi": "Wi-Fi",
       "checkedInTitle": "¡Bienvenido! Su llegada está registrada.",
-      "checkedIn": "Su habitación: {room}. ¡Disfrute de su estancia!"
+      "checkedIn": "Su habitación: {room}. ¡Disfrute de su estancia!",
+      "alreadyTitle": "Ya has hecho el check-in",
+      "already": "Tu check-in ya está hecho. ¡Disfruta de tu estancia! Para cualquier cambio, consulta en recepción."
     },
     "errors": {
       "generic": "Se ha producido un error. Inténtelo de nuevo o diríjase a la recepción.",
@@ -112,7 +115,9 @@
       "INVALID_SIGNATURE": "No se ha podido leer la firma. Firme de nuevo.",
       "TOO_MANY_GUESTS": "Hay más documentos que adultos.",
       "INVALID_CHECKIN_LINK": "Este enlace de check-in ya no es válido.",
-      "VALIDATION_ERROR": "Algunos datos no son válidos. Revise los pasos anteriores."
+      "VALIDATION_ERROR": "Algunos datos no son válidos. Revise los pasos anteriores.",
+      "DOCUMENT_REQUIRED": "Cada huésped debe fotografiar su pasaporte o documento de identidad.",
+      "ALREADY_CHECKED_IN": "Ya has hecho el check-in. ¡Disfruta de tu estancia!"
     }
   },
   "datePicker": {

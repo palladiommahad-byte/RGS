@@ -98,27 +98,72 @@ export function findMrzCandidates(text: string): string[][] {
   return candidates;
 }
 
+/** One decoded MRZ candidate: the parse, its fitted lines and how many checks it passed. */
+export type MrzCandidate = { result: ReturnType<typeof parse>; lines: string[]; score: number };
+
+/** Every MRZ candidate decodable from one OCR text. */
+export function parseMrzCandidates(text: string): MrzCandidate[] {
+  const out: MrzCandidate[] = [];
+  for (const lines of findMrzCandidates(text)) {
+    try {
+      const result = parse(lines, { autocorrect: true });
+      out.push({ result, lines, score: result.details.filter((d) => d.valid).length });
+      if (result.valid) break;
+    } catch {
+      // not a decodable block
+    }
+  }
+  return out;
+}
+
 /** Best MRZ found in the OCR text (fully valid first, else the most valid fields), or null. */
 export function parseMrzText(text: string, today: Date = new Date()): MrzResult | null {
-  let best: { result: ReturnType<typeof parse>; lines: string[]; score: number } | null = null;
-  for (const lines of findMrzCandidates(text)) {
-    let result: ReturnType<typeof parse>;
-    try {
-      result = parse(lines, { autocorrect: true });
-    } catch {
-      continue;
-    }
-    const score = result.details.filter((d) => d.valid).length;
-    if (!best || score > best.score) best = { result, lines, score };
-    if (result.valid) break;
+  return bestMrz(parseMrzCandidates(text), today);
+}
+
+// Fields protected by a check digit: a read where the digit matches is trusted.
+const CHECKED = [
+  ['documentNumber', 'documentNumber'],
+  ['birthDate', 'birthDate'],
+  ['documentExpiry', 'expirationDate'],
+] as const;
+
+function fieldOk(c: MrzCandidate, field: string): boolean {
+  const own = c.result.details.find((d) => d.field === field);
+  const check = c.result.details.find((d) => d.field === `${field}CheckDigit`);
+  return !!own?.valid && !!own.value && (check ? check.valid : true);
+}
+
+/**
+ * The best reading across several OCR passes (different crops and contrasts of one photo).
+ * A fully valid MRZ wins outright. Otherwise each check-digit field (number, birth date,
+ * expiry) comes from whichever pass got its check digit right, and names, sex and
+ * nationality from the pass that passed the most checks.
+ */
+export function bestMrz(candidates: MrzCandidate[], today: Date = new Date()): MrzResult | null {
+  if (candidates.length === 0) return null;
+  const sorted = [...candidates].sort((a, b) => Number(b.result.valid) - Number(a.result.valid) || b.score - a.score);
+  const best = sorted[0]!;
+  const fields = toFields(best.result, best.lines, today);
+  const set = fields as Record<keyof MrzFields, unknown>;
+  if (best.result.valid) {
+    return { valid: true, format: best.result.format, raw: best.lines.join('\n'), fields };
   }
-  if (!best) return null;
-  return {
-    valid: best.result.valid,
-    format: best.result.format,
-    raw: best.lines.join('\n'),
-    fields: toFields(best.result, best.lines, today),
-  };
+  let checked = 0;
+  for (const [key, field] of CHECKED) {
+    const ok = sorted.find((c) => fieldOk(c, field));
+    if (!ok) continue;
+    set[key] = toFields(ok.result, ok.lines, today)[key];
+    checked++;
+  }
+  for (const key of ['nationality', 'sex'] as const) {
+    if (fields[key]) continue;
+    const other = sorted.map((c) => toFields(c.result, c.lines, today)[key]).find(Boolean);
+    if (other) set[key] = other;
+  }
+  // All three check digits right and a name: as good as a valid MRZ for the guest form.
+  const valid = checked === CHECKED.length && !!fields.lastName;
+  return { valid, format: best.result.format, raw: best.lines.join('\n'), fields };
 }
 
 function toFields(result: ReturnType<typeof parse>, lines: string[], today: Date): MrzFields {

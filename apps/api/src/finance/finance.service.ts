@@ -7,6 +7,7 @@ import {
   htFromTtc,
   isoToUtcDate,
   isSpendingSpike,
+  localDate,
   margin,
   monthStartOf,
   nightsBetween,
@@ -16,6 +17,7 @@ import {
   prorate,
   revpar,
   utcDateToIso,
+  zonedMidnight,
   type ExtraCategory,
   type FinanceDashboardDto,
   type IsoDate,
@@ -39,6 +41,10 @@ type Breakdown = {
 /**
  * Finance KPIs on an accrual basis (all HT, centimes):
  * - accommodation revenue = nights stayed inside the period × nightly price, TVA removed;
+ * - a guest who left early: the nights actually stayed are occupied (the room was free for
+ *   others after), and the money billed for the stay is spread over those nights;
+ * - money kept from a cancelled stay counts as accommodation revenue on the day it was paid
+ *   (no occupied night, so ADR and RevPAR are computed on real nights only);
  * - extras by the date they were added; expenses by expense date, minus deductible TVA;
  * - OTA commissions are pro-rated by nights for the "net by source" view only (the
  *   commission invoices themselves are entered as expenses, so profit is not hit twice).
@@ -107,14 +113,31 @@ export class FinanceService {
     const start = isoToUtcDate(from);
     const end = isoToUtcDate(toExclusive);
     const lastDay = isoToUtcDate(addDays(toExclusive, -1));
-    const [stays, extras, expenses, rooms, rates] = await Promise.all([
+    // Instants (created / paid at) are cut at the riad's local midnight, not UTC.
+    const startAt = zonedMidnight(from);
+    const endAt = zonedMidnight(toExclusive);
+    const [stays, extras, kept, expenses, rooms, rates] = await Promise.all([
       this.prisma.stay.findMany({
         where: { riadId, status: { in: ['CHECKED_IN', 'CHECKED_OUT'] }, checkInDate: { lt: end }, checkOutDate: { gt: start } },
-        select: { checkInDate: true, checkOutDate: true, nights: true, pricePerNight: true, otaCommission: true, source: true },
+        select: {
+          checkInDate: true,
+          checkOutDate: true,
+          checkedOutAt: true,
+          status: true,
+          nights: true,
+          pricePerNight: true,
+          otaCommission: true,
+          source: true,
+        },
       }),
       this.prisma.stayExtra.findMany({
-        where: { riadId, createdAt: { gte: start, lt: end }, stay: { status: { in: ['CHECKED_IN', 'CHECKED_OUT'] } } },
+        where: { riadId, createdAt: { gte: startAt, lt: endAt }, stay: { status: { in: ['CHECKED_IN', 'CHECKED_OUT'] } } },
         select: { category: true, total: true },
+      }),
+      // Cancelled stays whose money was kept (refunded payments are deleted).
+      this.prisma.payment.findMany({
+        where: { riadId, paidAt: { gte: startAt, lt: endAt }, stay: { status: 'CANCELLED' } },
+        select: { amount: true, stay: { select: { source: true } } },
       }),
       this.prisma.expense.groupBy({
         by: ['categoryId'],
@@ -132,15 +155,33 @@ export class FinanceService {
     let accommodation = 0;
     const bySource = new Map<StaySource, { revenue: number; commission: number }>();
     for (const s of stays) {
-      const nights = overlapNights(utcDateToIso(s.checkInDate), utcDateToIso(s.checkOutDate), from, toExclusive);
+      const checkIn = utcDateToIso(s.checkInDate);
+      // Left early: occupied until the real departure day (at least one night).
+      let checkOut = utcDateToIso(s.checkOutDate);
+      if (s.status === 'CHECKED_OUT' && s.checkedOutAt) {
+        const left = localDate(s.checkedOutAt);
+        const earliest = addDays(checkIn, 1);
+        if (left < checkOut) checkOut = left > earliest ? left : earliest;
+      }
+      const stayed = nightsBetween(checkIn, checkOut);
+      const nights = overlapNights(checkIn, checkOut, from, toExclusive);
       if (nights === 0) continue;
       occupied += nights;
-      const ht = htFromTtc(nights * s.pricePerNight, accRate);
+      // The whole billed stay, spread over the nights actually stayed.
+      const ht = htFromTtc(Math.round((s.nights * s.pricePerNight * nights) / stayed), accRate);
       accommodation += ht;
       const src = bySource.get(s.source) ?? { revenue: 0, commission: 0 };
       src.revenue += ht;
-      src.commission += prorate(s.otaCommission, nights, s.nights);
+      src.commission += prorate(s.otaCommission, nights, stayed);
       bySource.set(s.source, src);
+    }
+    const nightsRevenue = accommodation;
+    for (const k of kept) {
+      const ht = htFromTtc(k.amount, accRate);
+      accommodation += ht;
+      const src = bySource.get(k.stay.source) ?? { revenue: 0, commission: 0 };
+      src.revenue += ht;
+      bySource.set(k.stay.source, src);
     }
 
     const extrasByCategory = new Map<ExtraCategory, number>();
@@ -173,8 +214,8 @@ export class FinanceService {
         profit,
         margin: margin(profit, revenue),
         occupancy: occupancyRate(occupied, available),
-        adr: adr(accommodation, occupied),
-        revpar: revpar(accommodation, available),
+        adr: adr(nightsRevenue, occupied),
+        revpar: revpar(nightsRevenue, available),
         costPerOccupiedNight: costPerOccupiedNight(expenseTotal, occupied),
         occupiedNights: occupied,
         availableNights: available,

@@ -113,9 +113,14 @@ describe('Extras, payments, checkout, invoices, register (e2e)', () => {
     await housekeepingA.post(`${API}/stays/${stayId}/payments`).send({ amount: 1000, method: 'CASH' }).expect(403);
     const cash = await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 200000, method: 'CASH' }).expect(201);
     expect(cash.body.receivedBy.name).toContain('RECEPTION');
-    await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 209000, method: 'CARD', note: 'TPE' }).expect(201);
     const typo = await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 5, method: 'CASH' }).expect(201);
     await receptionA.delete(`${API}/stays/${stayId}/payments/${typo.body.id}`).expect(204);
+    // Never more than what is still owed (no double collection).
+    const over = await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 209001, method: 'CARD' }).expect(409);
+    expect(over.body.code).toBe('OVERPAYMENT');
+    await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 209000, method: 'CARD', note: 'TPE' }).expect(201);
+    const again = await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 100, method: 'CASH' }).expect(409);
+    expect(again.body.code).toBe('ALREADY_PAID');
     await receptionA.post(`${API}/stays/${stayId}/payments`).send({ amount: 0, method: 'CASH' }).expect(400);
     const bill = (await receptionA.get(`${API}/stays/${stayId}/bill`).expect(200)).body as BillDto;
     expect(bill).toMatchObject({ paid: 409000, balance: 0 });

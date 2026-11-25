@@ -17,6 +17,7 @@ import {
   type TodayDto,
 } from '@riad/shared';
 import { AuditService } from '../audit/audit.service';
+import { BillingService } from '../billing/billing.service';
 import { AppException } from '../common/app-exception';
 import type { AuthPrincipal } from '../common/auth/principal';
 import { FieldEncryption } from '../common/crypto/field-encryption';
@@ -39,7 +40,6 @@ import type {
   UpdateStayDto,
 } from './stays.dto';
 
-type Tx = Prisma.TransactionClient;
 
 const MAX_NIGHTS = 365;
 const EDITABLE: readonly StayStatus[] = ['PENDING', 'CHECKED_IN'];
@@ -68,6 +68,7 @@ export class StaysService {
     private readonly storage: StorageService,
     private readonly realtime: RealtimeGateway,
     private readonly notifications: NotificationsService,
+    private readonly billing: BillingService,
   ) {}
 
   /** Open dashboards reload: stays and room statuses may both have changed. */
@@ -339,11 +340,44 @@ export class StaysService {
     return this.get(p, id);
   }
 
-  /** PENDING -> CANCELLED (no-show, duplicate). Checked-in guests are checked out instead. */
-  async cancel(p: AuthPrincipal, id: string): Promise<StayDetailDto> {
+  /**
+   * PENDING or CHECKED_IN -> CANCELLED (no-show, duplicate, booking cancelled). A guest
+   * already in the room frees it (to clean). When the guest paid something, staff choose:
+   * 'refund' gives every payment back (cash leaves the box, logged) or 'keep' keeps them
+   * (e.g. a non-refundable deposit). Without a choice, the call is refused so they can ask.
+   */
+  async cancel(p: AuthPrincipal, id: string, payments?: 'refund' | 'keep'): Promise<StayDetailDto> {
     const before = await this.findOrThrow(p.riadId, id);
-    assertStatus(before, 'PENDING', 'CANCELLED');
-    await this.transition(p, id, 'PENDING', { status: 'CANCELLED' }, 'stay.cancel');
+    if (before.status !== 'PENDING' && before.status !== 'CHECKED_IN') {
+      throw new AppException('INVALID_TRANSITION', `Cannot cancel a ${before.status} stay`, HttpStatus.CONFLICT, {
+        from: before.status,
+        to: 'CANCELLED',
+      });
+    }
+    const paid = await this.prisma.payment.findMany({ where: { stayId: id, riadId: p.riadId }, select: { id: true, amount: true } });
+    const total = paid.reduce((n, x) => n + x.amount, 0);
+    if (paid.length && !payments) {
+      throw new AppException('PAYMENTS_EXIST', 'Refund or keep the payments first', HttpStatus.CONFLICT, { total });
+    }
+    if (payments === 'refund') {
+      for (const x of paid) await this.billing.removePayment(p, id, x.id);
+    }
+    await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.stay.updateMany({ where: { id, riadId: p.riadId, status: before.status }, data: { status: 'CANCELLED' } });
+      if (count !== 1) throw changedConcurrently();
+      if (before.status === 'CHECKED_IN' && before.roomId) await releaseRoom(tx, p.riadId, before.roomId);
+      await this.audit.log(
+        {
+          riadId: p.riadId,
+          userId: p.userId,
+          action: 'stay.cancel',
+          entity: 'Stay',
+          entityId: id,
+          diff: { status: [before.status, 'CANCELLED'], payments: paid.length ? payments : null, amount: total },
+        },
+        tx,
+      );
+    });
     this.notify(p.riadId);
     return this.get(p, id);
   }
@@ -442,6 +476,71 @@ export class StaysService {
     this.notify(p.riadId);
   }
 
+  /**
+   * Deletes a stay for good (owner / manager only): its guests, extras, payments, invoice and
+   * passport photos. Cash taken for it leaves its cash box again (refused if already spent).
+   * Only the audit entry remains.
+   */
+  async remove(p: AuthPrincipal, id: string): Promise<void> {
+    if (p.roleKey !== 'OWNER' && p.roleKey !== 'MANAGER') {
+      throw new AppException('FORBIDDEN', 'Only the owner or a manager can delete a stay', HttpStatus.FORBIDDEN);
+    }
+    const stay = await this.prisma.stay.findFirst({
+      where: { id, riadId: p.riadId },
+      include: {
+        guests: { select: { firstName: true, lastName: true, isMain: true, passportPhotoKey: true, signatureKey: true } },
+        payments: { include: { cashMovement: true } },
+        invoices: { select: { id: true, number: true } },
+      },
+    });
+    if (!stay) throw notFound('Stay');
+    await this.prisma.$transaction(async (tx) => {
+      for (const pay of stay.payments) {
+        const m = pay.cashMovement;
+        if (m) {
+          const { count } = await tx.cashWallet.updateMany({
+            where: { id: m.walletId, balance: { gte: m.amount } },
+            data: { balance: { decrement: m.amount } },
+          });
+          if (count !== 1) {
+            throw new AppException('INSUFFICIENT_FUNDS', 'The cash box no longer holds this amount', HttpStatus.CONFLICT);
+          }
+          await tx.cashMovement.delete({ where: { id: m.id } });
+        }
+      }
+      await tx.payment.deleteMany({ where: { stayId: id } });
+      await tx.invoice.deleteMany({ where: { stayId: id } });
+      // Guests and extras go with the stay (cascade).
+      const { count } = await tx.stay.deleteMany({ where: { id, riadId: p.riadId, status: stay.status } });
+      if (count !== 1) throw changedConcurrently();
+      if (stay.status === 'CHECKED_IN' && stay.roomId) await releaseRoom(tx, p.riadId, stay.roomId);
+      const main = stay.guests.find((g) => g.isMain) ?? stay.guests[0];
+      await this.audit.log(
+        {
+          riadId: p.riadId,
+          userId: p.userId,
+          action: 'stay.delete',
+          entity: 'Stay',
+          entityId: id,
+          diff: {
+            status: stay.status,
+            guest: main ? `${main.firstName} ${main.lastName}` : null,
+            checkInDate: stay.checkInDate.toISOString().slice(0, 10),
+            checkOutDate: stay.checkOutDate.toISOString().slice(0, 10),
+            payments: stay.payments.reduce((n, x) => n + x.amount, 0),
+            invoices: stay.invoices.map((i) => i.number),
+          },
+        },
+        tx,
+      );
+    });
+    await this.storage.delete(
+      'passports',
+      stay.guests.flatMap((g) => [g.passportPhotoKey, g.signatureKey]),
+    );
+    this.notify(p.riadId);
+  }
+
   /** 5-minute signed URLs so staff can compare the passport photo with the typed data. */
   async guestFiles(p: AuthPrincipal, stayId: string, guestId: string): Promise<GuestFilesDto> {
     const guest = await this.findGuestOrThrow(p.riadId, stayId, guestId);
@@ -464,25 +563,6 @@ export class StaysService {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-
-  private async transition(
-    p: AuthPrincipal,
-    id: string,
-    from: StayStatus,
-    data: Prisma.StayUpdateManyMutationInput,
-    action: string,
-    sideEffects?: (tx: Tx) => Promise<void>,
-  ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const { count } = await tx.stay.updateMany({ where: { id, riadId: p.riadId, status: from }, data });
-      if (count !== 1) throw changedConcurrently();
-      await sideEffects?.(tx);
-      await this.audit.log(
-        { riadId: p.riadId, userId: p.userId, action, entity: 'Stay', entityId: id, diff: { status: [from, data.status as string] } },
-        tx,
-      );
-    });
-  }
 
   private async findOrThrow(riadId: string, id: string): Promise<Stay> {
     const stay = await this.prisma.stay.findFirst({ where: { id, riadId } });

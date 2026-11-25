@@ -80,7 +80,7 @@ export default function PaymentsPage() {
     <div className="flex flex-col gap-5">
       <PageHeader title={t('nav.payments')} subtitle={t('paymentsPage.subtitle')} />
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm">
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
           {PRESETS.map((p) => (
             <button
@@ -185,7 +185,7 @@ export default function PaymentsPage() {
                 <span className="first-letter:uppercase">{formatDate(day, locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 <span className="tabular-nums">{m(sum)}</span>
               </h2>
-              <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+              <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-sm">
                 {items.map((p) => {
                   const style = METHOD_STYLE[p.method];
                   return (

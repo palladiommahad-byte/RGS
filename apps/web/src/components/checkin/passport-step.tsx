@@ -24,6 +24,16 @@ export type GuestDraft = {
 
 export const emptyDraft = (): GuestDraft => ({ values: { ...EMPTY_GUEST } });
 
+/** Fields the guest already typed by hand stay as typed; the photo only fills the empty ones. */
+function fillEmpty(values: GuestValues, f: MrzFieldsDto): GuestValues {
+  const read = mergeMrz({ ...EMPTY_GUEST }, f);
+  const out = { ...values };
+  for (const k of Object.keys(read) as (keyof GuestValues)[]) {
+    if (!out[k] && read[k]) (out as Record<string, unknown>)[k] = read[k];
+  }
+  return out;
+}
+
 function mergeMrz(values: GuestValues, f: MrzFieldsDto): GuestValues {
   return {
     ...values,
@@ -73,13 +83,15 @@ export function PassportStep({
       const image = await compressImage(file);
       const preview = URL.createObjectURL(image);
       const scan = await checkinApi.scan<PassportScanDto>(link, image);
-      const values = scan.mrz ? mergeMrz(draft.values, scan.mrz.fields) : draft.values;
+      const values = !scan.mrz ? draft.values : draft.manual ? fillEmpty(draft.values, scan.mrz.fields) : mergeMrz(draft.values, scan.mrz.fields);
       onChange({
         values,
         preview,
         photoRef: scan.photoRef,
         mrzRaw: scan.mrz?.raw,
-        read: !scan.mrz ? 'failed' : scan.mrz.valid ? 'ok' : 'partial',
+        manual: draft.manual,
+        // Typed by hand first: no "read" banner, the photo is the proof.
+        read: draft.manual ? undefined : !scan.mrz ? 'failed' : scan.mrz.valid ? 'ok' : 'partial',
       });
     } catch (e) {
       setError(
@@ -97,6 +109,11 @@ export function PassportStep({
   }
 
   function next() {
+    // No document photo, no check-in: the guest cannot skip this step.
+    if (!draft.photoRef) {
+      setError(t('passport.required'));
+      return;
+    }
     const parsed = guestFormSchema.safeParse(guestValuesForSchema(draft.values));
     const errs: FieldErrors = parsed.success ? {} : fieldErrors(parsed.error);
     for (const k of REQUIRED_FOR_REGISTER) if (!draft.values[k]) errs[k] ??= 'required';
@@ -140,6 +157,7 @@ export function PassportStep({
           >
             {t('passport.manual')}
           </button>
+          <p className="text-center text-xs text-muted-foreground">{t('passport.required')}</p>
           <FormError message={error} />
         </>
       )}
@@ -172,6 +190,21 @@ export function PassportStep({
             onChange={(values) => onChange({ ...draft, values })}
             hideContact
           />
+          {!draft.photoRef && (
+            <div className="flex flex-col gap-3 rounded-2xl border-2 border-dashed border-teal-300 bg-teal-100/40 p-4">
+              <p className="text-sm font-medium text-teal-900">{t('passport.required')}</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button type="button" disabled={busy} onClick={() => cameraRef.current?.click()}>
+                  {busy ? <Loader2 className="animate-spin" aria-hidden /> : <Camera aria-hidden />}
+                  {t('passport.takePhoto')}
+                </Button>
+                <Button type="button" variant="outline" disabled={busy} onClick={() => galleryRef.current?.click()}>
+                  <ImageUp aria-hidden />
+                  {t('passport.choose')}
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="flex gap-3">
             {onBack && (
               <Button variant="outline" size="lg" className="flex-1" onClick={onBack}>

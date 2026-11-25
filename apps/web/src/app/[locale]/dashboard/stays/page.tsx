@@ -70,7 +70,7 @@ export default function StaysPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm">
         <div className="relative">
           <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input

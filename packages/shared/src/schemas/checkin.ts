@@ -4,7 +4,7 @@ import type { IsoDate } from '../dates';
 export const CHECKIN_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const CHECKIN_MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 /** Client-side resize target before upload (slow 4G). */
-export const CHECKIN_IMAGE_MAX_PX = 1600;
+export const CHECKIN_IMAGE_MAX_PX = 2400;
 
 export type CheckinContextDto = {
   riadName: string;

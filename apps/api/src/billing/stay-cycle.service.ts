@@ -39,9 +39,11 @@ export class StayCycleService {
     });
     let done = 0;
     for (const s of stays) {
-      if (now < atRiadTime(utcDateToIso(s.checkOutDate), s.riad.checkoutTime)) continue;
+      const due = atRiadTime(utcDateToIso(s.checkOutDate), s.riad.checkoutTime);
+      if (now < due) continue;
       try {
-        await this.billing.checkout({ riadId: s.riadId, userId: null }, s.id, { acceptBalanceDue: true }, { automatic: true });
+        // Recorded at the check-out time set in Settings, not when this job happened to run.
+        await this.billing.checkout({ riadId: s.riadId, userId: null }, s.id, { acceptBalanceDue: true }, { automatic: true, at: due });
         done++;
       } catch (e) {
         // e.g. staff checked the guest out at the same moment: nothing left to do.

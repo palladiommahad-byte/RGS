@@ -29,7 +29,7 @@ export function SettingsSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid gap-5 rounded-2xl border bg-card p-5 shadow-xs md:p-6 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-10">
+    <section className="grid gap-5 rounded-2xl border bg-card p-5 shadow-sm md:p-6 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-10">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
           <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-xl', TILES[tone])} aria-hidden>

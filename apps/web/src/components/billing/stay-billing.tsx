@@ -152,11 +152,16 @@ export function StayBilling({
           <Card>
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle>{t('payments.title')}</CardTitle>
-              {canPay && (
-                <Button size="sm" onClick={() => setDialog('payment')}>
-                  <Plus aria-hidden />
-                  {t('payments.add')}
-                </Button>
+              {/* Paid in full: nothing more to collect (no double collection). */}
+              {canPay && bill && bill.balance <= 0 ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{t('bill.settled')}</span>
+              ) : (
+                canPay && (
+                  <Button size="sm" onClick={() => setDialog('payment')}>
+                    <Plus aria-hidden />
+                    {t('payments.add')}
+                  </Button>
+                )
               )}
             </CardHeader>
             <CardContent>

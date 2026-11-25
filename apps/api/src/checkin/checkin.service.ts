@@ -79,7 +79,13 @@ export class CheckinService {
     }
     const id = randomUUID();
     await this.storage.put('passports', `${PENDING_PREFIX}${riad.id}/${id}.jpg`, normalised, 'image/jpeg');
-    const mrz = await this.reader.read(normalised);
+    // The reader gets the sharper upload (up to 2400 px): small MRZ letters read far better.
+    const forOcr = await sharp(file.buffer)
+      .rotate()
+      .resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true })
+      .toBuffer()
+      .catch(() => normalised);
+    const mrz = await this.reader.read(forOcr);
     return {
       photoRef: `${id}.${this.sign(riad.id, id)}`,
       mrz: mrz ? { valid: mrz.valid, raw: mrz.raw, fields: mrz.fields } : null,
@@ -98,6 +104,19 @@ export class CheckinService {
     }
     if (dto.guests.length > dto.adults) {
       throw new AppException('TOO_MANY_GUESTS', 'More guest documents than adults');
+    }
+    // Every guest must have photographed their passport or ID card (police register).
+    if (dto.guests.some((g) => !g.photoRef)) {
+      throw new AppException('DOCUMENT_REQUIRED', "A photo of each guest's passport or ID card is required");
+    }
+    // Sent twice (back button, another phone…): a document already in a current stay is refused.
+    const docHashes = dto.guests.map((g) => (g.documentNumber ? this.enc.hash(g.documentNumber) : null)).filter((h): h is string => !!h);
+    if (docHashes.length) {
+      const already = await this.prisma.guest.findFirst({
+        where: { riadId: riad.id, documentNumberHash: { in: docHashes }, stay: { status: { in: ['PENDING', 'CHECKED_IN'] } } },
+        select: { id: true },
+      });
+      if (already) throw new AppException('ALREADY_CHECKED_IN', 'This guest is already checked in', HttpStatus.CONFLICT);
     }
     const photoIds = dto.guests.map((g) => (g.photoRef ? this.verifyPhotoRef(riad.id, g.photoRef) : null));
     const signature = await this.decodeSignature(dto.signature);

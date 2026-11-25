@@ -25,7 +25,7 @@ import { useAction, useApiQuery } from '@/lib/use-api';
 import { cn } from '@/lib/utils';
 import { AmountDialog } from './amount-dialog';
 
-/** Petty cash: one card per wallet with its balance; managers top up and correct. */
+/** Cash boxes: one card per box with its balance; everyone handling cash tops up and corrects. */
 export function WalletsTab({ wallets, onChanged }: { wallets: CashWalletDto[]; onChanged: () => void }) {
   const t = useTranslations();
   const { can } = useAuth();
@@ -45,7 +45,7 @@ export function WalletsTab({ wallets, onChanged }: { wallets: CashWalletDto[]; o
       ) : (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           {wallets.map((w) => (
-            <WalletCard key={w.id} wallet={w} manager={manager} onChanged={onChanged} />
+            <WalletCard key={w.id} wallet={w} onChanged={onChanged} />
           ))}
         </div>
       )}
@@ -54,9 +54,12 @@ export function WalletsTab({ wallets, onChanged }: { wallets: CashWalletDto[]; o
   );
 }
 
-function WalletCard({ wallet, manager, onChanged }: { wallet: CashWalletDto; manager: boolean; onChanged: () => void }) {
+function WalletCard({ wallet, onChanged }: { wallet: CashWalletDto; onChanged: () => void }) {
   const t = useTranslations();
   const locale = useLocale();
+  // The box is shared: the name shown is whoever is signed in (on shift); each movement
+  // records who made it.
+  const { user } = useAuth();
   const [dialog, setDialog] = useState<'topup' | 'adjust' | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const history = useApiQuery<Paginated<CashMovementDto>>(showHistory ? `/cash-wallets/${wallet.id}/movements?limit=20` : null);
@@ -79,7 +82,7 @@ function WalletCard({ wallet, manager, onChanged }: { wallet: CashWalletDto; man
             </span>
             <div>
               <div className="font-semibold">{wallet.name}</div>
-              <div className="text-sm text-muted-foreground">{wallet.holder.name}</div>
+              <div className="text-sm text-muted-foreground">{user.name}</div>
             </div>
           </div>
           {!wallet.isActive && <Badge tone="gray">{t('rooms.deactivated')}</Badge>}
@@ -89,7 +92,7 @@ function WalletCard({ wallet, manager, onChanged }: { wallet: CashWalletDto; man
           <div className={cn('text-3xl font-semibold tabular-nums', wallet.balance === 0 && 'text-amber-700')}>{m(wallet.balance)}</div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {manager && wallet.isActive && (
+          {wallet.isActive && (
             <>
               <Button size="sm" onClick={() => setDialog('topup')}>
                 <ArrowDownLeft aria-hidden />
@@ -142,7 +145,7 @@ function WalletCard({ wallet, manager, onChanged }: { wallet: CashWalletDto; man
       <AmountDialog
         open={dialog === 'topup'}
         onOpenChange={(o) => setDialog(o ? 'topup' : null)}
-        title={t('wallets.topUpTitle', { name: wallet.holder.name })}
+        title={t('wallets.topUpTitle', { name: wallet.name })}
         onSubmit={move('top-up')}
       />
       <AmountDialog

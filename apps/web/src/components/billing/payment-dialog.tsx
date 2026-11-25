@@ -43,11 +43,12 @@ export function PaymentDialog({
   const [walletId, setWalletId] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
   const { run, pending, error, setError } = useAction();
-  const { user, can } = useAuth();
+  const { can } = useAuth();
   // Cash goes into a cash box: yours by default; managers, who see every box, can pick.
   const boxes = useApiQuery<CashWalletDto[]>(open && can('expenses.write', 'expenses.write_petty_cash') ? '/cash-wallets' : null);
   const active = (boxes.data ?? []).filter((b) => b.isActive);
-  const defaultBox = (active.find((b) => b.holder.id === user.id) ?? active[0])?.id ?? '';
+  // The main box (listed first) unless another is chosen.
+  const defaultBox = active[0]?.id ?? '';
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +65,10 @@ export function PaymentDialog({
     const parsed = paymentFormSchema.safeParse({ amountMad: amount, method, note });
     if (!parsed.success) return setErrors(fieldErrors(parsed.error));
     setErrors({});
+    // No double collection: at most what the guest still owes.
+    if (suggested > 0 && parseMadToCentimes(parsed.data.amountMad) > suggested) {
+      return setError(t('errors.OVERPAYMENT'));
+    }
     const ok = await run(() =>
       api(`/stays/${stayId}/payments`, {
         method: 'POST',
@@ -123,7 +128,7 @@ export function PaymentDialog({
               <Select id="pay-box" value={walletId || defaultBox} onChange={(e) => setWalletId(e.target.value)}>
                 {active.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} · {b.holder.name}
+                    {b.name}
                   </option>
                 ))}
               </Select>

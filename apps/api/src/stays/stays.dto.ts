@@ -101,3 +101,10 @@ export class ListStaysQueryDto extends PaginationQueryDto {
   @IsUUID()
   roomId?: string;
 }
+
+export class CancelStayDto {
+  @ApiPropertyOptional({ enum: ['refund', 'keep'], description: 'When the guest paid: give the money back, or keep it' })
+  @IsOptional()
+  @IsIn(['refund', 'keep'])
+  payments?: 'refund' | 'keep';
+}

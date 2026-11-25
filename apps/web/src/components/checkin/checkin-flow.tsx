@@ -28,7 +28,8 @@ type Step =
   | { kind: 'passport'; index: number }
   | { kind: 'contact' }
   | { kind: 'consent' }
-  | { kind: 'done'; result: CheckinDoneDto };
+  | { kind: 'done'; result: CheckinDoneDto; already?: boolean };
+
 
 /**
  * Guest self check-in: main passport -> contact & stay -> other adults -> consent &
@@ -115,6 +116,12 @@ export function CheckinFlow({ link }: { link: CheckinLink }) {
       setStep({ kind: 'done', result });
     } catch (e) {
       const code = e instanceof ApiError ? e.code : 'generic';
+      // The passport/ID number is already in a current stay: a re-submission.
+      if (code === 'ALREADY_CHECKED_IN') {
+        const result = { riadName: context?.riadName ?? '', wifiInfo: null, checkedIn: true, roomName: null };
+        setStep({ kind: 'done', result, already: true });
+        return;
+      }
       setSubmitError(t.has(`errors.${code}`) ? t(`errors.${code}`) : t('errors.generic'));
     } finally {
       setSubmitting(false);
@@ -135,9 +142,9 @@ export function CheckinFlow({ link }: { link: CheckinLink }) {
           <Loader2 className="size-8 animate-spin" aria-hidden />
         </div>
       ) : step.kind === 'done' ? (
-        <Done result={step.result} />
+        <Done result={step.result} already={step.already} />
       ) : (
-        <main className="flex flex-col gap-5 rounded-2xl border bg-card p-5 sm:p-6">
+        <main className="flex flex-col gap-5 rounded-2xl border bg-card p-5 sm:p-6 shadow-sm">
           {step.kind !== 'intro' && (
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium text-muted-foreground">
@@ -230,15 +237,20 @@ function Intro({ context, onStart }: { context: CheckinContextDto; onStart: () =
   );
 }
 
-function Done({ result }: { result: CheckinDoneDto }) {
+function Done({ result, already }: { result: CheckinDoneDto; already?: boolean }) {
   const t = useTranslations('checkin.done');
   return (
-    <main className="flex flex-col items-center gap-5 rounded-2xl border bg-card p-6 text-center">
+    <main className="flex flex-col items-center gap-5 rounded-2xl border bg-card p-6 text-center shadow-sm">
       <span className="flex size-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
         <CircleCheckBig className="size-9" aria-hidden />
       </span>
       <div>
-        {result.checkedIn ? (
+        {already ? (
+          <>
+            <h1 className="text-2xl font-semibold">{t('alreadyTitle')}</h1>
+            <p className="mt-2 text-muted-foreground">{t('already')}</p>
+          </>
+        ) : result.checkedIn ? (
           <>
             <h1 className="text-2xl font-semibold">{t('checkedInTitle')}</h1>
             <p className="mt-2 text-muted-foreground">{t('checkedIn', { room: result.roomName ?? '' })}</p>
@@ -264,5 +276,5 @@ function Done({ result }: { result: CheckinDoneDto }) {
 }
 
 function Message({ title }: { title: string }) {
-  return <p className="rounded-2xl border bg-card p-6 text-center text-muted-foreground">{title}</p>;
+  return <p className="rounded-2xl border bg-card p-6 text-center text-muted-foreground shadow-sm">{title}</p>;
 }

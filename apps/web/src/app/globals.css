@@ -6,7 +6,7 @@
 /* Brand: deep teal on soft grey-green neutrals, white cards. */
 :root {
   --radius: 0.75rem;
-  --background: #f3f6f5;
+  --background: #ecf1ef;
   --foreground: #14211f;
   --card: #ffffff;
   --card-foreground: #14211f;
@@ -15,15 +15,15 @@
   --primary: #134e48;
   --primary-hover: #0f413c;
   --primary-foreground: #ffffff;
-  --secondary: #edf3f1;
+  --secondary: #e2ebe8;
   --secondary-foreground: #1d3b37;
   --muted: #f0f4f3;
-  --muted-foreground: #6a7b77;
-  --accent: #e8f0ee;
+  --muted-foreground: #5a6b67;
+  --accent: #dfeae7;
   --accent-foreground: #134e48;
   --destructive: #c2410c;
-  --border: #e3e9e7;
-  --input: #dbe3e1;
+  --border: #d5dfdc;
+  --input: #c7d3d0;
   --ring: #2f7a70;
   /* Teal ramp for charts, calendar bars and highlights (dark -> light). */
   --teal-900: #134e48;

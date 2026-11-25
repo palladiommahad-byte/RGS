@@ -30,7 +30,7 @@ describe('Payments received (e2e)', () => {
           checkOutDate: addDays(today, 2),
           adults: 1,
           children: 0,
-          pricePerNight: 50000,
+          pricePerNight: 100000,
           roomId: a.rooms[roomIndex]!.id,
           checkInNow: true,
           mainGuest: { firstName, lastName: 'Guest' },

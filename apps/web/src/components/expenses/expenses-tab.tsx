@@ -126,7 +126,7 @@ export function ExpensesTab({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label={t('expenses.period')}>
             {PRESETS.map((p) => (
@@ -235,7 +235,7 @@ export function ExpensesTab({
       ) : (
         <div className={cn('flex flex-col gap-4', query.loading && 'opacity-60')}>
           {days.map((day) => (
-            <section key={day.date} className="overflow-hidden rounded-2xl border bg-card">
+            <section key={day.date} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
               <header className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-2.5 text-sm">
                 <span className="inline-block font-medium first-letter:uppercase">{formatDate(day.date, locale, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                 <span className="font-semibold tabular-nums">{m(day.items.reduce((n, e) => n + e.amountTtc, 0))}</span>

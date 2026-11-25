@@ -35,7 +35,7 @@ export function StayList({ stays, today }: { stays: StaySummaryDto[]; today: str
   return (
     <>
       {/* Wide screens: table. */}
-      <div className="overflow-hidden rounded-2xl border bg-card max-md:hidden">
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-sm max-md:hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
             <tr>
@@ -144,7 +144,7 @@ export function StayList({ stays, today }: { stays: StaySummaryDto[]; today: str
               <button
                 type="button"
                 onClick={() => open(s)}
-                className={cn('flex w-full flex-col gap-3 rounded-2xl border bg-card p-3.5 text-start', s.status === 'CANCELLED' && 'opacity-60')}
+                className={cn('flex w-full flex-col gap-3 rounded-2xl border bg-card p-3.5 text-start shadow-sm', s.status === 'CANCELLED' && 'opacity-60')}
               >
                 <span className="flex w-full items-center gap-3">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-900" aria-hidden>

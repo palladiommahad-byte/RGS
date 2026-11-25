@@ -95,14 +95,19 @@ export class ExpensesService {
     let walletId = dto.walletId;
 
     if (!full) {
-      // Petty-cash users can only spend from their own wallet.
+      // Petty-cash users pay from a cash box: the one chosen (any active box of the riad),
+      // else the main box (the first created).
       method = 'PETTY_CASH';
-      const own = await this.prisma.cashWallet.findFirst({
-        where: { riadId: p.riadId, holderId: p.userId, isActive: true, ...(walletId ? { id: walletId } : {}) },
-        orderBy: { createdAt: 'asc' },
-      });
-      if (!own) throw new AppException('NO_WALLET', 'You have no petty-cash wallet', HttpStatus.FORBIDDEN);
-      walletId = own.id;
+      const active = { riadId: p.riadId, isActive: true };
+      const box = walletId
+        ? await this.prisma.cashWallet.findFirst({ where: { ...active, id: walletId } })
+        : await this.prisma.cashWallet.findFirst({ where: active, orderBy: { createdAt: 'asc' } });
+      if (!box) {
+        throw walletId
+          ? new AppException('NOT_FOUND', 'Cash box not found', HttpStatus.NOT_FOUND)
+          : new AppException('NO_WALLET', 'There is no cash box yet', HttpStatus.FORBIDDEN);
+      }
+      walletId = box.id;
     }
     if (method === 'PETTY_CASH' && !walletId) {
       throw new AppException('WALLET_REQUIRED', 'Choose the petty-cash wallet', HttpStatus.BAD_REQUEST);

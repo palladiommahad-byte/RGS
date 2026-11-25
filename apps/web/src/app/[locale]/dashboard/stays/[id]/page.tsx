@@ -17,6 +17,7 @@ import { GuestDocuments } from '@/components/stays/guest-documents';
 import { ConfirmStayDialog, EditStayDialog, GuestDialog } from '@/components/stays/stay-dialogs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -36,6 +37,8 @@ export default function StayDetailPage() {
   const [editingGuest, setEditingGuest] = useState<GuestDto | undefined>();
   const action = useAction();
   const confirm = useConfirm();
+  // Cancelling a stay the guest already paid: give the money back, or keep it.
+  const [cancelPaid, setCancelPaid] = useState(false);
 
   const reload = () => {
     stay.reload();
@@ -58,9 +61,12 @@ export default function StayDetailPage() {
   const roomList = rooms.data?.items ?? [];
   const title = s.mainGuest ? `${s.mainGuest.firstName} ${s.mainGuest.lastName}` : t('stays.stay');
 
-  async function cancelStay() {
-    if (!(await confirm({ message: t('stays.cancelConfirm'), confirmLabel: t('stays.cancelStay') }))) return;
-    if (await action.run(() => api(`/stays/${s!.id}/cancel`, { method: 'POST' }), { success: 'stayCancelled' })) reload();
+  async function cancelStay(payments?: 'refund' | 'keep') {
+    if ((bill.data?.paid ?? 0) > 0 && !payments) return setCancelPaid(true);
+    if (!payments && !(await confirm({ message: t('stays.cancelConfirm'), confirmLabel: t('stays.cancelStay') }))) return;
+    setCancelPaid(false);
+    const body = payments ? { payments } : {};
+    if (await action.run(() => api(`/stays/${s!.id}/cancel`, { method: 'POST', body }), { success: 'stayCancelled' })) reload();
   }
 
   async function rejectStay() {
@@ -133,7 +139,7 @@ export default function StayDetailPage() {
                 {t('stays.reject')}
               </Button>
             )}
-            {s.status === 'PENDING' && canWrite && (
+            {(s.status === 'PENDING' || s.status === 'CHECKED_IN') && canWrite && (
               <Button size="lg" variant="ghost" className="text-destructive" onClick={() => void cancelStay()}>
                 <XCircle aria-hidden />
                 {t('stays.cancelStay')}
@@ -278,6 +284,25 @@ export default function StayDetailPage() {
 
       <StayBilling stay={s} bill={bill.data} onChanged={reload} />
 
+      <Dialog open={cancelPaid} onOpenChange={setCancelPaid}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('stays.cancelPaidTitle')}</DialogTitle>
+            <DialogDescription>{t('stays.cancelPaidText', { amount: formatMoney(bill.data?.paid ?? 0, locale) })}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button variant="destructive" disabled={action.pending} onClick={() => void cancelStay('refund')}>
+              {t('stays.cancelRefund')}
+            </Button>
+            <Button variant="outline" disabled={action.pending} onClick={() => void cancelStay('keep')}>
+              {t('stays.cancelKeep')}
+            </Button>
+            <Button variant="ghost" onClick={() => setCancelPaid(false)}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <ConfirmStayDialog stay={s} rooms={roomList} open={dialog === 'confirm'} onOpenChange={(o) => setDialog(o ? 'confirm' : null)} onDone={reload} />
       <EditStayDialog stay={s} rooms={roomList} open={dialog === 'edit'} onOpenChange={(o) => setDialog(o ? 'edit' : null)} onDone={reload} />
       <GuestDialog stayId={s.id} guest={editingGuest} open={dialog === 'guest'} onOpenChange={(o) => setDialog(o ? 'guest' : null)} onDone={reload} />

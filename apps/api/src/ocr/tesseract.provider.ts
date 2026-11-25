@@ -2,7 +2,7 @@ import { Logger, type OnModuleDestroy } from '@nestjs/common';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createWorker, PSM, type Worker } from 'tesseract.js';
-import type { PassportOcrProvider } from './passport-ocr.provider';
+import type { OcrLayout, PassportOcrProvider } from './passport-ocr.provider';
 
 /** A loaded worker holds ~100 MB; small servers get it back after this long unused. */
 const IDLE_MS = 3 * 60_000;
@@ -22,11 +22,14 @@ export class TesseractProvider implements PassportOcrProvider, OnModuleDestroy {
 
   constructor(private readonly cacheDir: string) {}
 
-  async recognize(image: Buffer): Promise<string> {
+  async recognize(image: Buffer, layout: OcrLayout = 'page'): Promise<string> {
     this.busy++;
     if (this.idleTimer) clearTimeout(this.idleTimer);
     try {
       const worker = await this.getWorker();
+      // An MRZ crop is one uniform block of text: telling Tesseract so avoids it hunting
+      // for columns and dropping the lines.
+      await worker.setParameters({ tessedit_pageseg_mode: layout === 'block' ? PSM.SINGLE_BLOCK : PSM.AUTO });
       const { data } = await worker.recognize(image);
       return data.text;
     } finally {

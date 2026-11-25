@@ -24,6 +24,7 @@ import {
 import { CurrentUser, RequirePermissions } from '../common/auth/decorators';
 import type { AuthPrincipal } from '../common/auth/principal';
 import {
+  CancelStayDto,
   ConfirmStayDto,
   CreateStayDto,
   GuestInputDto,
@@ -80,8 +81,20 @@ export class StaysController {
   @RequirePermissions(P.STAYS_WRITE)
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  cancel(@CurrentUser() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string): Promise<StayDetailDto> {
-    return this.stays.cancel(p, id);
+  cancel(
+    @CurrentUser() p: AuthPrincipal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelStayDto,
+  ): Promise<StayDetailDto> {
+    return this.stays.cancel(p, id, dto.payments);
+  }
+
+  /** Owner and manager only (checked in the service): the stay and everything on it. */
+  @RequirePermissions(P.STAYS_WRITE)
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@CurrentUser() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.stays.remove(p, id);
   }
 
   @RequirePermissions(P.CHECKIN_CONFIRM)

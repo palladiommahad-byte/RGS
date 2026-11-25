@@ -41,8 +41,10 @@ export class ListMovementsQueryDto extends PaginationQueryDto {
 }
 
 /**
- * Petty cash: a manager gives cash to a staff member (top-up); their expenses debit the
- * wallet. The balance is kept in step with the movements inside each transaction.
+ * Cash boxes: owners and managers create, rename and close them; the first one is the riad's
+ * main box. Everyone with cash rights (not housekeeping) runs the active boxes: guest cash
+ * and top-ups in, expenses out, corrections; each movement logged and notified. The balance is kept in step with
+ * the movements inside each transaction.
  */
 @ApiTags('expenses')
 @Controller('cash-wallets')
@@ -57,9 +59,11 @@ export class WalletsController {
   @Get()
   async list(@CurrentUser() p: AuthPrincipal): Promise<CashWalletDto[]> {
     const rows = await this.prisma.cashWallet.findMany({
-      where: { riadId: p.riadId, ...(manages(p) ? {} : { holderId: p.userId, isActive: true }) },
+      // Managers also see closed boxes; everyone else the active ones, whoever holds them.
+      where: { riadId: p.riadId, ...(manages(p) ? {} : { isActive: true }) },
       include: walletInclude,
-      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+      // The first box created is the main one: listed first, used by default.
+      orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }],
     });
     return rows.map(toView);
   }
@@ -101,14 +105,15 @@ export class WalletsController {
     return toView(row);
   }
 
-  @RequirePermissions(P.EXPENSES_WRITE)
+  // Everyone who handles cash (not housekeeping) runs the box: top-ups and corrections too.
+  @RequireAnyPermission(P.EXPENSES_WRITE, P.EXPENSES_WRITE_PETTY_CASH)
   @Post(':id/top-up')
   topUp(@CurrentUser() p: AuthPrincipal, @Param('id', ParseUUIDPipe) id: string, @Body() dto: TopUpDto): Promise<CashWalletDto> {
     return this.move(p, id, 'TOP_UP', dto.amount, dto.note);
   }
 
   /** Cash count correction (signed). Can never leave a negative balance. */
-  @RequirePermissions(P.EXPENSES_WRITE)
+  @RequireAnyPermission(P.EXPENSES_WRITE, P.EXPENSES_WRITE_PETTY_CASH)
   @Post(':id/adjust')
   adjust(
     @CurrentUser() p: AuthPrincipal,
@@ -249,7 +254,7 @@ export class WalletsController {
 
   private async findOrThrow(p: AuthPrincipal, id: string): Promise<CashWallet> {
     const w = await this.prisma.cashWallet.findFirst({
-      where: { id, riadId: p.riadId, ...(manages(p) ? {} : { holderId: p.userId }) },
+      where: { id, riadId: p.riadId, ...(manages(p) ? {} : { isActive: true }) },
     });
     if (!w) throw new AppException('NOT_FOUND', 'Wallet not found', HttpStatus.NOT_FOUND);
     return w;

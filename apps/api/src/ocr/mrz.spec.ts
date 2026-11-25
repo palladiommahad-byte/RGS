@@ -37,9 +37,9 @@ describe('parseMrzText', () => {
     expect(r?.fields.lastName).toBe('Mustermann');
   });
 
-  it('still returns fields when check digits fail, flagged invalid', () => {
+  it('still returns fields when a field check digit fails, flagged invalid', () => {
     const r = parseMrzText(
-      'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<\nL898902C36UTO7408122F1204159ZE184226B<<<<<10',
+      'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<\nL898902C35UTO7408122F1204159ZE184226B<<<<<10',
       TODAY,
     );
     expect(r?.valid).toBe(false);

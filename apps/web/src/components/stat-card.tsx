@@ -32,7 +32,7 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <div className={cn('flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl border bg-card p-5 shadow-xs', className)}>
+    <div className={cn('flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm', className)}>
       <div className="flex items-start justify-between gap-3">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-xl', TONES[highlight ? 'teal' : tone])} aria-hidden>

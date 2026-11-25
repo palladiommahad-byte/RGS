@@ -8,7 +8,7 @@ import { PASSPORT_OCR } from '../src/ocr/passport-ocr.provider';
 import { RealtimeGateway } from '../src/realtime/realtime.gateway';
 import { RetentionService } from '../src/retention/retention.service';
 import { StorageService } from '../src/storage/storage.service';
-import { createApp, createRiad, FakeStorage, loginAs, resetDatabase, type RiadFixture } from './fixtures';
+import { createApp, createRiad, FakeStorage, loginAs, resetDatabase, resetRateLimits, type RiadFixture } from './fixtures';
 
 const API = '/api/v1';
 const GERMAN_MRZ = 'P<D<<MUSTERMANN<<ERIKA<<<<<<<<<<<<<<<<<<<<<<\nC01X00T478D<<6408125F2702283<<<<<<<<<<<<<<<4';
@@ -50,6 +50,12 @@ describe('QR self check-in (e2e)', () => {
     signature,
     guests: [{ firstName: 'Erika', lastName: 'Mustermann', nationality: 'DEU', documentType: 'PASSPORT', documentNumber: 'C01X00T47' }],
     ...overrides,
+  });
+
+  /** A guest with a scanned document photo (required for every guest). */
+  const withPhoto = async (guest: Record<string, unknown>) => ({
+    ...guest,
+    photoRef: (await scan({ room: roomToken }).expect(200)).body.photoRef as string,
   });
 
   beforeAll(async () => {
@@ -130,6 +136,7 @@ describe('QR self check-in (e2e)', () => {
 
     it('checks the guest straight into a free room, moves the photo and stores the signature', async () => {
       const scanned = await scan({ room: roomToken }).expect(200);
+      const max = await withPhoto({ firstName: 'Max', lastName: 'Mustermann' });
       emit.mockClear();
       const res = await http()
         .post(`${API}/checkin/submit`)
@@ -140,7 +147,7 @@ describe('QR self check-in (e2e)', () => {
             checkOutDate: addDays(todayIso(), 2),
             guests: [
               { ...body().guests[0], photoRef: scanned.body.photoRef, mrzRaw: GERMAN_MRZ },
-              { firstName: 'Max', lastName: 'Mustermann' },
+              max,
             ],
           }),
         )
@@ -169,7 +176,7 @@ describe('QR self check-in (e2e)', () => {
       const files = await receptionA.get(`${API}/stays/${stay.id}/guests/${main.id}/files`).expect(200);
       expect(files.body.passportPhotoUrl).toContain(`riads/${a.riadId}/stays/${stay.id}/`);
       expect(files.body.signatureUrl).toContain('signature.png');
-      expect(storage.keys('passports', `riads/${a.riadId}/stays/${stay.id}/`)).toHaveLength(2);
+      expect(storage.keys('passports', `riads/${a.riadId}/stays/${stay.id}/`)).toHaveLength(3);
       // The pending upload used by this check-in is gone.
       const ref = (scanned.body.photoRef as string).split('.')[0];
       expect(storage.has('passports', `pending/${a.riadId}/${ref}.jpg`)).toBe(false);
@@ -180,7 +187,8 @@ describe('QR self check-in (e2e)', () => {
     it('leaves the check-in to reception when the room is not free', async () => {
       emit.mockClear();
       // Room 2 is now occupied by the guest above.
-      const res = await http().post(`${API}/checkin/submit`).send(body()).expect(201);
+      const guest = await withPhoto({ ...body().guests[0], documentNumber: 'X1234567' });
+      const res = await http().post(`${API}/checkin/submit`).send(body({ guests: [guest] })).expect(201);
       expect(res.body).toMatchObject({ checkedIn: false, roomName: 'Room 2' });
       expect(emit).toHaveBeenCalledWith(a.riadId, 'checkin:new', expect.objectContaining({ status: 'PENDING' }));
       stayId = (emit.mock.calls[0]![2] as { id: string }).id;
@@ -197,7 +205,8 @@ describe('QR self check-in (e2e)', () => {
         .post(`${API}/stays`)
         .send({ source: 'BOOKING', checkInDate: todayIso(), checkOutDate: addDays(todayIso(), 3), adults: 1, children: 0, pricePerNight: 50000, roomId: a.rooms[2]!.id, mainGuest: { firstName: 'Ana', lastName: 'Silva' } })
         .expect(201);
-      const res = await http().post(`${API}/checkin/submit`).send(body({ room: room3Token })).expect(201);
+      const guest = await withPhoto({ ...body().guests[0], documentNumber: 'Y7654321' });
+      const res = await http().post(`${API}/checkin/submit`).send(body({ room: room3Token, guests: [guest] })).expect(201);
       expect(res.body).toMatchObject({ checkedIn: false, roomName: 'Room 3' });
       expect((await prisma.room.findUniqueOrThrow({ where: { id: a.rooms[2]!.id } })).status).toBe('FREE');
     });
@@ -206,7 +215,7 @@ describe('QR self check-in (e2e)', () => {
       const scannedB = await scan({ room: tokenB }).expect(200);
       const res = await http()
         .post(`${API}/checkin/submit`)
-        .send(body({ guests: [{ ...body().guests[0], photoRef: scannedB.body.photoRef }] }))
+        .send(body({ guests: [{ ...body().guests[0], documentNumber: 'Z1111111', photoRef: scannedB.body.photoRef }] }))
         .expect(400);
       expect(res.body.code).toBe('INVALID_PHOTO');
     });
@@ -223,7 +232,19 @@ describe('QR self check-in (e2e)', () => {
       await http().post(`${API}/checkin/submit`).send(body({ signature: 'data:image/png;base64,AAAA' })).expect(400);
     });
 
+    it('requires a document photo for every guest', async () => {
+      const res = await http().post(`${API}/checkin/submit`).send(body({ guests: [{ ...body().guests[0], documentNumber: 'W2222222' }] })).expect(400);
+      expect(res.body.code).toBe('DOCUMENT_REQUIRED');
+    });
+
+    it('refuses a second check-in with a document already in a current stay', async () => {
+      const guest = await withPhoto(body().guests[0]!);
+      const res = await http().post(`${API}/checkin/submit`).send(body({ guests: [guest] })).expect(409);
+      expect(res.body.code).toBe('ALREADY_CHECKED_IN');
+    });
+
     it('silently drops honeypot submissions', async () => {
+      resetRateLimits(app); // every guest now scans a document: more requests than before
       const before = await prisma.stay.count();
       const res = await http().post(`${API}/checkin/submit`).send(body({ website: 'http://spam' })).expect(201);
       expect(res.body.wifiInfo).toBeNull();

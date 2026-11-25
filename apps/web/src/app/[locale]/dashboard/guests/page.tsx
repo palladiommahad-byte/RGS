@@ -1,20 +1,23 @@
 'use client';
 
 import { addDays, todayIso, type GuestRegisterRowDto, type Paginated } from '@riad/shared';
-import { FileSpreadsheet, FileText, Search } from 'lucide-react';
+import { Eye, FileSpreadsheet, FileText, Search, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/components/auth-provider';
 import { DateRangePicker } from '@/components/date-range-picker';
+import { useConfirm } from '@/components/feedback';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
 import { StayStatusBadge } from '@/components/status-badges';
+import { SwipeActions } from '@/components/swipe-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Link } from '@/i18n/navigation';
-import { apiDownload } from '@/lib/api';
+import { api, apiDownload } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useAction, useApiQuery } from '@/lib/use-api';
 import { cn } from '@/lib/utils';
@@ -38,6 +41,11 @@ export default function GuestRegisterPage() {
   const [{ from, to }, setRange] = useState(monthRange);
   const [page, setPage] = useState(1);
   const exporting = useAction();
+  const removing = useAction();
+  const confirm = useConfirm();
+  const { user } = useAuth();
+  // Owner and manager: view or delete a stay right from the register.
+  const manages = user.role.key === 'OWNER' || user.role.key === 'MANAGER';
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -60,6 +68,17 @@ export default function GuestRegisterPage() {
     void exporting.run(() =>
       apiDownload(`/guests/export?from=${from}&to=${to}&format=${format}`, `registre-clients.${format}`),
     );
+
+  async function removeStay(r: GuestRegisterRowDto) {
+    const ok = await confirm({
+      title: t('register.deleteTitle'),
+      message: t('register.deleteText', { name: `${r.lastName.toUpperCase()} ${r.firstName}` }),
+      confirmLabel: t('register.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
+    if (await removing.run(() => api(`/stays/${r.stayId}`, { method: 'DELETE' }), { success: 'deleted' })) query.reload();
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -111,13 +130,37 @@ export default function GuestRegisterPage() {
       </Card>
 
       {!canExport && <p className="text-sm text-muted-foreground">{t('register.exportHint')}</p>}
-      <FormError message={exporting.error} />
+      <FormError message={exporting.error ?? removing.error} />
 
       {/* Phones: one card per guest. */}
       <ul className={cn('flex flex-col gap-2 md:hidden', query.loading && 'opacity-60')}>
         {query.data?.items.map((r) => (
           <li key={r.guestId}>
-            <Link href={`/dashboard/stays/${r.stayId}`} className="flex flex-col gap-2 rounded-2xl border bg-card p-3.5">
+            <SwipeActions
+              actions={
+                manages ? (
+                  <>
+                    <Link
+                      href={`/dashboard/stays/${r.stayId}`}
+                      className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-primary text-xs font-medium text-primary-foreground"
+                    >
+                      <Eye className="size-5" aria-hidden />
+                      {t('register.view')}
+                    </Link>
+                    <button
+                      type="button"
+                      disabled={removing.pending}
+                      onClick={() => void removeStay(r)}
+                      className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-destructive text-xs font-medium text-white disabled:opacity-60"
+                    >
+                      <Trash2 className="size-5" aria-hidden />
+                      {t('register.delete')}
+                    </button>
+                  </>
+                ) : undefined
+              }
+            >
+            <Link href={`/dashboard/stays/${r.stayId}`} className="flex flex-col gap-2 rounded-2xl border bg-card p-3.5 shadow-sm">
               <span className="flex items-start justify-between gap-2">
                 <span className="min-w-0">
                   <span className="block font-medium">
@@ -155,6 +198,7 @@ export default function GuestRegisterPage() {
                 )}
               </span>
             </Link>
+            </SwipeActions>
           </li>
         ))}
         {query.data?.items.length === 0 && (
@@ -172,11 +216,16 @@ export default function GuestRegisterPage() {
                     {t(`register.${k}`)}
                   </th>
                 ))}
+                {manages && (
+                  <th scope="col" className="w-24 px-4 py-3">
+                    <span className="sr-only">{t('register.actions')}</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y">
               {query.data?.items.map((r) => (
-                <tr key={r.guestId} className="hover:bg-accent/40">
+                <tr key={r.guestId} className="group hover:bg-accent/40">
                   <td className="px-4 py-3">
                     <Link href={`/dashboard/stays/${r.stayId}`} className="font-medium hover:underline">
                       {r.lastName.toUpperCase()} {r.firstName}
@@ -196,6 +245,28 @@ export default function GuestRegisterPage() {
                     <StayStatusBadge status={r.status} />
                   </td>
                   <td className="px-4 py-3">{r.room ?? '—'}</td>
+                  {manages && (
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                        <Button asChild size="icon" variant="outline" className="size-8">
+                          <Link href={`/dashboard/stays/${r.stayId}`} aria-label={t('register.view')} title={t('register.view')}>
+                            <Eye aria-hidden />
+                          </Link>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={removing.pending}
+                          aria-label={t('register.delete')}
+                          title={t('register.delete')}
+                          onClick={() => void removeStay(r)}
+                        >
+                          <Trash2 aria-hidden />
+                        </Button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

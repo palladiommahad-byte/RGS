@@ -4,7 +4,6 @@ import {
   computeBill,
   formatInvoiceNumber,
   isoToUtcDate,
-  PERMISSIONS,
   todayIso,
   utcDateToIso,
   type BillDto,
@@ -112,7 +111,19 @@ export class BillingService {
     }
     // Cash goes into a cash box, so the box balance matches the cash in hand.
     const walletId = dto.method === 'CASH' ? await this.cashBoxFor(p, dto.walletId) : null;
+    let invoiceId: string | null = null;
     const payment = await this.prisma.$transaction(async (tx) => {
+      // No double collection: a payment is at most what the guest still owes.
+      const full = await tx.stay.findFirstOrThrow({ where: { id: stayId, riadId: p.riadId }, include: billInclude });
+      const issuedOn = todayIso();
+      const computed = await this.compute(full, issuedOn, tx);
+      const owed = computed.totals.totalTtc - sumPayments(full);
+      if (owed <= 0) {
+        throw new AppException('ALREADY_PAID', 'This stay is already fully paid', HttpStatus.CONFLICT, { balance: owed });
+      }
+      if (dto.amount > owed) {
+        throw new AppException('OVERPAYMENT', 'More than the guest still owes', HttpStatus.CONFLICT, { balance: owed });
+      }
       const created = await tx.payment.create({
         data: {
           riadId: p.riadId,
@@ -141,8 +152,14 @@ export class BillingService {
         },
         tx,
       );
+      // Paid in full: the invoice is issued now (or brought up to date), not at check-out.
+      if (dto.amount === owed) {
+        full.payments.push(created);
+        invoiceId = (await this.writeInvoice(tx, p, full, issuedOn, computed)).id;
+      }
       return created;
     });
+    if (invoiceId) await this.renderPdf(invoiceId);
     if (walletId) await this.notifications.cash(p.riadId, walletId, p.userId, 'GUEST_PAYMENT', dto.amount, await this.guestLabel(stayId));
     const user = await this.prisma.user.findUnique({ where: { id: p.userId }, select: { id: true, name: true } });
     return {
@@ -195,23 +212,18 @@ export class BillingService {
   }
 
   /**
-   * The cash box a cash payment goes into: the one asked for (yours, or any for managers),
-   * else your own box, else the riad's only box. None: the payment is not tracked in a box.
+   * The cash box a cash payment goes into: the one asked for (any active box of the riad),
+   * else the main box (the first created). None: the payment is not tracked in a box.
    */
   private async cashBoxFor(p: AuthPrincipal, requested?: string): Promise<string | null> {
     const active = { riadId: p.riadId, isActive: true };
     if (requested) {
       const box = await this.prisma.cashWallet.findFirst({ where: { ...active, id: requested } });
       if (!box) throw notFound('Cash box');
-      if (box.holderId !== p.userId && !p.permissions.includes(PERMISSIONS.EXPENSES_WRITE)) {
-        throw new AppException('FORBIDDEN', 'You can only put cash in your own cash box', HttpStatus.FORBIDDEN);
-      }
       return box.id;
     }
-    const own = await this.prisma.cashWallet.findFirst({ where: { ...active, holderId: p.userId }, orderBy: { createdAt: 'asc' } });
-    if (own) return own.id;
-    const boxes = await this.prisma.cashWallet.findMany({ where: active, select: { id: true }, take: 2 });
-    return boxes.length === 1 ? boxes[0]!.id : null;
+    const main = await this.prisma.cashWallet.findFirst({ where: active, orderBy: { createdAt: 'asc' }, select: { id: true } });
+    return main?.id ?? null;
   }
 
   /** "Karim Test · Chambre 1", for cash notifications. */
@@ -233,7 +245,7 @@ export class BillingService {
     if (!stay) throw notFound('Stay');
     const paid = sumPayments(stay);
     const invoice = stay.invoices[0];
-    if (invoice) {
+    if (invoice && stay.status === 'CHECKED_OUT') {
       const b = invoice.breakdown as unknown as InvoiceBreakdown;
       return {
         lines: b.lines,
@@ -248,17 +260,22 @@ export class BillingService {
     }
     const ratesDate = todayIso();
     const computed = await this.compute(stay, ratesDate);
-    return { ...computed, paid, balance: computed.totals.totalTtc - paid, ratesDate, invoice: null };
+    return {
+      ...computed,
+      paid,
+      balance: computed.totals.totalTtc - paid,
+      ratesDate,
+      invoice: invoice ? { id: invoice.id, number: invoice.number, totalTtc: invoice.totalTtc, issuedAt: invoice.issuedAt.toISOString() } : null,
+    };
   }
 
   /**
-   * CHECKED_IN -> CHECKED_OUT: freezes the bill into a sequentially numbered invoice,
-   * frees the room for cleaning, then renders the PDF.
+   * CHECKED_IN -> CHECKED_OUT: the stay's invoice becomes final (issued now if the guest
+   * never paid in full, else brought up to date), the room goes to cleaning, PDF rendered.
    */
   /** `p.userId` is null when the system checks the guest out (end of stay). */
-  async checkout(p: Actor, stayId: string, dto: CheckoutDto, opts: { automatic?: boolean } = {}): Promise<CheckoutResultDto> {
+  async checkout(p: Actor, stayId: string, dto: CheckoutDto, opts: { automatic?: boolean; at?: Date } = {}): Promise<CheckoutResultDto> {
     const issuedOn = todayIso();
-    const year = Number(issuedOn.slice(0, 4));
 
     const result = await this.prisma.$transaction(async (tx) => {
       const stay = await tx.stay.findFirst({ where: { id: stayId, riadId: p.riadId }, include: billInclude });
@@ -277,47 +294,14 @@ export class BillingService {
 
       const { count } = await tx.stay.updateMany({
         where: { id: stayId, riadId: p.riadId, status: 'CHECKED_IN' },
-        data: { status: 'CHECKED_OUT', checkedOutAt: new Date() },
+        data: { status: 'CHECKED_OUT', checkedOutAt: opts.at ?? new Date() },
       });
       if (count !== 1) {
         throw new AppException('STAY_CHANGED', 'This stay was changed by someone else, reload and retry', HttpStatus.CONFLICT);
       }
       if (stay.roomId) await releaseRoom(tx, p.riadId, stay.roomId);
 
-      // Gapless yearly numbering: an atomic upsert-increment on the riad/year counter.
-      const seq = await tx.invoiceSequence.upsert({
-        where: { riadId_year: { riadId: p.riadId, year } },
-        create: { riadId: p.riadId, year, lastValue: 1 },
-        update: { lastValue: { increment: 1 } },
-      });
-      const riad = await tx.riad.findUniqueOrThrow({ where: { id: p.riadId }, select: { invoicePrefix: true } });
-      const main = stay.guests[0];
-      const breakdown: InvoiceBreakdown = {
-        ...computed,
-        ratesDate: issuedOn,
-        paidAtIssue: paid,
-        stay: {
-          roomName: stay.room?.name ?? null,
-          checkInDate: utcDateToIso(stay.checkInDate),
-          checkOutDate: utcDateToIso(stay.checkOutDate),
-          nights: stay.nights,
-          adults: stay.adults,
-          children: stay.children,
-        },
-        guest: main ? { name: `${main.firstName} ${main.lastName}`, nationality: main.nationality } : null,
-      };
-      const invoice = await tx.invoice.create({
-        data: {
-          riadId: p.riadId,
-          stayId,
-          number: formatInvoiceNumber(riad.invoicePrefix, year, seq.lastValue),
-          year,
-          sequence: seq.lastValue,
-          ...computed.totals,
-          breakdown: breakdown as unknown as Prisma.InputJsonObject,
-          createdBy: p.userId,
-        },
-      });
+      const invoice = await this.writeInvoice(tx, p, stay, issuedOn, computed);
       await this.audit.log(
         {
           riadId: p.riadId,
@@ -332,12 +316,7 @@ export class BillingService {
       return { invoice, balance };
     });
 
-    try {
-      await this.pdf.generate(result.invoice.id);
-    } catch (e) {
-      // The invoice exists; the PDF is regenerated on first download.
-      this.logger.error(`PDF for ${result.invoice.number} failed: ${String(e)}`);
-    }
+    await this.renderPdf(result.invoice.id);
     // The room is now « to clean »: every open screen (housekeeping too) updates at once.
     this.realtime.staysChanged(p.riadId);
     this.realtime.roomsChanged(p.riadId);
@@ -347,6 +326,71 @@ export class BillingService {
       invoice: { id: i.id, number: i.number, totalTtc: i.totalTtc, issuedAt: i.issuedAt.toISOString() },
       balance: result.balance,
     };
+  }
+
+  /**
+   * One invoice per stay. The first time (full payment, or check-out) it takes the next
+   * number of the gapless yearly sequence; afterwards (nights or extras added, then paid,
+   * or the final check-out) the same invoice is brought up to date and its PDF redone.
+   */
+  private async writeInvoice(
+    tx: Prisma.TransactionClient,
+    actor: Actor,
+    stay: BillStay,
+    issuedOn: string,
+    computed: Awaited<ReturnType<BillingService['compute']>>,
+  ) {
+    const main = stay.guests[0];
+    const breakdown: InvoiceBreakdown = {
+      ...computed,
+      ratesDate: issuedOn,
+      paidAtIssue: sumPayments(stay),
+      stay: {
+        roomName: stay.room?.name ?? null,
+        checkInDate: utcDateToIso(stay.checkInDate),
+        checkOutDate: utcDateToIso(stay.checkOutDate),
+        nights: stay.nights,
+        adults: stay.adults,
+        children: stay.children,
+      },
+      guest: main ? { name: `${main.firstName} ${main.lastName}`, nationality: main.nationality } : null,
+    };
+    const existing = stay.invoices[0];
+    if (existing) {
+      return tx.invoice.update({
+        where: { id: existing.id },
+        data: { ...computed.totals, breakdown: breakdown as unknown as Prisma.InputJsonObject, pdfKey: null },
+      });
+    }
+    const year = Number(issuedOn.slice(0, 4));
+    // Gapless yearly numbering: an atomic upsert-increment on the riad/year counter.
+    const seq = await tx.invoiceSequence.upsert({
+      where: { riadId_year: { riadId: actor.riadId, year } },
+      create: { riadId: actor.riadId, year, lastValue: 1 },
+      update: { lastValue: { increment: 1 } },
+    });
+    const riad = await tx.riad.findUniqueOrThrow({ where: { id: actor.riadId }, select: { invoicePrefix: true } });
+    return tx.invoice.create({
+      data: {
+        riadId: actor.riadId,
+        stayId: stay.id,
+        number: formatInvoiceNumber(riad.invoicePrefix, year, seq.lastValue),
+        year,
+        sequence: seq.lastValue,
+        ...computed.totals,
+        breakdown: breakdown as unknown as Prisma.InputJsonObject,
+        createdBy: actor.userId,
+      },
+    });
+  }
+
+  /** The invoice exists either way; a failed PDF is regenerated on first download. */
+  private async renderPdf(invoiceId: string): Promise<void> {
+    try {
+      await this.pdf.generate(invoiceId);
+    } catch (e) {
+      this.logger.error(`PDF for invoice ${invoiceId} failed: ${String(e)}`);
+    }
   }
 
   private async compute(stay: BillStay, ratesDate: string, tx?: Prisma.TransactionClient) {

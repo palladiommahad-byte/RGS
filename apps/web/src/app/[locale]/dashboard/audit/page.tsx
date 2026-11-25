@@ -100,7 +100,7 @@ export default function AuditPage() {
     <div className="flex flex-col gap-5">
       <PageHeader title={t('nav.audit')} subtitle={t('audit.subtitle')} />
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm">
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
           {(['ALL', ...AUDIT_AREA_KEYS] as Filter[]).map((f) => (
             <button
@@ -160,7 +160,7 @@ export default function AuditPage() {
               <h2 className="text-sm font-semibold text-muted-foreground first-letter:uppercase">
                 {formatDate(day, locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </h2>
-              <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+              <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-sm">
                 {entries.map((e) => (
                   <AuditRow key={e.id} entry={e} />
                 ))}
