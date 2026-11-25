@@ -140,7 +140,6 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
       FILES_DOMAIN: ${FILES_DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
       GOMAXPROCS: '1'
       GOMEMLIMIT: 48MiB
     volumes:
