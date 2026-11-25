@@ -49,6 +49,8 @@ export class CheckinService {
 
   async context(link: CheckinLinkDto): Promise<CheckinContextDto> {
     const { riad, room } = await this.resolve(link);
+    // The guest will photograph a passport in a minute: have the reader ready.
+    this.reader.warm();
     return {
       riadName: riad.name,
       roomName: room?.name ?? null,

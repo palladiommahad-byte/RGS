@@ -71,6 +71,8 @@ export function PassportStep({
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  // The photo just taken, shown at once while the server reads it.
+  const [reading, setReading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const reviewing = Boolean(draft.preview || draft.manual);
@@ -79,9 +81,15 @@ export function PassportStep({
     if (!file) return;
     setBusy(true);
     setError(null);
+    // Show the new photo straight away (the old one must not linger while it uploads).
+    const instant = URL.createObjectURL(file);
+    setReading(instant);
+    let preview = instant;
     try {
       const image = await compressImage(file);
-      const preview = URL.createObjectURL(image);
+      preview = URL.createObjectURL(image);
+      URL.revokeObjectURL(instant);
+      setReading(preview);
       const scan = await checkinApi.scan<PassportScanDto>(link, image);
       const values = !scan.mrz ? draft.values : draft.manual ? fillEmpty(draft.values, scan.mrz.fields) : mergeMrz(draft.values, scan.mrz.fields);
       onChange({
@@ -94,6 +102,7 @@ export function PassportStep({
         read: draft.manual ? undefined : !scan.mrz ? 'failed' : scan.mrz.valid ? 'ok' : 'partial',
       });
     } catch (e) {
+      URL.revokeObjectURL(preview);
       setError(
         e instanceof ApiError && e.code === 'UNSUPPORTED_IMAGE'
           ? t('passport.unsupported')
@@ -103,6 +112,7 @@ export function PassportStep({
       );
     } finally {
       setBusy(false);
+      setReading(null);
       if (cameraRef.current) cameraRef.current.value = '';
       if (galleryRef.current) galleryRef.current.value = '';
     }
@@ -132,8 +142,10 @@ export function PassportStep({
       {!reviewing && (
         <>
           <p className="text-muted-foreground">{t('passport.hint')}</p>
-          <div className="flex aspect-[3/2] items-center justify-center rounded-2xl border-2 border-dashed border-teal-300 bg-teal-100/40">
-            {busy ? (
+          <div className="relative flex aspect-[3/2] items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-teal-300 bg-teal-100/40">
+            {reading ? (
+              <ReadingPhoto src={reading} label={t('passport.reading')} />
+            ) : busy ? (
               <span className="flex flex-col items-center gap-3 text-teal-900">
                 <Loader2 className="size-10 animate-spin" aria-hidden />
                 {t('passport.reading')}
@@ -164,9 +176,13 @@ export function PassportStep({
 
       {reviewing && (
         <>
-          {draft.preview && (
+          {(reading || draft.preview) && (
             <div className="relative overflow-hidden rounded-2xl border bg-muted">
-              <img src={draft.preview} alt="" className="max-h-56 w-full object-contain" />
+              {reading ? (
+                <ReadingPhoto src={reading} label={t('passport.reading')} className="max-h-56" />
+              ) : (
+                <img src={draft.preview} alt="" className="max-h-56 w-full object-contain" />
+              )}
             </div>
           )}
           {draft.read && <ReadStatus status={draft.read} />}
@@ -224,6 +240,19 @@ export function PassportStep({
         </Button>
       )}
     </div>
+  );
+}
+
+/** The photo being read, dimmed under a spinner. */
+function ReadingPhoto({ src, label, className }: { src: string; label: string; className?: string }) {
+  return (
+    <>
+      <img src={src} alt="" className={cn('size-full object-contain opacity-60', className)} />
+      <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/40 font-medium text-teal-900" role="status">
+        <Loader2 className="size-10 animate-spin" aria-hidden />
+        {label}
+      </span>
+    </>
   );
 }
 

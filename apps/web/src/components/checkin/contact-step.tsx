@@ -1,7 +1,8 @@
 'use client';
 
 import { addDays, todayIso } from '@riad/shared';
-import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
+import { getCountryCallingCode, getExampleNumber, parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
+import examples from 'libphonenumber-js/examples.mobile.json';
 import { Minus, Plus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -21,10 +22,21 @@ export type ContactValues = {
   checkOutDate: string;
 };
 
-/** E.164 number if valid for the chosen country, else null. */
+/**
+ * E.164 number if valid, else null. The guest types the local number (0612345678); the
+ * country code comes from the chosen country. A number typed with its code anyway
+ * (+212…, 00212…, 212…) is accepted too.
+ */
 export function toE164(v: ContactValues): string | null {
   const parsed = parsePhoneNumberFromString(v.phone, v.country);
-  return parsed?.isValid() ? parsed.number : null;
+  if (parsed?.isValid()) return parsed.number;
+  const digits = v.phone.replace(/\D/g, '').replace(/^00/, '');
+  const dial = getCountryCallingCode(v.country);
+  if (digits.startsWith(dial)) {
+    const withCode = parsePhoneNumberFromString(`+${digits}`);
+    if (withCode?.isValid()) return withCode.number;
+  }
+  return null;
 }
 
 export function ContactStep({
@@ -44,6 +56,19 @@ export function ContactStep({
   const options = useMemo(() => dialOptions(locale), [locale]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const tomorrow = addDays(todayIso(), 1);
+  const dial = getCountryCallingCode(values.country);
+  const example = getExampleNumber(values.country, examples)?.formatNational().replace(/[\s-]/g, '') ?? '';
+
+  // Typed with "+" and a code: switch the country to match and keep the local number.
+  function setPhone(phone: string) {
+    if (/^\s*(\+|00)/.test(phone)) {
+      const parsed = parsePhoneNumberFromString(phone.trim().replace(/^00/, '+'));
+      if (parsed?.isValid() && parsed.country) {
+        return onChange({ ...values, country: parsed.country, phone: parsed.formatNational().replace(/[\s-]/g, '') });
+      }
+    }
+    onChange({ ...values, phone });
+  }
 
   function next() {
     const errs: FieldErrors = {};
@@ -71,15 +96,23 @@ export function ContactStep({
               </option>
             ))}
           </Select>
-          <Input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel-national"
-            value={values.phone}
-            onChange={(e) => onChange({ ...values, phone: e.target.value })}
-            aria-invalid={!!errors.phone}
-          />
+          {/* The country code is shown, not typed: the guest enters the local number. */}
+          <div className="relative">
+            <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 font-medium text-muted-foreground" aria-hidden>
+              +{dial}
+            </span>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
+              placeholder={example}
+              style={{ paddingInlineStart: `calc(${dial.length + 1}ch + 1.25rem)` }}
+              value={values.phone}
+              onChange={(e) => setPhone(e.target.value)}
+              aria-invalid={!!errors.phone}
+            />
+          </div>
         </div>
       </FormField>
 

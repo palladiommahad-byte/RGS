@@ -132,7 +132,7 @@ export function CheckinFlow({ link }: { link: CheckinLink }) {
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-6 px-4 pt-5 pb-10">
       <header className="flex items-center justify-between gap-3">
         <BrandMark name={context?.riadName ?? ''} />
-        <LocaleSwitcher locales={PUBLIC_LOCALES} className="shrink-0" short />
+        <LocaleSwitcher locales={PUBLIC_LOCALES} className="shrink-0" flags />
       </header>
 
       {contextError ? (

@@ -5,7 +5,7 @@ import { createWorker, PSM, type Worker } from 'tesseract.js';
 import type { OcrLayout, PassportOcrProvider } from './passport-ocr.provider';
 
 /** A loaded worker holds ~100 MB; small servers get it back after this long unused. */
-const IDLE_MS = 3 * 60_000;
+const IDLE_MS = 15 * 60_000;
 
 /**
  * Free, local OCR. One worker is created on the first scan and reused while scans keep
@@ -22,9 +22,23 @@ export class TesseractProvider implements PassportOcrProvider, OnModuleDestroy {
 
   constructor(private readonly cacheDir: string) {}
 
+  /** Guest opened the check-in link: load the model now, so the first photo reads fast. */
+  warm(): void {
+    if (this.worker) return;
+    this.getWorker()
+      .then(() => {
+        if (this.busy === 0 && !this.idleTimer) {
+          this.idleTimer = setTimeout(() => void this.release(), IDLE_MS);
+          this.idleTimer.unref();
+        }
+      })
+      .catch(() => undefined); // retried on the first scan
+  }
+
   async recognize(image: Buffer, layout: OcrLayout = 'page'): Promise<string> {
     this.busy++;
     if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
     try {
       const worker = await this.getWorker();
       // An MRZ crop is one uniform block of text: telling Tesseract so avoids it hunting

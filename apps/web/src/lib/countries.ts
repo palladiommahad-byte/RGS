@@ -6,8 +6,12 @@ export type CountryOption = { code: string; name: string };
 
 const ALPHA3_TO_ALPHA2 = countries.getAlpha3Codes();
 
+/** Left out of every country list (Western Sahara is part of Morocco). */
+const HIDDEN_ALPHA2 = new Set(['EH']);
+
 export function alpha3ToAlpha2(alpha3: string | undefined | null): string | undefined {
-  return alpha3 ? ALPHA3_TO_ALPHA2[alpha3.toUpperCase()] : undefined;
+  const a2 = alpha3 ? ALPHA3_TO_ALPHA2[alpha3.toUpperCase()] : undefined;
+  return a2 === 'EH' ? 'MA' : a2;
 }
 
 function displayNames(locale: string): (alpha2: string) => string | undefined {
@@ -33,6 +37,7 @@ export function nationalityOptions(locale: string): CountryOption[] {
   if (!cache.has(key)) {
     const name = displayNames(locale);
     const list = Object.entries(ALPHA3_TO_ALPHA2)
+      .filter(([, a2]) => !HIDDEN_ALPHA2.has(a2))
       .map(([a3, a2]) => ({ code: a3, name: name(a2) ?? a3 }))
       .sort((a, b) => a.name.localeCompare(b.name, intlLocale(locale)));
     cache.set(key, list);
@@ -48,6 +53,7 @@ export function dialOptions(locale: string): DialOption[] {
   if (!cache.has(key)) {
     const name = displayNames(locale);
     const list = getCountries()
+      .filter((c) => !HIDDEN_ALPHA2.has(c))
       .map((c) => ({ code: c, name: `${name(c) ?? c} (+${getCountryCallingCode(c)})` }))
       .sort((a, b) => a.name.localeCompare(b.name, intlLocale(locale)));
     cache.set(key, list);
