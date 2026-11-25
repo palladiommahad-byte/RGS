@@ -7,7 +7,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { ChangePasswordDialog } from '@/components/change-password-dialog';
+import { LanguageMenu } from '@/components/language-menu';
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
+import { NAV_ITEMS } from './nav-items';
 import { NotificationCenter } from './notification-center';
 
 export function initials(name: string): string {
@@ -24,11 +27,12 @@ const panel =
 const roundButton =
   'relative flex size-11 items-center justify-center rounded-full bg-muted/70 text-foreground/80 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent';
 
-/** Top-right of every staff page: the notification center and the account menu. */
+/** Top-right of every staff page: language, the notification center and the account menu. */
 export function TopBarActions() {
   const { can } = useAuth();
   return (
     <div className="flex items-center gap-2">
+      <LanguageMenu />
       {can('stays.read', 'rooms.read', 'expenses.read_all', 'expenses.write_petty_cash') && (
         <NotificationCenter buttonClassName={roundButton} panelClassName={panel} />
       )}
@@ -40,7 +44,9 @@ export function TopBarActions() {
 function UserMenu() {
   const t = useTranslations();
   const locale = useLocale();
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
+  // Settings (and any other item kept out of the sidebar) opens from here.
+  const menuLinks = NAV_ITEMS.filter((i) => i.bottom && can(...i.anyOf));
   const [changingPassword, setChangingPassword] = useState(false);
   const roleName = roleLabel(user.role, locale);
   const item =
@@ -75,6 +81,14 @@ function UserMenu() {
               </div>
             </div>
             <DropdownMenu.Separator className="my-1 h-px bg-border" />
+            {menuLinks.map((l) => (
+              <DropdownMenu.Item key={l.key} asChild className={item}>
+                <Link href={l.href}>
+                  <l.icon className="size-4 text-muted-foreground" aria-hidden />
+                  {t(`nav.${l.key}`)}
+                </Link>
+              </DropdownMenu.Item>
+            ))}
             <DropdownMenu.Item className={item} onSelect={() => setChangingPassword(true)}>
               <KeyRound className="size-4 text-muted-foreground" aria-hidden />
               {t('account.changePassword')}

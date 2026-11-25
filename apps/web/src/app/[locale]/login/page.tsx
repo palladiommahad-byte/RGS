@@ -16,7 +16,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
     <main className="min-h-dvh bg-[#e9eeec] p-2 sm:p-3">
       <div className="grid min-h-[calc(100dvh-1rem)] gap-2 sm:min-h-[calc(100dvh-1.5rem)] sm:gap-3 lg:grid-cols-2">
         <Showcase t={t} />
-        <section className="relative flex items-center justify-center overflow-hidden rounded-[28px] bg-gradient-to-br from-white to-[#f1f4f3] p-4 sm:p-10">
+        <section className="relative flex items-center justify-center overflow-clip rounded-[28px] bg-gradient-to-br from-white to-[#f1f4f3] p-4 sm:p-10">
           <div
             className="pointer-events-none absolute -end-24 -top-24 size-72 rounded-full opacity-60 blur-3xl"
             style={{ background: `radial-gradient(circle, ${ACCENT}, transparent 70%)` }}
@@ -36,7 +36,7 @@ type T = Awaited<ReturnType<typeof getTranslations<'auth'>>>;
 /** Left panel (large screens): what the app does, with a mock of the reception's day. */
 function Showcase({ t }: { t: T }) {
   return (
-    <section className="relative hidden overflow-hidden rounded-[28px] bg-[#0b1f1c] p-12 text-white lg:flex lg:flex-col">
+    <section className="relative hidden overflow-clip rounded-[28px] bg-[#0b1f1c] p-12 text-white lg:flex lg:flex-col">
       {/* Grid, glow and rings: decoration only. */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.07]"

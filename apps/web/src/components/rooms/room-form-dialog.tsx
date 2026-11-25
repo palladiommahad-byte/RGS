@@ -73,7 +73,7 @@ export function RoomFormDialog({
     const saved = await run(() =>
       room
         ? api<RoomDto>(`/rooms/${room.id}`, { method: 'PATCH', body })
-        : api<RoomDto>('/rooms', { method: 'POST', body }),
+        : api<RoomDto>('/rooms', { method: 'POST', body }), { success: room ? 'saved' : 'added' },
     );
     if (saved) {
       onSaved(saved);

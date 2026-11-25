@@ -142,7 +142,7 @@ export function ExpenseDialog({
         await apiUpload(`/expenses/${row.id}/receipt`, form);
       }
       return row;
-    });
+    }, { success: expense ? 'saved' : 'added' });
     if (saved) {
       onOpenChange(false);
       onSaved();

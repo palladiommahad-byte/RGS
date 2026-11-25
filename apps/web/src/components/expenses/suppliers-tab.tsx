@@ -5,6 +5,7 @@ import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
+import { useConfirm } from '@/components/feedback';
 import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -33,6 +34,7 @@ export function SuppliersTab({ categories }: { categories: ExpenseCategoryDto[] 
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<SupplierDto | null | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -48,8 +50,8 @@ export function SuppliersTab({ categories }: { categories: ExpenseCategoryDto[] 
   const byId = new Map(categories.map((c) => [c.id, c]));
 
   async function remove(s: SupplierDto) {
-    if (!window.confirm(t('suppliers.deleteConfirm', { name: s.name }))) return;
-    if (await action.run(() => api(`/suppliers/${s.id}`, { method: 'DELETE' }))) query.reload();
+    if (!(await confirm({ message: t('suppliers.deleteConfirm', { name: s.name }) }))) return;
+    if (await action.run(() => api(`/suppliers/${s.id}`, { method: 'DELETE' }), { success: 'deleted' })) query.reload();
   }
 
   return (
@@ -154,7 +156,7 @@ function SupplierDialog({
     const ok = await run(() =>
       supplier
         ? api(`/suppliers/${supplier.id}`, { method: 'PATCH', body: parsed.data })
-        : api('/suppliers', { method: 'POST', body: parsed.data }),
+        : api('/suppliers', { method: 'POST', body: parsed.data }), { success: supplier ? 'saved' : 'added' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

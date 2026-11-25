@@ -13,6 +13,7 @@ import { Pencil, Play, Plus, Power, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
+import { useConfirm } from '@/components/feedback';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -41,6 +42,7 @@ export function RecurringTab({ categories, onChanged }: { categories: ExpenseCat
   const query = useApiQuery<Paginated<RecurringExpenseDto>>('/recurring-expenses?includeInactive=true&limit=100');
   const [editing, setEditing] = useState<RecurringExpenseDto | null | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
   const [info, setInfo] = useState<string | null>(null);
 
   const refresh = () => {
@@ -57,12 +59,12 @@ export function RecurringTab({ categories, onChanged }: { categories: ExpenseCat
   }
 
   async function toggle(r: RecurringExpenseDto) {
-    if (await action.run(() => api(`/recurring-expenses/${r.id}`, { method: 'PATCH', body: { isActive: !r.isActive } }))) refresh();
+    if (await action.run(() => api(`/recurring-expenses/${r.id}`, { method: 'PATCH', body: { isActive: !r.isActive } }), { success: 'saved' })) refresh();
   }
 
   async function remove(r: RecurringExpenseDto) {
-    if (!window.confirm(t('recurring.deleteConfirm', { label: r.label }))) return;
-    if (await action.run(() => api(`/recurring-expenses/${r.id}`, { method: 'DELETE' }))) refresh();
+    if (!(await confirm({ message: t('recurring.deleteConfirm', { label: r.label }) }))) return;
+    if (await action.run(() => api(`/recurring-expenses/${r.id}`, { method: 'DELETE' }), { success: 'deleted' })) refresh();
   }
 
   return (
@@ -194,7 +196,7 @@ function RecurringDialog({
     const ok = await run(() =>
       recurring
         ? api(`/recurring-expenses/${recurring.id}`, { method: 'PATCH', body })
-        : api('/recurring-expenses', { method: 'POST', body }),
+        : api('/recurring-expenses', { method: 'POST', body }), { success: recurring ? 'saved' : 'added' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

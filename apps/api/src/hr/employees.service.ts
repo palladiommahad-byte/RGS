@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import sharp from 'sharp';
 import { AuditService } from '../audit/audit.service';
 import { AppException } from '../common/app-exception';
+import { isPdf } from '../common/is-pdf';
 import type { AuthPrincipal } from '../common/auth/principal';
 import { FieldEncryption } from '../common/crypto/field-encryption';
 import { diffFields } from '../common/diff';
@@ -139,6 +140,10 @@ export class EmployeesService {
     let body = file.buffer;
     let ext = 'pdf';
     let contentType = 'application/pdf';
+    // The browser's word is not enough: a real PDF starts with %PDF-.
+    if (file.mimetype === 'application/pdf' && !isPdf(file.buffer)) {
+      throw new AppException('UNSUPPORTED_FILE', 'This file is not a valid PDF');
+    }
     if (file.mimetype !== 'application/pdf') {
       try {
         body = await sharp(file.buffer).rotate().resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();

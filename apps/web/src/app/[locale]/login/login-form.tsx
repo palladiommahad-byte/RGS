@@ -1,13 +1,12 @@
 'use client';
 
-import { STAFF_LOCALES } from '@riad/shared';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { FormError } from '@/components/form-field';
-import { LocaleSwitcher } from '@/components/locale-switcher';
+import { LanguageMenu } from '@/components/language-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,7 +49,7 @@ export function LoginForm() {
     <div className="relative flex w-full max-w-sm flex-col gap-8">
       <div className="flex items-center justify-between gap-3">
         <BrandMark name={t('appName')} className="lg:invisible" />
-        <LocaleSwitcher locales={STAFF_LOCALES} />
+        <LanguageMenu className="h-10 border bg-card shadow-xs hover:bg-accent sm:h-10" />
       </div>
 
       <div>

@@ -126,6 +126,12 @@ describe('HR (e2e)', () => {
         .post(`${API}/hr/employees/${e.id}/contract`)
         .attach('file', Buffer.from('hello'), { filename: 'x.txt', contentType: 'text/plain' })
         .expect(400);
+      // Called a PDF by the browser, but it is not one.
+      const fake = await manager
+        .post(`${API}/hr/employees/${e.id}/contract`)
+        .attach('file', Buffer.from('<html><script>alert(1)</script>'), { filename: 'contrat.pdf', contentType: 'application/pdf' })
+        .expect(400);
+      expect(fake.body.code).toBe('UNSUPPORTED_FILE');
       const up = await manager
         .post(`${API}/hr/employees/${e.id}/contract`)
         .attach('file', Buffer.from('%PDF-1.4 contract'), { filename: 'contrat.pdf', contentType: 'application/pdf' })

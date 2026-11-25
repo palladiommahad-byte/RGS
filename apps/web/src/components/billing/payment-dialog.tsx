@@ -73,7 +73,7 @@ export function PaymentDialog({
           note: parsed.data.note,
           ...(method === 'CASH' && (walletId || defaultBox) ? { walletId: walletId || defaultBox } : {}),
         },
-      }),
+      }), { success: 'paymentAdded' },
     );
     if (ok) {
       onOpenChange(false);

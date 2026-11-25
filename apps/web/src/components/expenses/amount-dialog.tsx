@@ -66,7 +66,7 @@ export function AmountDialog({
     const ok = await run(async () => {
       await onSubmit(sign * parseMadToCentimes(parsed.data.amountMad), parsed.data.note);
       return true;
-    });
+    }, { success: 'saved' });
     if (ok) onOpenChange(false);
   }
 

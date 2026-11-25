@@ -154,7 +154,7 @@
     "submit": "Sign in",
     "submitting": "Signing in…",
     "invalid": "Wrong email or password.",
-    "tooMany": "Too many attempts. Try again in a minute.",
+    "tooMany": "Too many attempts. Try again in a few minutes.",
     "error": "Something went wrong. Please try again.",
     "appName": "Riad Manager",
     "badge": "Internal riad system",
@@ -246,7 +246,10 @@
     "CANNOT_CHANGE_SELF": "You can't change your own role or deactivate yourself.",
     "ROOM_BOOKED": "This room is already booked for some of these nights.",
     "BACKUP_IN_PROGRESS": "A backup is already waiting or running.",
-    "ROLE_LOCKED": "The owner role always has every right."
+    "ROLE_LOCKED": "The owner role always has every right.",
+    "OWNER_ONLY": "Only an owner can do this.",
+    "CONFIRM_REQUIRED": "Type the confirmation word exactly.",
+    "BACKUP_NOT_FOUND": "This backup no longer exists."
   },
   "roomStatus": {
     "FREE": "Free",
@@ -1234,7 +1237,22 @@
       "RUNNING": "Running",
       "REQUESTED": "Waiting"
     },
-    "hint": "Every night: the database and every stored file (passport photos, receipts, contracts, invoices), encrypted and copied to another provider. The name under each backup is what the restore needs."
+    "hint": "Every night: the database and every stored file (passport photos, receipts, contracts, invoices), encrypted and copied to another provider. The name under each backup is what the restore needs.",
+    "sectionHint": "Every night, and whenever you ask: the database and every file, encrypted and copied off the server.",
+    "history": "History",
+    "restoreTitle": "Restore the latest backup",
+    "restoreHint": "Puts the whole app back as it was on {date}, from this server or from the off-site copy.",
+    "restoreButton": "Restore…",
+    "restoreOf": "Restore of {name}",
+    "restoreDialogTitle": "Restore the backup of {date}?",
+    "restoreDialogLead": "Use this only if data was lost or damaged.",
+    "restoreLoses": "Everything recorded after {date} (stays, payments, expenses, files) will be replaced by the backup.",
+    "restoreSafety": "A copy of the current data is saved first, so this can be undone.",
+    "restoreTime": "It takes a few minutes. The app restarts and everyone has to sign in again.",
+    "restoreType": "Type {word} to confirm",
+    "restoreConfirm": "Restore",
+    "restoringTitle": "Restore in progress",
+    "restoringHint": "A safety copy is made, then the backup is restored. The app restarts by itself in a few minutes: then sign in again."
   },
   "roles": {
     "hintOwner": "Choose what each role may do. Changes apply at once to everyone with the role.",
@@ -1271,5 +1289,31 @@
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
     "daysCount": "{count, plural, one {# day} other {# days}}"
+  },
+  "feedback": {
+    "confirmTitle": "Are you sure?",
+    "deleteTitle": "Delete for good?",
+    "cannotUndo": "This cannot be undone.",
+    "saved": "Changes saved",
+    "added": "Added",
+    "deleted": "Deleted",
+    "qrRenewed": "New QR code ready: print it again",
+    "roomStatus": "Room status updated",
+    "roomReactivated": "Room reactivated",
+    "logoUpdated": "Logo updated",
+    "stayCreated": "Stay created",
+    "stayCancelled": "Stay cancelled",
+    "checkinRejected": "Check-in rejected",
+    "checkedIn": "Guest checked in",
+    "userActivated": "Account reactivated",
+    "userDeactivated": "Account deactivated",
+    "backupStarted": "Backup started: ready in about a minute",
+    "extraAdded": "Extra added",
+    "paymentAdded": "Payment recorded",
+    "walletCreated": "Cash box created",
+    "leaveUpdated": "Leave updated",
+    "payrollGenerated": "Payroll created for the month",
+    "paymentCancelled": "Payment cancelled",
+    "paid": "Salary payment recorded"
   }
 }

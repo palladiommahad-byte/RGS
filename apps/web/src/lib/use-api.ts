@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { useToast, type FeedbackKey } from '@/components/feedback';
 import { api, ApiError } from './api';
 
 type QueryState<T> = { data?: T; error?: ApiError; loading: boolean };
@@ -36,17 +37,27 @@ export function useApiQuery<T>(path: string | null) {
  * Resolves to `undefined` only on failure: a call with no body (204) resolves to `true`,
  * so `if (await run(...))` works for deletes too.
  */
+/**
+ * Runs one user action: pending flag, translated error, and with `success` a short
+ * message that goes away on its own (toast).
+ */
 export function useAction() {
   const errorMessage = useApiErrorMessage();
+  const toast = useToast();
+  const tf = useTranslations('feedback');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async <T,>(fn: () => Promise<T>): Promise<(T extends void | undefined ? true : T) | undefined> => {
+    async <T,>(
+      fn: () => Promise<T>,
+      options?: { success?: FeedbackKey },
+    ): Promise<(T extends void | undefined ? true : T) | undefined> => {
       setPending(true);
       setError(null);
       try {
         const result = await fn();
+        if (options?.success) toast.success(tf(options.success));
         return (result === undefined ? true : result) as T extends void | undefined ? true : T;
       } catch (e) {
         setError(errorMessage(e));
@@ -55,7 +66,7 @@ export function useAction() {
         setPending(false);
       }
     },
-    [errorMessage],
+    [errorMessage, toast, tf],
   );
 
   return { run, pending, error, setError };

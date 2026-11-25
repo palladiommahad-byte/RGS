@@ -15,6 +15,7 @@ import { FileSpreadsheet, Landmark, Pencil, Plus, Receipt, Trash2, TriangleAlert
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
@@ -46,6 +47,7 @@ export default function TaxesPage() {
   const settings = useApiQuery<TaxSettingDto[]>('/tax-settings');
   const [editing, setEditing] = useState<TaxSettingDto | null | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
   const m = (c: number) => formatMoney(c, locale);
   const r = report.data;
 
@@ -55,8 +57,8 @@ export default function TaxesPage() {
   const inForce = (s: TaxSettingDto) => s.validFrom <= today && (!s.validTo || s.validTo >= today);
 
   async function remove(s: TaxSettingDto) {
-    if (!window.confirm(t('deleteConfirm', { code: tc(`taxCode.${s.code}`) }))) return;
-    if (await action.run(() => api(`/tax-settings/${s.id}`, { method: 'DELETE' }))) settings.reload();
+    if (!(await confirm({ message: t('deleteConfirm', { code: tc(`taxCode.${s.code}`) }) }))) return;
+    if (await action.run(() => api(`/tax-settings/${s.id}`, { method: 'DELETE' }), { success: 'deleted' })) settings.reload();
   }
 
   return (
@@ -224,7 +226,7 @@ function TaxSettingDialog({
     // "10" % -> 1000 basis points; "25,50" MAD -> 2550 centimes: same conversion.
     const body = { code, mode, value: parseMadToCentimes(parsed.data.value), validFrom, validTo: validTo || null };
     const ok = await run(() =>
-      setting ? api(`/tax-settings/${setting.id}`, { method: 'PATCH', body }) : api('/tax-settings', { method: 'POST', body }),
+      setting ? api(`/tax-settings/${setting.id}`, { method: 'PATCH', body }) : api('/tax-settings', { method: 'POST', body }), { success: setting ? 'saved' : 'added' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

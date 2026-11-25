@@ -201,6 +201,24 @@ describe('Settings & users (e2e)', () => {
     });
   });
 
+  describe('sign-in brake', () => {
+    it('locks one account after 10 wrong passwords, even from many places, and not the others', async () => {
+      const model = await prisma.user.findUniqueOrThrow({ where: { email: a.emails.RECEPTION } });
+      const email = 'brake-test@riad.test';
+      await prisma.user.create({
+        data: { riadId: a.riadId, roleId: model.roleId, name: 'Brake Test', email, passwordHash: model.passwordHash },
+      });
+      for (let i = 0; i < 10; i++) {
+        resetRateLimits(app); // as if each guess came from another address
+        await login(email, `wrong-${i}`).expect(401);
+      }
+      resetRateLimits(app);
+      const locked = await login(email, PASSWORD).expect(429);
+      expect(locked.body.code).toBe('TOO_MANY_ATTEMPTS');
+      await login(a.emails.RECEPTION, PASSWORD).expect(200);
+    });
+  });
+
   describe('role editor', () => {
     const roleOf = async (agent: TestAgent, key: string) =>
       ((await agent.get(`${API}/roles`).expect(200)).body as RoleDto[]).find((r) => r.key === key)!;

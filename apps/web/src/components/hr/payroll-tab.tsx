@@ -14,6 +14,7 @@ import { Banknote, FileSpreadsheet, Info, Pencil, Sparkles, Trash2, Undo2 } from
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
+import { useConfirm } from '@/components/feedback';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -43,6 +44,7 @@ export function PayrollTab({ month, canWrite, onChanged }: { month: string; canW
   // undefined = closed, null = pay the whole month, entry = pay one line.
   const [paying, setPaying] = useState<PayrollEntryDto | null | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
   const m = (c: number) => formatMoney(c, locale);
   const d = query.data;
   const unpaid = d?.entries.filter((e) => !e.paidAt) ?? [];
@@ -53,17 +55,17 @@ export function PayrollTab({ month, canWrite, onChanged }: { month: string; canW
   };
 
   async function generate() {
-    if (await action.run(() => api('/hr/payroll/generate', { method: 'POST', body: { month } }))) refresh();
+    if (await action.run(() => api('/hr/payroll/generate', { method: 'POST', body: { month } }), { success: 'payrollGenerated' })) refresh();
   }
 
   async function unpay(e: PayrollEntryDto) {
-    if (!window.confirm(t('hr.payroll.unpayConfirm', { name: e.employee.name }))) return;
-    if (await action.run(() => api(`/hr/payroll/${e.id}/unpay`, { method: 'POST' }))) refresh();
+    if (!(await confirm({ message: t('hr.payroll.unpayConfirm', { name: e.employee.name }), tone: 'warning', confirmLabel: t('hr.payroll.unpay') }))) return;
+    if (await action.run(() => api(`/hr/payroll/${e.id}/unpay`, { method: 'POST' }), { success: 'paymentCancelled' })) refresh();
   }
 
   async function remove(e: PayrollEntryDto) {
-    if (!window.confirm(t('hr.payroll.deleteConfirm', { name: e.employee.name }))) return;
-    if (await action.run(() => api(`/hr/payroll/${e.id}`, { method: 'DELETE' }))) refresh();
+    if (!(await confirm({ message: t('hr.payroll.deleteConfirm', { name: e.employee.name }) }))) return;
+    if (await action.run(() => api(`/hr/payroll/${e.id}`, { method: 'DELETE' }), { success: 'deleted' })) refresh();
   }
 
   return (
@@ -224,7 +226,7 @@ function EditDialog({ entry, onOpenChange, onDone }: { entry?: PayrollEntryDto; 
     if (!entry) return;
     if (!parsed.success || !amounts) return setErrors(fieldErrors(parsed.error!));
     setErrors({});
-    const ok = await run(() => api(`/hr/payroll/${entry.id}`, { method: 'PATCH', body: amounts }));
+    const ok = await run(() => api(`/hr/payroll/${entry.id}`, { method: 'PATCH', body: amounts }), { success: 'saved' });
     if (ok !== undefined) {
       onOpenChange(false);
       onDone();
@@ -310,7 +312,7 @@ function PayDialog({
     const ok = await run(() =>
       entry
         ? api(`/hr/payroll/${entry.id}/pay`, { method: 'POST', body })
-        : api('/hr/payroll/pay-month', { method: 'POST', body: { ...body, month } }),
+        : api('/hr/payroll/pay-month', { method: 'POST', body: { ...body, month } }), { success: 'paid' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

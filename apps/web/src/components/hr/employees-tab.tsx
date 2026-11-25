@@ -13,6 +13,7 @@ import { FileText, Pencil, Plus, RefreshCw, Search, Trash2, Upload } from 'lucid
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
+import { useConfirm } from '@/components/feedback';
 import { Pagination } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ export function EmployeesTab({ canWrite, onChanged }: { canWrite: boolean; onCha
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<EmployeeDto | null | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -69,8 +71,8 @@ export function EmployeesTab({ canWrite, onChanged }: { canWrite: boolean; onCha
   }
 
   async function remove(e: EmployeeDto) {
-    if (!window.confirm(t('hr.employees.deleteConfirm', { name: `${e.firstName} ${e.lastName}` }))) return;
-    if (await action.run(() => api(`/hr/employees/${e.id}`, { method: 'DELETE' }))) refresh();
+    if (!(await confirm({ message: t('hr.employees.deleteConfirm', { name: `${e.firstName} ${e.lastName}` }) }))) return;
+    if (await action.run(() => api(`/hr/employees/${e.id}`, { method: 'DELETE' }), { success: 'deleted' })) refresh();
   }
 
   return (
@@ -198,6 +200,7 @@ function EmployeeDialog({
   const fileInput = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const { run, pending, error, setError } = useAction();
+  const confirm = useConfirm();
   const [badgeInfo, setBadgeInfo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -251,7 +254,7 @@ function EmployeeDialog({
         await apiUpload(`/hr/employees/${res.id}/contract`, data);
       }
       return res;
-    });
+    }, { success: employeeId ? 'saved' : 'added' });
     if (saved) {
       onOpenChange(false);
       onDone();
@@ -259,7 +262,7 @@ function EmployeeDialog({
   }
 
   async function rotateBadge() {
-    if (!employeeId || !window.confirm(t('hr.employees.rotateConfirm'))) return;
+    if (!employeeId || !(await confirm({ message: t('hr.employees.rotateConfirm'), tone: 'warning', confirmLabel: t('hr.employees.rotate') }))) return;
     if (await run(() => api(`/hr/employees/${employeeId}/badge/rotate`, { method: 'POST' }))) setBadgeInfo(t('hr.employees.rotated'));
   }
 

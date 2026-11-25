@@ -1,7 +1,7 @@
 #!/bin/sh
 # Riad backups: database dump + every stored file, encrypted, copied off the server.
 #   backup.sh once   -> one backup now (run it before every upgrade)
-#   backup.sh loop   -> nightly at BACKUP_HOUR (riad time), plus "Back up now" from the app
+#   backup.sh loop   -> nightly at BACKUP_HOUR (riad time), plus "Back up now" and "Restore" from the app
 # Each run is recorded in the backup_runs table, which the owner sees in Settings.
 set -u
 
@@ -123,6 +123,50 @@ run() {
   fi
 }
 
+# "Restore" from the app (owner, typed RESTORE): $1 = backup_runs id, $2 = backup to restore.
+# A safety copy of the current data is made first (no copy, no restore). The restored database
+# brings back the backup's own backup_runs, so this restore and the safety copy are written
+# back into it afterwards. The API notices the finished RESTORE row and restarts itself.
+restore_run() {
+  r_id="$1"; r_src="$2"
+  r_by=$(sql "SELECT coalesce(requested_by::text, '') FROM backup_runs WHERE id = '$r_id'" 2>/dev/null || true)
+  r_requested=$(sql "SELECT to_char(requested_at, 'YYYY-MM-DD HH24:MI:SS.MS') FROM backup_runs WHERE id = '$r_id'" 2>/dev/null || true)
+  record "$r_id" "status = 'RUNNING', started_at = now()"
+  log "restore of $r_src requested: safety copy of the current data first"
+  if ! run "$(new_run MANUAL)"; then
+    record "$r_id" "status = 'FAILED', finished_at = now(), error = 'Safety copy failed: nothing was restored'"
+    log "restore of $r_src CANCELLED: the safety copy failed"
+    return 1
+  fi
+  r_safety="$stamp" # set by run()
+  read -r r_dbb r_fb _ _ < "$DIR/.last-sizes"
+  r_started=$(date -u '+%Y-%m-%d %H:%M:%S')
+  log "restore of $r_src started (safety copy: $r_safety)"
+  if /usr/local/bin/restore.sh "$r_src" --yes > /tmp/restore.log 2>&1; then
+    r_status=OK; r_err=NULL
+    log "restore of $r_src done"
+  else
+    r_status=FAILED
+    r_err="'$(tail -n 1 /tmp/restore.log | sed "s/'/''/g" | cut -c1-300)'"
+    log "restore of $r_src FAILED: $(tail -n 1 /tmp/restore.log)"
+  fi
+  r_off=false; [ -n "${BACKUP_S3_BUCKET:-}" ] && r_off=true
+  r_enc=false; [ -n "${BACKUP_PASSPHRASE:-}" ] && r_enc=true
+  r_byval=NULL; [ -n "$r_by" ] && r_byval="'$r_by'"
+  r_reqval="now()"; [ -n "$r_requested" ] && r_reqval="'$r_requested'"
+  # The safety copy, so it can be restored to undo this (if the restored history lacks it).
+  sql "INSERT INTO backup_runs (trigger, status, requested_by, name, db_bytes, files_bytes, encrypted, offsite, requested_at, started_at, finished_at)
+       SELECT 'MANUAL', 'OK', $r_byval, '$r_safety', $r_dbb, $r_fb, $r_enc, $r_off, '$r_started', '$r_started', '$r_started'
+       WHERE NOT EXISTS (SELECT 1 FROM backup_runs WHERE name = '$r_safety' AND trigger <> 'RESTORE')" >/dev/null 2>&1 || true
+  # This restore: update its row if it is still there (restore failed early), else write it back.
+  r_upd=$(sql "UPDATE backup_runs SET status = '$r_status', finished_at = now(), error = $r_err WHERE id = '$r_id' RETURNING id" 2>/dev/null || true)
+  if [ -z "$r_upd" ]; then
+    sql "INSERT INTO backup_runs (trigger, status, requested_by, name, error, requested_at, started_at, finished_at)
+         VALUES ('RESTORE', '$r_status', $r_byval, '$r_src', $r_err, $r_reqval, '$r_started', now())" >/dev/null 2>&1 || true
+  fi
+  [ "$r_status" = OK ]
+}
+
 new_run() { # $1 = SCHEDULED | MANUAL -> prints the id, or nothing if the table is missing
   sql "INSERT INTO backup_runs (trigger, status) VALUES ('$1', 'REQUESTED') RETURNING id" 2>/dev/null || true
 }
@@ -151,9 +195,12 @@ case "${1:-loop}" in
         # A run cut short by a restart will never finish: say so.
         sql "UPDATE backup_runs SET status = 'FAILED', finished_at = now(), error = 'Interrupted (backup container restarted)' WHERE status = 'RUNNING'" >/dev/null 2>&1 || true
       fi
-      # "Back up now" from the app.
-      id=$(sql "SELECT id FROM backup_runs WHERE status = 'REQUESTED' ORDER BY requested_at LIMIT 1" 2>/dev/null || true)
-      [ -n "$id" ] && run "$id"
+      # "Back up now" and "Restore" from the app.
+      next=$(sql "SELECT id || '|' || trigger || '|' || coalesce(name, '') FROM backup_runs WHERE status = 'REQUESTED' ORDER BY requested_at LIMIT 1" 2>/dev/null || true)
+      if [ -n "$next" ]; then
+        n_id=${next%%|*}; n_rest=${next#*|}; n_trigger=${n_rest%%|*}; n_name=${n_rest#*|}
+        if [ "$n_trigger" = RESTORE ]; then restore_run "$n_id" "$n_name"; else run "$n_id"; fi
+      fi
       # Nightly, once a day from BACKUP_HOUR — or as soon as possible after it (server was
       # off, or restarted). The day counts as done only once a run is recorded.
       today=$(date +%Y-%m-%d)

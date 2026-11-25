@@ -121,7 +121,7 @@ export function ConfirmStayDialog({
           pricePerNight: parseMadToCentimes(price),
           otaCommission: parseMadToCentimes(commission),
         },
-      }),
+      }), { success: 'checkedIn' },
     );
     if (ok) {
       onOpenChange(false);
@@ -229,7 +229,7 @@ export function EditStayDialog({
         if (e instanceof ApiError && e.code === 'ROOM_BOOKED') setBooked(e.details as RoomBookedDetails);
         throw e;
       }
-    });
+    }, { success: 'saved' });
     if (ok) {
       onOpenChange(false);
       onDone();
@@ -331,7 +331,7 @@ export function GuestDialog({
     const ok = await run(() =>
       guest
         ? api(`/stays/${stayId}/guests/${guest.id}`, { method: 'PATCH', body: guestToUpdateBody(parsed.data) })
-        : api(`/stays/${stayId}/guests`, { method: 'POST', body: parsed.data }),
+        : api(`/stays/${stayId}/guests`, { method: 'POST', body: parsed.data }), { success: guest ? 'saved' : 'added' },
     );
     if (ok) {
       onOpenChange(false);

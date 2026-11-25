@@ -3,22 +3,31 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import sharp from 'sharp';
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
 import { env } from './config/env';
+
+// Small servers (1 GB): no image cache kept between uploads, one image at a time.
+sharp.cache(false);
+sharp.concurrency(1);
 
 async function bootstrap(): Promise<void> {
   const config = env();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   configureApp(app);
 
-  const swagger = new DocumentBuilder()
-    .setTitle('Riad Management API')
-    .setVersion('1.0')
-    .addCookieAuth('access_token')
-    .addBearerAuth()
-    .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swagger));
+  // API docs for development only: the production proxy never routes /api/docs, and
+  // building them costs memory on small servers.
+  if (process.env.NODE_ENV !== 'production') {
+    const swagger = new DocumentBuilder()
+      .setTitle('Riad Management API')
+      .setVersion('1.0')
+      .addCookieAuth('access_token')
+      .addBearerAuth()
+      .build();
+    SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swagger));
+  }
 
   app.enableShutdownHooks();
   await app.listen(config.API_PORT);

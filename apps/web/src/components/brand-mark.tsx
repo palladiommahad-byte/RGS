@@ -28,7 +28,7 @@ export function BrandMark({
           <Hotel className="size-5" aria-hidden />
         </span>
       )}
-      <span className="truncate text-lg font-semibold tracking-tight">{name}</span>
+      <span data-brand-name className="truncate text-lg font-semibold tracking-tight">{name}</span>
     </span>
   );
 }

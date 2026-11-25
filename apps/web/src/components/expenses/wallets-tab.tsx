@@ -175,7 +175,7 @@ function NewWalletDialog({ open, onOpenChange, onDone }: { open: boolean; onOpen
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!holderId || !name.trim()) return;
-    const ok = await run(() => api('/cash-wallets', { method: 'POST', body: { holderId, name: name.trim() } }));
+    const ok = await run(() => api('/cash-wallets', { method: 'POST', body: { holderId, name: name.trim() } }), { success: 'walletCreated' });
     if (ok !== undefined) {
       onOpenChange(false);
       onDone();

@@ -77,3 +77,13 @@
     font-family: var(--font-plex-arabic), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   }
 }
+
+/* Toasts: the thin bar that empties until the message goes away. */
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}

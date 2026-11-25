@@ -1,15 +1,57 @@
 # Production stack for one riad on one VPS: Caddy (HTTPS) -> web + api, Postgres, MinIO,
-# nightly backups. Run from this folder:
-#   cp .env.production.example .env.production   # then fill it in
+# nightly backups. Sized to run on a 1 vCPU / 1 GB server (with 2 GB swap, see
+# deploy/server-setup.sh); bigger servers simply have room to spare.
+#
+# Small server (1-2 GB RAM): use the images GitHub builds, never build on the server:
+#   docker compose -f docker-compose.prod.yml --env-file .env.production pull
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --no-build
+# Server with 4 GB+ RAM may build itself instead:
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 name: riad
 
 x-db-url: &db-url postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
 
+# Docker logs are capped (3 x 10 MB per service) so they never fill a small disk.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
 services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 192m
+    shm_size: 64m
+    # Tuned for a small server: one riad is a few thousand rows a month.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=48MB
+      - -c
+      - effective_cache_size=256MB
+      - -c
+      - work_mem=2MB
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - max_connections=30
+      - -c
+      - wal_buffers=4MB
+      - -c
+      - min_wal_size=64MB
+      - -c
+      - max_wal_size=256MB
+      - -c
+      - max_worker_processes=2
+      - -c
+      - max_parallel_workers=1
+      - -c
+      - max_parallel_workers_per_gather=0
+      - -c
+      - jit=off
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -28,22 +70,33 @@ services:
   minio:
     image: cgr.dev/chainguard/minio:latest
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 160m
     command: server /data
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+      # No web console (never exposed anyway), one CPU, and a memory target for Go.
+      MINIO_BROWSER: 'off'
+      GOMAXPROCS: '1'
+      GOMEMLIMIT: 120MiB
     volumes:
       - miniodata:/data
 
   api:
+    image: ${RIAD_IMAGES:-ghcr.io/palladiommahad-byte}/riad-api:${RIAD_TAG:-latest}
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
-    image: riad-api:latest
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 384m
     env_file: .env.production
     environment:
       NODE_ENV: production
+      # Heap cap below the container limit: Node collects garbage before Docker kills it.
+      NODE_OPTIONS: --max-old-space-size=256
+      UV_THREADPOOL_SIZE: '2'
       DATABASE_URL: *db-url
       COOKIE_SECURE: 'true'
       # Trust Caddy (private Docker network) for the client IP used by rate limits.
@@ -51,6 +104,11 @@ services:
       CORS_ORIGINS: https://${DOMAIN}
       S3_ENDPOINT: http://minio:9000
       S3_PUBLIC_ENDPOINT: https://${FILES_DOMAIN}
+      # The backup secrets are in .env.production for the backup service only: the API
+      # never needs them, so a break-in there cannot read or delete the off-site copies.
+      BACKUP_PASSPHRASE: ''
+      BACKUP_S3_ACCESS_KEY: ''
+      BACKUP_S3_SECRET_KEY: ''
     depends_on:
       postgres: { condition: service_healthy }
       # The API creates its buckets in MinIO when it starts.
@@ -59,18 +117,22 @@ services:
       - ocrcache:/data/ocr
 
   web:
+    image: ${RIAD_IMAGES:-ghcr.io/palladiommahad-byte}/riad-web:${RIAD_TAG:-latest}
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
-    image: riad-web:latest
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 192m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=128
     depends_on: [api]
 
   caddy:
     image: caddy:2.10-alpine
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 64m
     ports:
       - '80:80'
       - '443:443'
@@ -79,6 +141,8 @@ services:
       DOMAIN: ${DOMAIN}
       FILES_DOMAIN: ${FILES_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
+      GOMAXPROCS: '1'
+      GOMEMLIMIT: 48MiB
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -89,10 +153,12 @@ services:
   # BACKUP_PASSPHRASE and copied off the server (BACKUP_S3_*); "Back up now" in Settings too.
   # One backup now (before an upgrade): docker compose ... run --rm backup once
   backup:
+    image: ${RIAD_IMAGES:-ghcr.io/palladiommahad-byte}/riad-backup:${RIAD_TAG:-latest}
     build:
       context: ./backup
-    image: riad-backup:latest
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 192m
     environment: &backup-env
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER}
@@ -113,7 +179,7 @@ services:
       BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-riad}
       BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:-}
       BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:-}
-      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-7}
       BACKUP_REMOTE_KEEP_DAYS: ${BACKUP_REMOTE_KEEP_DAYS:-30}
       BACKUP_REMOTE_KEEP_MONTHS: ${BACKUP_REMOTE_KEEP_MONTHS:-12}
       BACKUP_HOUR: ${BACKUP_HOUR:-3}
@@ -125,8 +191,9 @@ services:
 
   # Restore (see README): docker compose ... --profile restore run --rm restore list
   restore:
-    image: riad-backup:latest
+    image: ${RIAD_IMAGES:-ghcr.io/palladiommahad-byte}/riad-backup:${RIAD_TAG:-latest}
     profiles: ['restore']
+    logging: *logging
     entrypoint: ['/usr/local/bin/restore.sh']
     environment: *backup-env
     volumes:

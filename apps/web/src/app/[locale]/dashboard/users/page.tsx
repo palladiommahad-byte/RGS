@@ -13,6 +13,7 @@ import { KeyRound, Pencil, Plus, Power, Search, Wand2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { Pagination } from '@/components/pagination';
@@ -58,6 +59,7 @@ export default function UsersPage() {
   const [editing, setEditing] = useState<UserDto | null | undefined>(undefined);
   const [resetting, setResetting] = useState<UserDto | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -81,8 +83,8 @@ export default function UsersPage() {
   };
 
   async function toggle(u: UserDto) {
-    if (u.isActive && !window.confirm(t('users.deactivateConfirm', { name: u.name }))) return;
-    if (await action.run(() => api(`/users/${u.id}`, { method: 'PATCH', body: { isActive: !u.isActive } }))) refresh();
+    if (u.isActive && !(await confirm({ message: t('users.deactivateConfirm', { name: u.name }), confirmLabel: t('users.deactivate') }))) return;
+    if (await action.run(() => api(`/users/${u.id}`, { method: 'PATCH', body: { isActive: !u.isActive } }), { success: u.isActive ? 'userDeactivated' : 'userActivated' })) refresh();
   }
 
   return (
@@ -237,7 +239,7 @@ function UserDialog({
     const ok = await run(() =>
       user
         ? api(`/users/${user.id}`, { method: 'PATCH', body: { name, email, ...(user.isSelf ? {} : { roleId }) } })
-        : api('/users', { method: 'POST', body: parsed.data }),
+        : api('/users', { method: 'POST', body: parsed.data }), { success: user ? 'saved' : 'added' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

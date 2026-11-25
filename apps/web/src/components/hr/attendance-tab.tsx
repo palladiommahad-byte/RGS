@@ -5,6 +5,7 @@ import { ChevronDown, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
+import { useConfirm } from '@/components/feedback';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,11 +35,12 @@ export function AttendanceTab({ month, canWrite }: { month: string; canWrite: bo
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editing, setEditing] = useState<Editing | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
   const rows = query.data?.employees ?? [];
 
   async function remove(r: AttendanceRecordDto) {
-    if (!window.confirm(t('hr.attendance.deleteConfirm'))) return;
-    if (await action.run(() => api(`/hr/attendance/${r.id}`, { method: 'DELETE' }))) query.reload();
+    if (!(await confirm({ message: t('hr.attendance.deleteConfirm') }))) return;
+    if (await action.run(() => api(`/hr/attendance/${r.id}`, { method: 'DELETE' }), { success: 'deleted' })) query.reload();
   }
 
   return (
@@ -200,7 +202,7 @@ function AttendanceDialog({
     const ok = await run(() =>
       record
         ? api(`/hr/attendance/${record.id}`, { method: 'PATCH', body: times })
-        : api('/hr/attendance', { method: 'POST', body: { employeeId, ...times } }),
+        : api('/hr/attendance', { method: 'POST', body: { employeeId, ...times } }), { success: record ? 'saved' : 'added' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

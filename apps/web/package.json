@@ -23,7 +23,7 @@
     "jsqr": "1.4.0",
     "libphonenumber-js": "^1.13.15",
     "lucide-react": "^0.544.0",
-    "next": "^15.5.4",
+    "next": "^15.5.29",
     "next-intl": "^4.3.9",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",

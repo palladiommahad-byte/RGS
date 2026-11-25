@@ -31,7 +31,25 @@
 }
 
 # Signed, 5-minute links to private files (passport photos, receipts, contracts).
-# The Host header is kept, so MinIO can verify the signature.
+# The Host header is kept, so MinIO can verify the signature. Downloads only: the API talks
+# to MinIO inside Docker, so nothing from the internet may write, list or administer it.
 {$FILES_DOMAIN} {
-	reverse_proxy minio:9000
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	@read {
+		method GET HEAD
+		not path /minio/*
+		query X-Amz-Signature=*
+	}
+	handle @read {
+		reverse_proxy minio:9000
+	}
+	handle {
+		respond 403
+	}
 }

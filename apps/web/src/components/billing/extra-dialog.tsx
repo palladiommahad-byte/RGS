@@ -59,7 +59,7 @@ export function ExtraDialog({
       api(`/stays/${stayId}/extras`, {
         method: 'POST',
         body: { label: l, category, quantity: q, unitPrice: parseMadToCentimes(unitPriceMad) },
-      }),
+      }), { success: 'extraAdded' },
     );
     if (ok) {
       onOpenChange(false);

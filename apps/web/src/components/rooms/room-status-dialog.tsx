@@ -33,7 +33,7 @@ export function RoomStatusDialog({
   async function choose(status: RoomStatus) {
     if (!room) return;
     const updated = await run(() =>
-      api<RoomDto>(`/rooms/${room.id}/status`, { method: 'PATCH', body: { status } }),
+      api<RoomDto>(`/rooms/${room.id}/status`, { method: 'PATCH', body: { status } }), { success: 'roomStatus' },
     );
     if (updated) {
       onChanged(updated);

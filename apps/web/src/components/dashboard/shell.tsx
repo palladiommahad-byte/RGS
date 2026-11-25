@@ -1,12 +1,10 @@
 'use client';
 
-import { STAFF_LOCALES } from '@riad/shared';
 import { ChevronsLeft, Menu, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { BrandMark } from '@/components/brand-mark';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Button } from '@/components/ui/button';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
@@ -46,8 +44,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const visible = NAV_ITEMS.filter((i) => can(...i.anyOf));
+  // Settings lives in the account menu (top right), not in the sidebar.
   const main = visible.filter((i) => !i.bottom);
-  const bottom = visible.filter((i) => i.bottom);
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
@@ -126,12 +124,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               </div>
             );
           })}
-          {bottom.length > 0 && <ul className="mt-auto flex flex-col gap-1 pt-4">{bottom.map(navLink)}</ul>}
         </nav>
 
-        <div className={cn('border-t p-4', c && 'lg:hidden')}>
-          <LocaleSwitcher locales={STAFF_LOCALES} />
-        </div>
       </aside>
 
       <div className={cn('transition-[padding] lg:ps-64 print:ps-0', c && 'lg:ps-[76px]')}>
@@ -139,7 +133,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label={t('common.openMenu')}>
             <Menu />
           </Button>
-          <div className="min-w-0 lg:hidden">
+          {/* Narrow phones: the logo only, so the top-bar buttons keep their room. */}
+          <div className="min-w-0 lg:hidden max-[419px]:[&_[data-brand-name]]:sr-only">
             <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
           </div>
           {can('stays.read') && <TopSearch />}

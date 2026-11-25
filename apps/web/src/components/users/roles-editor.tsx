@@ -55,7 +55,7 @@ export function RolesEditor({ roles, onSaved }: { roles: RoleDto[]; onSaved: () 
     setDraft((d) => (d.includes(code) ? d.filter((c) => c !== code && !dependents(code).includes(c as Permission)) : withImplied([...d, code])));
 
   async function submit(permissions: string[]) {
-    if (await save.run(() => api(`/roles/${role!.id}`, { method: 'PATCH', body: { permissions } }))) onSaved();
+    if (await save.run(() => api(`/roles/${role!.id}`, { method: 'PATCH', body: { permissions } }), { success: 'saved' })) onSaved();
   }
 
   return (

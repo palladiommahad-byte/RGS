@@ -327,7 +327,10 @@ and web app. The secrets in it are test-only values.
 
 ## Deployment (VPS + Docker)
 
-One riad = one small VPS (2 vCPU, 4 GB RAM, 40 GB disk is plenty; EU or Morocco region).
+One riad = one small VPS (EU or Morocco region). The stack runs on **1 vCPU / 1 GB RAM / 20 GB**
+(about 240 MB idle, 460 MB at its busiest): on such a small server, follow
+[`deploy/SMALL-SERVER.md`](deploy/SMALL-SERVER.md) (GitHub builds the images, the server only
+pulls them). With 4 GB RAM or more, the steps below may also build on the server.
 Everything runs in Docker: Caddy (automatic HTTPS), web, api, Postgres 16, MinIO, backups.
 Files are in [`deploy/`](deploy/).
 
@@ -411,6 +414,12 @@ storage answer, then runs a missed nightly backup at once. A backup only counts 
 once the dump is readable, every file is archived and the off-site copy arrived whole;
 otherwise it is recorded as failed with the reason (the owner is alerted) and nothing
 half-made is kept.
+
+**Recover everything in one command** (new server after a crash, or back to an earlier night):
+`bash deploy/recover.sh` (newest backup) or `bash deploy/recover.sh 2026-10-31_030000`. It needs
+only the repository and your saved `.env.production`; it prepares the server, downloads
+the app, restores database + files (from off-site when this server has none) and starts
+everything, keeping the backup service off until the restore is done.
 
 **Restore** — the name is the stamp shown under each backup in Settings (or `latest`):
 

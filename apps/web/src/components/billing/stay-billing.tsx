@@ -5,6 +5,7 @@ import { FileDown, Plus, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { FormError } from '@/components/form-field';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,18 +46,19 @@ export function StayBilling({
   const { can } = useAuth();
   const [dialog, setDialog] = useState<'extra' | 'payment' | null>(null);
   const action = useAction();
+  const confirm = useConfirm();
   const m = (c: number) => formatMoney(c, locale);
   const extrasOpen = (stay.status === 'PENDING' || stay.status === 'CHECKED_IN') && can('stays.write');
   const canPay = stay.status !== 'CANCELLED' && can('payments.write');
 
   async function removeExtra(id: string, label: string) {
-    if (!window.confirm(t('extras.deleteConfirm', { label }))) return;
-    if (await action.run(() => api(`/stays/${stay.id}/extras/${id}`, { method: 'DELETE' }))) onChanged();
+    if (!(await confirm({ message: t('extras.deleteConfirm', { label }) }))) return;
+    if (await action.run(() => api(`/stays/${stay.id}/extras/${id}`, { method: 'DELETE' }), { success: 'deleted' })) onChanged();
   }
 
   async function removePayment(id: string, amount: number) {
-    if (!window.confirm(t('payments.deleteConfirm', { amount: m(amount) }))) return;
-    if (await action.run(() => api(`/stays/${stay.id}/payments/${id}`, { method: 'DELETE' }))) onChanged();
+    if (!(await confirm({ message: t('payments.deleteConfirm', { amount: m(amount) }) }))) return;
+    if (await action.run(() => api(`/stays/${stay.id}/payments/${id}`, { method: 'DELETE' }), { success: 'deleted' })) onChanged();
   }
 
   return (

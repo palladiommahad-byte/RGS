@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { StayBilling } from '@/components/billing/stay-billing';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
@@ -34,6 +35,7 @@ export default function StayDetailPage() {
   const [dialog, setDialog] = useState<'confirm' | 'edit' | 'guest' | null>(null);
   const [editingGuest, setEditingGuest] = useState<GuestDto | undefined>();
   const action = useAction();
+  const confirm = useConfirm();
 
   const reload = () => {
     stay.reload();
@@ -57,18 +59,18 @@ export default function StayDetailPage() {
   const title = s.mainGuest ? `${s.mainGuest.firstName} ${s.mainGuest.lastName}` : t('stays.stay');
 
   async function cancelStay() {
-    if (!window.confirm(t('stays.cancelConfirm'))) return;
-    if (await action.run(() => api(`/stays/${s!.id}/cancel`, { method: 'POST' }))) reload();
+    if (!(await confirm({ message: t('stays.cancelConfirm'), confirmLabel: t('stays.cancelStay') }))) return;
+    if (await action.run(() => api(`/stays/${s!.id}/cancel`, { method: 'POST' }), { success: 'stayCancelled' })) reload();
   }
 
   async function rejectStay() {
-    if (!window.confirm(t('stays.rejectConfirm'))) return;
-    if (await action.run(() => api(`/stays/${s!.id}/reject`, { method: 'POST' }))) router.replace('/dashboard');
+    if (!(await confirm({ message: t('stays.rejectConfirm'), confirmLabel: t('stays.reject') }))) return;
+    if (await action.run(() => api(`/stays/${s!.id}/reject`, { method: 'POST' }), { success: 'checkinRejected' })) router.replace('/dashboard');
   }
 
   async function removeGuest(g: GuestDto) {
-    if (!window.confirm(t('stays.removeGuestConfirm', { name: `${g.firstName} ${g.lastName}` }))) return;
-    if (await action.run(() => api(`/stays/${s!.id}/guests/${g.id}`, { method: 'DELETE' }))) reload();
+    if (!(await confirm({ message: t('stays.removeGuestConfirm', { name: `${g.firstName} ${g.lastName}` }) }))) return;
+    if (await action.run(() => api(`/stays/${s!.id}/guests/${g.id}`, { method: 'DELETE' }), { success: 'deleted' })) reload();
   }
 
   function openGuest(g?: GuestDto) {

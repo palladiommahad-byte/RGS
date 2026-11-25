@@ -90,4 +90,48 @@ describe('Backups (e2e)', () => {
     expect(notes.items[0]).toMatchObject({ type: 'BACKUP', data: { kind: 'STALE' } });
     expect((notes.items[0]!.data as { lastOkAt: string | null }).lastOkAt).not.toBeNull();
   });
+
+  describe('restore', () => {
+    const NAME = '2026-11-20_030000';
+    const good = async () => {
+      await prisma.backupRun.updateMany({ where: { status: { in: ['REQUESTED', 'RUNNING'] } }, data: { status: 'FAILED' } });
+      return prisma.backupRun.create({
+        data: { trigger: 'SCHEDULED', status: 'OK', name: NAME, dbBytes: 1000, filesBytes: 2000, encrypted: true, offsite: true, finishedAt: ago(2) },
+      });
+    };
+
+    it('is for owners only: managers with riad settings cannot', async () => {
+      await good();
+      const res = await manager.post(`${API}/backups/restore`).send({ name: NAME, confirm: 'RESTORE' }).expect(403);
+      expect(res.body.code).toBe('OWNER_ONLY');
+      await reception.post(`${API}/backups/restore`).send({ name: NAME, confirm: 'RESTORE' }).expect(403);
+      expect((await manager.get(`${API}/backups`).expect(200)).body.canRestore).toBe(false);
+      expect((await status()).canRestore).toBe(true);
+    });
+
+    it('needs the exact word RESTORE and an existing good backup', async () => {
+      const wrong = await owner.post(`${API}/backups/restore`).send({ name: NAME, confirm: 'restore' }).expect(400);
+      expect(wrong.body.code).toBe('CONFIRM_REQUIRED');
+      const unknown = await owner.post(`${API}/backups/restore`).send({ name: '2020-01-01_030000', confirm: 'RESTORE' }).expect(404);
+      expect(unknown.body.code).toBe('BACKUP_NOT_FOUND');
+      // Only backup stamps: nothing else can reach the restore script.
+      await owner.post(`${API}/backups/restore`).send({ name: '../../etc/passwd', confirm: 'RESTORE' }).expect(400);
+    });
+
+    it('queues the restore for the backup container, once at a time, and audits it', async () => {
+      await owner.post(`${API}/backups/restore`).send({ name: NAME, confirm: 'RESTORE' }).expect(202);
+      const s = await status();
+      expect(s).toMatchObject({ restoring: true, inProgress: true });
+      expect(s.runs[0]).toMatchObject({ trigger: 'RESTORE', status: 'REQUESTED', name: NAME });
+      // A restore is not a backup: it never shows as the last good backup.
+      expect(s.lastOk?.trigger).not.toBe('RESTORE');
+      expect((await owner.post(`${API}/backups`).expect(409)).body.code).toBe('BACKUP_IN_PROGRESS');
+      expect(await prisma.auditLog.count({ where: { action: 'backup.restore_request' } })).toBe(1);
+    });
+
+    it('never restarts the API outside production', async () => {
+      await prisma.backupRun.updateMany({ where: { trigger: 'RESTORE' }, data: { status: 'OK', finishedAt: new Date() } });
+      expect(await monitor.restartAfterRestore()).toBe(false);
+    });
+  });
 });

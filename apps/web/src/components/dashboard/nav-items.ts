@@ -24,9 +24,9 @@ export type NavItem = {
   icon: LucideIcon;
   /** Shown when the user holds at least one of these. */
   anyOf: Permission[];
-  /** Sidebar group (shown under a small title); Settings is pinned to the bottom instead. */
+  /** Sidebar group (shown under a small title); Settings is in the account menu instead. */
   section?: NavSection;
-  /** Pinned to the bottom of the sidebar (like Settings). */
+  /** Shown in the account menu (top right) instead of the sidebar, like Settings. */
   bottom?: boolean;
 };
 

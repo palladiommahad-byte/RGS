@@ -16,6 +16,7 @@ import { Landmark, Paperclip, Pencil, Receipt, Repeat, Trash2, Users, Wallet } f
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { CHART_COLORS } from '@/components/finance/charts';
 import { DateRangePicker } from '@/components/date-range-picker';
 import { FormError } from '@/components/form-field';
@@ -78,6 +79,7 @@ export function ExpensesTab({
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ExpenseDto | undefined>();
   const action = useAction();
+  const confirm = useConfirm();
 
   const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
   if (range.from) params.set('from', range.from);
@@ -110,8 +112,8 @@ export function ExpensesTab({
   }
 
   async function remove(e: ExpenseDto) {
-    if (!window.confirm(t('expenses.deleteConfirm', { amount: m(e.amountTtc) }))) return;
-    if (await action.run(() => api(`/expenses/${e.id}`, { method: 'DELETE' }))) onChanged();
+    if (!(await confirm({ message: t('expenses.deleteConfirm', { amount: m(e.amountTtc) }) }))) return;
+    if (await action.run(() => api(`/expenses/${e.id}`, { method: 'DELETE' }), { success: 'deleted' })) onChanged();
   }
 
   // Group the page by day, newest first (the API already sorts by date).

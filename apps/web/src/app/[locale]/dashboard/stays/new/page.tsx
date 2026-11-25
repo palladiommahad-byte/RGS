@@ -96,7 +96,7 @@ function NewStay() {
       api<StayDetailDto>('/stays', {
         method: 'POST',
         body: { ...stayToBody(s.data), checkInNow: willCheckIn, mainGuest: g.data },
-      }),
+      }), { success: 'stayCreated' },
     );
     if (created) router.replace(`/dashboard/stays/${created.id}`);
   }

@@ -95,6 +95,13 @@ if [ -n "$INTO" ]; then
 fi
 pg_restore --clean --if-exists --no-owner -d "$TARGET" "$dump"
 echo "restore: database restored"
+if [ -z "$INTO" ]; then
+  # The dump was taken while its own run was still RUNNING: it finished (it is this file).
+  # Anything else waiting or running in the restored history was cut short by the restore.
+  psql -X -q -d "$TARGET" -c "UPDATE backup_runs SET status = 'OK', finished_at = coalesce(finished_at, started_at, now()) WHERE name = '$NAME' AND status IN ('REQUESTED', 'RUNNING')" \
+    -c "UPDATE backup_runs SET status = 'FAILED', finished_at = now(), error = 'Interrupted by a restore' WHERE status IN ('REQUESTED', 'RUNNING')" \
+    >/dev/null 2>&1 || true
+fi
 
 if [ "$DB_ONLY" != 1 ]; then
   fetch files

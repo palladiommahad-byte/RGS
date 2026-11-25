@@ -12,9 +12,11 @@ import { Clock, FileText, Hotel, ImageIcon, ImageUp, Landmark, QrCode, Trash2, W
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { BackupsCard } from '@/components/backups-card';
 import { FormError, FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
+import { SettingsSection as Section } from '@/components/settings-section';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,9 +50,9 @@ export default function SettingsPage() {
   const query = useApiQuery<RiadSettingsDto>(allowed ? '/settings/riad' : null);
   const [form, setForm] = useState<Form>(EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [saved, setSaved] = useState(false);
   const save = useAction();
   const logo = useAction();
+  const confirm = useConfirm();
   const fileInput = useRef<HTMLInputElement>(null);
   const s = query.data;
 
@@ -76,7 +78,6 @@ export default function SettingsPage() {
   if (!allowed) return <p className="text-muted-foreground">{t('dashboard.forbidden')}</p>;
 
   const set = (k: keyof Form, v: string) => {
-    setSaved(false);
     setForm((f) => ({ ...f, [k]: v }));
   };
 
@@ -87,8 +88,7 @@ export default function SettingsPage() {
     setErrors({});
     // Optional fields go as "" so that emptying them clears them.
     const body = { ...form, name: parsed.data.name, invoicePrefix: parsed.data.invoicePrefix };
-    if (await save.run(() => api<RiadSettingsDto>('/settings/riad', { method: 'PATCH', body }))) {
-      setSaved(true);
+    if (await save.run(() => api<RiadSettingsDto>('/settings/riad', { method: 'PATCH', body }), { success: 'saved' })) {
       query.reload();
       await refresh();
     }
@@ -98,15 +98,15 @@ export default function SettingsPage() {
     if (!file) return;
     const data = new FormData();
     data.append('file', file);
-    if (await logo.run(() => apiUpload<RiadSettingsDto>('/settings/riad/logo', data))) {
+    if (await logo.run(() => apiUpload<RiadSettingsDto>('/settings/riad/logo', data), { success: 'logoUpdated' })) {
       query.reload();
       await refresh();
     }
   }
 
   async function removeLogo() {
-    if (!window.confirm(t('settings.logoRemoveConfirm'))) return;
-    if (await logo.run(() => api('/settings/riad/logo', { method: 'DELETE' }))) {
+    if (!(await confirm({ message: t('settings.logoRemoveConfirm') }))) return;
+    if (await logo.run(() => api('/settings/riad/logo', { method: 'DELETE' }), { success: 'deleted' })) {
       query.reload();
       await refresh();
     }
@@ -236,42 +236,11 @@ export default function SettingsPage() {
           <Button type="submit" size="lg" disabled={save.pending || !s}>
             {save.pending ? t('common.saving') : t('common.save')}
           </Button>
-          {saved && <span className="text-sm text-emerald-700">{t('settings.saved')}</span>}
           <FormError message={save.error} />
         </div>
       </form>
 
       <BackupsCard />
     </div>
-  );
-}
-
-/** Settings block: icon, title and what it is for on the left (computers), fields on the right. */
-function Section({
-  icon: Icon,
-  title,
-  hint,
-  className,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  hint: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="grid gap-5 rounded-2xl border bg-card p-5 shadow-xs md:p-6 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-10">
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-900" aria-hidden>
-          <Icon className="size-[18px]" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-semibold">{title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
-        </div>
-      </div>
-      <div className={className}>{children}</div>
-    </section>
   );
 }

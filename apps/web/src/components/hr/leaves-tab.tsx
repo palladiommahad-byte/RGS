@@ -15,6 +15,7 @@ import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { FormError, FormField } from '@/components/form-field';
+import { useConfirm } from '@/components/feedback';
 import { Pagination } from '@/components/pagination';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ export function LeavesTab({ canWrite, onChanged }: { canWrite: boolean; onChange
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<LeaveDto | null | undefined>(undefined);
   const action = useAction();
+  const confirm = useConfirm();
   const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
   if (status) params.set('status', status);
   const query = useApiQuery<Paginated<LeaveDto>>(`/hr/leaves?${params}`);
@@ -58,12 +60,12 @@ export function LeavesTab({ canWrite, onChanged }: { canWrite: boolean; onChange
   };
 
   async function decide(l: LeaveDto, verb: 'approve' | 'reject') {
-    if (await action.run(() => api(`/hr/leaves/${l.id}/${verb}`, { method: 'POST' }))) refresh();
+    if (await action.run(() => api(`/hr/leaves/${l.id}/${verb}`, { method: 'POST' }), { success: 'leaveUpdated' })) refresh();
   }
 
   async function remove(l: LeaveDto) {
-    if (!window.confirm(t('hr.leaves.deleteConfirm'))) return;
-    if (await action.run(() => api(`/hr/leaves/${l.id}`, { method: 'DELETE' }))) refresh();
+    if (!(await confirm({ message: t('hr.leaves.deleteConfirm') }))) return;
+    if (await action.run(() => api(`/hr/leaves/${l.id}`, { method: 'DELETE' }), { success: 'deleted' })) refresh();
   }
 
   return (
@@ -203,7 +205,7 @@ function LeaveDialog({
     const ok = await run(() =>
       leave
         ? api(`/hr/leaves/${leave.id}`, { method: 'PATCH', body: { type: v.type, startDate: v.startDate, endDate: v.endDate, note: v.note } })
-        : api('/hr/leaves', { method: 'POST', body: v }),
+        : api('/hr/leaves', { method: 'POST', body: v }), { success: leave ? 'saved' : 'added' },
     );
     if (ok !== undefined) {
       onOpenChange(false);

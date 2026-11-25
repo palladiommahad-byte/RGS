@@ -5,6 +5,7 @@ import { BedDouble, Brush, DoorOpen, Plus, QrCode, Wrench } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
+import { useConfirm } from '@/components/feedback';
 import { FormError } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { useRealtimeEvent } from '@/components/realtime-provider';
@@ -28,6 +29,7 @@ export default function RoomsPage() {
   const [editing, setEditing] = useState<RoomDto | undefined>();
   const [formOpen, setFormOpen] = useState(false);
   const action = useAction();
+  const confirm = useConfirm();
 
   const query = useApiQuery<Paginated<RoomDto>>(
     `/rooms?page=${page}&limit=${LIMIT}${showInactive ? '&includeInactive=true' : ''}`,
@@ -42,22 +44,22 @@ export default function RoomsPage() {
   }
 
   async function regenerate(room: RoomDto) {
-    if (!window.confirm(t('rooms.regenerateConfirm', { name: room.name }))) return;
-    if (await action.run(() => api(`/rooms/${room.id}/qr-token`, { method: 'POST' }))) query.reload();
+    if (!(await confirm({ message: t('rooms.regenerateConfirm', { name: room.name }), tone: 'warning', confirmLabel: t('rooms.regenerateQr') }))) return;
+    if (await action.run(() => api(`/rooms/${room.id}/qr-token`, { method: 'POST' }), { success: 'qrRenewed' })) query.reload();
   }
 
   async function remove(room: RoomDto) {
-    if (!window.confirm(t('rooms.deleteConfirm', { name: room.name }))) return;
-    if (await action.run(() => api(`/rooms/${room.id}`, { method: 'DELETE' }))) query.reload();
+    if (!(await confirm({ message: t('rooms.deleteConfirm', { name: room.name }) }))) return;
+    if (await action.run(() => api(`/rooms/${room.id}`, { method: 'DELETE' }), { success: 'deleted' })) query.reload();
   }
 
   async function setStatus(room: RoomDto, status: RoomStatus) {
-    if (await action.run(() => api(`/rooms/${room.id}/status`, { method: 'PATCH', body: { status } }))) query.reload();
+    if (await action.run(() => api(`/rooms/${room.id}/status`, { method: 'PATCH', body: { status } }), { success: 'roomStatus' })) query.reload();
   }
 
   async function reactivate(room: RoomDto) {
     const body = { isActive: true };
-    if (await action.run(() => api(`/rooms/${room.id}`, { method: 'PATCH', body }))) query.reload();
+    if (await action.run(() => api(`/rooms/${room.id}`, { method: 'PATCH', body }), { success: 'roomReactivated' })) query.reload();
   }
 
   const active = query.data?.items.filter((r) => r.isActive) ?? [];
