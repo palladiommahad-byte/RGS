@@ -152,7 +152,6 @@
     }
   },
   "auth": {
-    "title": "Sign in to your workspace.",
     "subtitle": "For riad staff only: management, reception and housekeeping.",
     "email": "Email",
     "password": "Password",
@@ -166,14 +165,6 @@
     "headline1": "Every stay,",
     "headline2": "well kept.",
     "lead": "QR check-ins, rooms, invoices, expenses and staff: the whole riad team works on the same screen.",
-    "cardTitle": "Today · Reception",
-    "cardBadge": "2 arrivals",
-    "cardRow1Title": "QR check-in · Room 3",
-    "cardRow1Sub": "Passport read → to confirm",
-    "cardRow1Action": "Confirm",
-    "cardRow2Title": "Room 5",
-    "cardRow2Sub": "Departure → to clean",
-    "cardRow2Action": "Done",
     "eyebrow": "Welcome back",
     "emailPlaceholder": "you@your-riad.com",
     "passwordPlaceholder": "Your password",
@@ -181,7 +172,16 @@
     "hidePassword": "Hide password",
     "forgot": "Forgot password?",
     "forgotHint": "Ask your manager: they can give you a new password from the Users page.",
-    "secure": "Secure sign-in · Accounts are created by management"
+    "secure": "Secure sign-in · Accounts are created by management",
+    "welcome": "Sign in",
+    "rights": "All rights reserved.",
+    "featureRooms": "Rooms & QR check-in",
+    "featureStays": "Stays & invoices",
+    "featureCash": "Cash box & expenses",
+    "featureStaff": "Staff & time clock",
+    "cardOccupancy": "Occupancy this week",
+    "cardCheckin": "Passport check-in received",
+    "cardRoom": "Room ready for guests"
   },
   "nav": {
     "today": "Dashboard",

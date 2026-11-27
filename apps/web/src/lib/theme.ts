@@ -50,6 +50,17 @@ function setTabIcon(theme: AppTheme): void {
   });
 }
 
+/** Puts the theme remembered on this device back on <html> (it can be dropped by a re-render). */
+export function reapplyStoredTheme(): void {
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    return;
+  }
+  if (stored && asAppTheme(stored) !== current()) applyTheme(asAppTheme(stored));
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);

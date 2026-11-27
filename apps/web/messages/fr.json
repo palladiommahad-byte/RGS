@@ -36,7 +36,6 @@
     "ar": "العربية"
   },
   "auth": {
-    "title": "Connectez-vous à votre espace.",
     "subtitle": "Réservé au personnel du riad : direction, réception et ménage.",
     "email": "E-mail",
     "password": "Mot de passe",
@@ -50,14 +49,6 @@
     "headline1": "Chaque séjour,",
     "headline2": "bien tenu.",
     "lead": "Arrivées par QR code, chambres, factures, dépenses et personnel : toute l'équipe du riad travaille sur le même écran.",
-    "cardTitle": "Aujourd'hui · Réception",
-    "cardBadge": "2 arrivées",
-    "cardRow1Title": "Check-in QR · Chambre 3",
-    "cardRow1Sub": "Passeport lu → à confirmer",
-    "cardRow1Action": "Confirmer",
-    "cardRow2Title": "Chambre 5",
-    "cardRow2Sub": "Départ → à nettoyer",
-    "cardRow2Action": "Fait",
     "eyebrow": "Bon retour",
     "emailPlaceholder": "vous@votre-riad.ma",
     "passwordPlaceholder": "Votre mot de passe",
@@ -65,7 +56,16 @@
     "hidePassword": "Masquer le mot de passe",
     "forgot": "Mot de passe oublié ?",
     "forgotHint": "Demandez à votre gérant : il peut vous donner un nouveau mot de passe depuis la page Utilisateurs.",
-    "secure": "Connexion sécurisée · Les comptes sont créés par la direction"
+    "secure": "Connexion sécurisée · Les comptes sont créés par la direction",
+    "welcome": "Connexion",
+    "rights": "Tous droits réservés.",
+    "featureRooms": "Chambres & check-in QR",
+    "featureStays": "Séjours & factures",
+    "featureCash": "Caisse & dépenses",
+    "featureStaff": "Personnel & pointage",
+    "cardOccupancy": "Occupation de la semaine",
+    "cardCheckin": "Check-in passeport reçu",
+    "cardRoom": "Chambre prête pour les clients"
   },
   "nav": {
     "today": "Tableau de bord",

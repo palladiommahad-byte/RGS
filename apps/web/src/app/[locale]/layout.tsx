@@ -1,3 +1,4 @@
+import { ThemeKeeper } from '@/components/theme-keeper';
 import { THEME_BOOT_SCRIPT } from '@/lib/theme';
 import type { Metadata, Viewport } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
@@ -56,7 +57,10 @@ export default async function LocaleLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-dvh">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <ThemeKeeper />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );
