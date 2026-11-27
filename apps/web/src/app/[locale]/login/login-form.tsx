@@ -112,7 +112,7 @@ export function LoginForm() {
         </div>
 
         <FormError message={error} />
-        <Button type="submit" size="lg" disabled={pending} className="h-12 rounded-xl bg-[#0b1f1c] text-white shadow-lg shadow-black/10 hover:bg-[#134e48]">
+        <Button type="submit" size="lg" disabled={pending} className="h-12 rounded-xl bg-[var(--brand-ink)] text-white shadow-lg shadow-black/10 hover:bg-primary">
           {pending ? t('submitting') : t('submit')}
         </Button>
       </form>

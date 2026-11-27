@@ -130,6 +130,8 @@ model Riad {
   checkoutTime  String   @default("12:00") @map("checkout_time")
   /// …and rooms left « to clean » become free again at this one.
   roomReadyTime String   @default("15:00") @map("room_ready_time")
+  /// App colour theme (teal, blue…), for staff and guest pages.
+  theme         String   @default("teal")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

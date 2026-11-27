@@ -4,6 +4,7 @@ import { hasAnyPermission, type AuthUser } from '@riad/shared';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
+import { applyTheme } from '@/lib/theme';
 
 type AuthContextValue = {
   user: AuthUser;
@@ -32,6 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, [locale]);
+
+  // The riad's colour theme (Settings › Appearance), for everyone signed in.
+  const theme = user?.riad.theme;
+  useEffect(() => {
+    if (theme) applyTheme(theme);
+  }, [theme]);
 
   const logout = useCallback(async () => {
     await api('/auth/logout', { method: 'POST' }).catch(() => undefined);

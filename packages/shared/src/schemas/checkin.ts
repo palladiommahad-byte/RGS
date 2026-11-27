@@ -1,3 +1,4 @@
+import type { AppTheme } from '../stays';
 import type { DocumentType, Sex } from '../constants';
 import type { IsoDate } from '../dates';
 
@@ -8,6 +9,8 @@ export const CHECKIN_IMAGE_MAX_PX = 2400;
 
 export type CheckinContextDto = {
   riadName: string;
+  /** The riad's colour theme, so the guest pages match. */
+  theme: AppTheme;
   roomName: string | null;
   contactEmail: string | null;
   retentionDays: number;

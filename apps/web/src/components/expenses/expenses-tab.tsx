@@ -17,7 +17,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { useConfirm } from '@/components/feedback';
-import { CHART_COLORS } from '@/components/finance/charts';
 import { DateRangePicker } from '@/components/date-range-picker';
 import { FormError } from '@/components/form-field';
 import { Pagination } from '@/components/pagination';
@@ -28,6 +27,7 @@ import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useAction, useApiQuery } from '@/lib/use-api';
+import { useChartPalette } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { CategoryIcon, categoryName } from './category-icon';
 import { ExpenseDialog } from './expense-dialog';
@@ -67,6 +67,7 @@ export function ExpensesTab({
   version: number;
   onChanged: () => void;
 }) {
+  const chartColors = useChartPalette();
   const t = useTranslations();
   const locale = useLocale();
   const { can } = useAuth();
@@ -98,6 +99,7 @@ export function ExpensesTab({
   const m = (c: number) => formatMoney(c, locale);
   const d = query.data;
   // One colour per category, stable across filters (order of the category list).
+  const CHART_COLORS = chartColors;
   const colorOf = (id: string) => CHART_COLORS[Math.max(0, categories.findIndex((c) => c.id === id)) % CHART_COLORS.length]!;
   const category = (id: string) => categories.find((c) => c.id === id);
   const set = (fn: (v: string) => void) => (v: string) => {

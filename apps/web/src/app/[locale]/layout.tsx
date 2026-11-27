@@ -1,3 +1,4 @@
+import { THEME_BOOT_SCRIPT } from '@/lib/theme';
 import type { Metadata, Viewport } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -47,7 +48,12 @@ export default async function LocaleLayout({
       lang={locale}
       dir={isRtl(locale) ? 'rtl' : 'ltr'}
       className={`${inter.variable} ${plexArabic.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* The riad's colour theme, remembered on this device: no flash of the default colours. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-dvh">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ICE, INVOICE_PREFIX, TIME_OF_DAY } from '@riad/shared';
+import { APP_THEMES, ICE, INVOICE_PREFIX, TIME_OF_DAY, type AppTheme } from '@riad/shared';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsOptional, IsString, Length, Matches, MaxLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength, ValidateIf } from 'class-validator';
 import { TrimToUndefined } from '../common/validation';
 
 /** Trims but keeps "", which means "clear this field". */
@@ -28,4 +28,5 @@ export class UpdateRiadSettingsDto {
   @ApiPropertyOptional({ description: 'Shown to guests after check-in' }) @IsOptional() @Trim() @IsString() @MaxLength(300) wifiInfo?: string;
   @ApiPropertyOptional({ description: 'Automatic check-out, riad time HH:MM' }) @IsOptional() @Matches(TIME_OF_DAY) checkoutTime?: string;
   @ApiPropertyOptional({ description: 'Rooms to clean become free, riad time HH:MM' }) @IsOptional() @Matches(TIME_OF_DAY) roomReadyTime?: string;
+  @ApiPropertyOptional({ enum: APP_THEMES, description: 'App colour theme' }) @IsOptional() @IsIn(APP_THEMES) theme?: AppTheme;
 }

@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import type { Riad } from '@prisma/client';
-import { formatInvoiceNumber, todayIso, type RiadSettingsDto } from '@riad/shared';
+import { asAppTheme, formatInvoiceNumber, todayIso, type RiadSettingsDto } from '@riad/shared';
 import sharp from 'sharp';
 import { AuditService } from '../audit/audit.service';
 import { logoVersion } from '../auth/auth.service';
@@ -12,7 +12,7 @@ import { StorageService } from '../storage/storage.service';
 import type { UpdateRiadSettingsDto } from './settings.dto';
 
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const FIELDS = ['name', 'address', 'city', 'phone', 'email', 'invoicePrefix', 'ice', 'fiscalId', 'rcNumber', 'patente', 'wifiInfo', 'checkoutTime', 'roomReadyTime'] as const;
+const FIELDS = ['name', 'address', 'city', 'phone', 'email', 'invoicePrefix', 'ice', 'fiscalId', 'rcNumber', 'patente', 'wifiInfo', 'checkoutTime', 'roomReadyTime', 'theme'] as const;
 
 /** undefined = unchanged, "" = cleared. */
 const clearable = (v: string | undefined) => (v === undefined ? undefined : v || null);
@@ -49,6 +49,7 @@ export class SettingsService {
           wifiInfo: clearable(dto.wifiInfo),
           checkoutTime: dto.checkoutTime,
           roomReadyTime: dto.roomReadyTime,
+          theme: dto.theme,
         },
       });
       await this.audit.log(
@@ -120,6 +121,7 @@ export class SettingsService {
       checkoutTime: r.checkoutTime,
       roomReadyTime: r.roomReadyTime,
       logoVersion: logoVersion(r.logoKey),
+      theme: asAppTheme(r.theme),
       nextInvoiceNumber: formatInvoiceNumber(r.invoicePrefix, year, (seq?.lastValue ?? 0) + 1),
     };
   }

@@ -59,14 +59,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           aria-current={active ? 'page' : undefined}
           title={c ? label : undefined}
           className={cn(
-            'flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
+            // Filled pill for the page you are on; the others plain grey with thin icons.
+            'flex h-12 items-center gap-3.5 rounded-2xl px-4 text-[15px] font-medium transition-colors',
             c && 'lg:justify-center lg:px-0',
             active
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-foreground/75 hover:bg-accent hover:text-foreground',
+              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+              : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground',
           )}
         >
-          <item.icon className="size-5 shrink-0" aria-hidden />
+          <item.icon className="size-[22px] shrink-0" strokeWidth={active ? 2 : 1.6} aria-hidden />
           <span className={cn('truncate', c && 'lg:sr-only')}>{label}</span>
         </Link>
       </li>
@@ -115,12 +116,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             const items = main.filter((i) => i.section === section);
             if (!items.length) return null;
             return (
-              <div key={section} className="flex flex-col gap-1 pt-4 first:pt-1">
-                <span className={cn('px-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase', c && 'lg:sr-only')}>
+              <div key={section} className="flex flex-col gap-1 pt-6 first:pt-1">
+                <span className={cn('px-4 pb-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground/80 uppercase', c && 'lg:sr-only')}>
                   {t(`navSection.${section}`)}
                 </span>
                 {c && <span className="mx-3 mb-1 hidden border-t lg:block" aria-hidden />}
-                <ul className="flex flex-col gap-0.5">{items.map(navLink)}</ul>
+                <ul className="flex flex-col gap-1">{items.map(navLink)}</ul>
               </div>
             );
           })}

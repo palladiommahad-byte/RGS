@@ -27,10 +27,45 @@
   --ring: #2f7a70;
   /* Teal ramp for charts, calendar bars and highlights (dark -> light). */
   --teal-900: #134e48;
+  --teal-800: #18564f;
   --teal-700: #2e6b63;
   --teal-500: #5c948b;
   --teal-300: #9fc4bd;
   --teal-100: #dcebe8;
+  --teal-50: #eef6f4;
+  /* Very dark brand shade (login panel). */
+  --brand-ink: #0b1f1c;
+}
+
+/*
+ * Blue theme (Settings › Appearance): primary #1D4FD7 = hsl(224 76% 48%).
+ * The "teal" ramp names are the brand ramp: every theme redefines them.
+ * Chart colours mirror these in lib/theme.ts.
+ */
+:root[data-theme='blue'] {
+  --background: #eef1f7;
+  --foreground: #121a2e;
+  --card-foreground: #121a2e;
+  --popover-foreground: #121a2e;
+  --primary: #1d4fd7;
+  --primary-hover: #1840b3;
+  --secondary: #e3e9f6;
+  --secondary-foreground: #1b2c5a;
+  --muted: #f1f4fa;
+  --muted-foreground: #5a6478;
+  --accent: #e1e8fb;
+  --accent-foreground: #1d4fd7;
+  --border: #d5dceb;
+  --input: #c6cfe2;
+  --ring: #4f78e6;
+  --teal-900: #1d4fd7;
+  --teal-800: #1a45bd;
+  --teal-700: #3864e0;
+  --teal-500: #6e8fea;
+  --teal-300: #a8bdf3;
+  --teal-100: #dde6fc;
+  --teal-50: #eef3fe;
+  --brand-ink: #0b1736;
 }
 
 @theme inline {
@@ -60,10 +95,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-teal-900: var(--teal-900);
+  --color-teal-800: var(--teal-800);
   --color-teal-700: var(--teal-700);
   --color-teal-500: var(--teal-500);
   --color-teal-300: var(--teal-300);
   --color-teal-100: var(--teal-100);
+  --color-teal-50: var(--teal-50);
 }
 
 @layer base {

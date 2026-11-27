@@ -1,14 +1,16 @@
 'use client';
 
 import {
+  APP_THEMES,
   DEFAULT_CHECKOUT_TIME,
   DEFAULT_ROOM_READY_TIME,
   formatInvoiceNumber,
   INVOICE_PREFIX,
   riadSettingsFormSchema,
+  type AppTheme,
   type RiadSettingsDto,
 } from '@riad/shared';
-import { Clock, FileText, Hotel, ImageIcon, ImageUp, Landmark, QrCode, Trash2, Wifi } from 'lucide-react';
+import { Check, Clock, FileText, Hotel, ImageIcon, ImageUp, Landmark, Palette, QrCode, Trash2, Wifi } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -23,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link } from '@/i18n/navigation';
 import { api, apiUpload } from '@/lib/api';
 import { fieldErrors, type FieldErrors } from '@/lib/forms';
+import { applyTheme, THEME_COLORS, useAppTheme } from '@/lib/theme';
 import { useAction, useApiQuery } from '@/lib/use-api';
 
 type Form = {
@@ -52,6 +55,8 @@ export default function SettingsPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const save = useAction();
   const logo = useAction();
+  const themeAction = useAction();
+  const activeTheme = useAppTheme();
   const confirm = useConfirm();
   const fileInput = useRef<HTMLInputElement>(null);
   const s = query.data;
@@ -104,6 +109,16 @@ export default function SettingsPage() {
     }
   }
 
+  // The whole app (staff and guest pages) switches at once; saved for the riad.
+  async function chooseTheme(theme: AppTheme) {
+    if (theme === activeTheme) return;
+    const previous = activeTheme;
+    applyTheme(theme);
+    const ok = await themeAction.run(() => api<RiadSettingsDto>('/settings/riad', { method: 'PATCH', body: { theme } }), { success: 'saved' });
+    if (ok) await refresh();
+    else applyTheme(previous);
+  }
+
   async function removeLogo() {
     if (!(await confirm({ message: t('settings.logoRemoveConfirm') }))) return;
     if (await logo.run(() => api('/settings/riad/logo', { method: 'DELETE' }), { success: 'deleted' })) {
@@ -135,6 +150,38 @@ export default function SettingsPage() {
           </>
         }
       />
+
+      <Section icon={Palette} tone="violet" title={t('settings.appearance')} hint={t('settings.sectionHint.appearance')}>
+        <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('settings.appearance')}>
+          {APP_THEMES.map((theme) => {
+            const c = THEME_COLORS[theme];
+            const active = theme === activeTheme;
+            return (
+              <button
+                key={theme}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={themeAction.pending}
+                onClick={() => void chooseTheme(theme)}
+                className={`flex items-center gap-3 rounded-xl border bg-card p-3 text-start shadow-xs transition hover:border-primary/40 disabled:opacity-60 ${active ? 'border-primary ring-2 ring-primary/30' : ''}`}
+              >
+                <span className="flex shrink-0 -space-x-2 rtl:space-x-reverse" aria-hidden>
+                  {[c.c900, c.c500, c.c300].map((hex) => (
+                    <span key={hex} className="size-8 rounded-full border-2 border-card" style={{ background: hex }} />
+                  ))}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{t(`settings.themes.${theme}`)}</span>
+                  <span className="block font-mono text-xs text-muted-foreground uppercase" dir="ltr">{c.swatch}</span>
+                </span>
+                {active && <Check className="size-5 shrink-0 text-primary" aria-hidden />}
+              </button>
+            );
+          })}
+        </div>
+        <FormError message={themeAction.error} />
+      </Section>
 
       <Section icon={ImageIcon} title={t('settings.logo')} hint={t('settings.sectionHint.logo')} className="flex flex-wrap items-center gap-5">
           <span className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-muted">

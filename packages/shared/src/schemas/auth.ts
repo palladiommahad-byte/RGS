@@ -1,3 +1,4 @@
+import type { AppTheme } from '../stays';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -13,5 +14,5 @@ export type AuthUser = {
   email: string;
   role: { id: string; key: string; nameFr: string; nameAr: string };
   permissions: string[];
-  riad: { id: string; name: string; logoVersion: string | null };
+  riad: { id: string; name: string; logoVersion: string | null; theme: AppTheme };
 };

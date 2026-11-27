@@ -16,20 +16,8 @@ import {
   YAxis,
 } from 'recharts';
 import { formatMoney, intlLocale } from '@/lib/format';
+import { useChartPalette, useThemeColors } from '@/lib/theme';
 
-/** Teal ramp first (brand), then warm accents so categories stay distinguishable. */
-export const CHART_COLORS = [
-  '#134e48',
-  '#5c948b',
-  '#9fc4bd',
-  '#c9a227',
-  '#d97757',
-  '#7c6f9b',
-  '#2e6b63',
-  '#b5838d',
-  '#a3a3a3',
-  '#6d9dc5',
-];
 
 function useMoney() {
   const locale = useLocale();
@@ -46,6 +34,7 @@ function useMoney() {
 const tooltipStyle = { borderRadius: 10, border: '1px solid var(--border)', fontSize: 12 };
 
 export function RevenueExpensesChart({ months }: { months: FinanceDashboardDto['months'] }) {
+  const brand = useThemeColors();
   const t = useTranslations('finance');
   const locale = useLocale();
   const money = useMoney();
@@ -77,8 +66,8 @@ export function RevenueExpensesChart({ months }: { months: FinanceDashboardDto['
             cursor={{ fill: 'var(--accent)' }}
           />
           <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="revenue" name={t('revenue')} fill="#134e48" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="expenses" name={t('expenses')} fill="#9fc4bd" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="revenue" name={t('revenue')} fill={brand.c900} radius={[6, 6, 0, 0]} />
+          <Bar dataKey="expenses" name={t('expenses')} fill={brand.c300} radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -86,6 +75,7 @@ export function RevenueExpensesChart({ months }: { months: FinanceDashboardDto['
 }
 
 export function DonutChart({ data }: { data: { name: string; value: number }[] }) {
+  const CHART_COLORS = useChartPalette();
   const money = useMoney();
   const total = data.reduce((a, b) => a + b.value, 0);
   return (
@@ -140,6 +130,7 @@ export function HorizontalBars({
 }: {
   data: { name: string; value: number; secondary?: number }[];
 }) {
+  const CHART_COLORS = useChartPalette();
   const money = useMoney();
   const max = Math.max(1, ...data.map((d) => d.value));
   return (

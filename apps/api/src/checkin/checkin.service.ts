@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import type { Riad, Room } from '@prisma/client';
 import {
+  asAppTheme,
   accommodationTotal,
   CHECKIN_ALLOWED_IMAGE_TYPES,
   CHECKIN_ROOM_STATUSES,
@@ -53,6 +54,7 @@ export class CheckinService {
     this.reader.warm();
     return {
       riadName: riad.name,
+      theme: asAppTheme(riad.theme),
       roomName: room?.name ?? null,
       contactEmail: riad.email,
       retentionDays: env().PASSPORT_IMAGE_RETENTION_DAYS,

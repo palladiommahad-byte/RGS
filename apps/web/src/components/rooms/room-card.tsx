@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 const ICON: Record<RoomStatus, LucideIcon> = { FREE: DoorOpen, OCCUPIED: BedDouble, CLEANING: Brush, OUT_OF_SERVICE: Wrench };
 const ACTIVE: Record<RoomStatus, string> = {
-  FREE: 'bg-emerald-600 text-white',
+  FREE: 'bg-primary text-primary-foreground shadow-sm',
   OCCUPIED: 'bg-teal-900 text-white',
   CLEANING: 'bg-amber-500 text-white',
   OUT_OF_SERVICE: 'bg-stone-500 text-white',

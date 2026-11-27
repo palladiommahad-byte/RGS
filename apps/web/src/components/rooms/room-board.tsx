@@ -149,7 +149,7 @@ export function RoomBoard({
                         <span className="tabular-nums">{t('rooms.nightOf', { night, total: stay.nights })}</span>
                       </span>
                       <span className="h-1.5 w-full overflow-hidden rounded-full bg-white/20" aria-hidden>
-                        <span className="block h-full rounded-full bg-[#c5f27f]" style={{ width: `${(night / Math.max(1, stay.nights)) * 100}%` }} />
+                        <span className="block h-full rounded-full bg-white" style={{ width: `${(night / Math.max(1, stay.nights)) * 100}%` }} />
                       </span>
                     </>
                   ) : room.status === 'CLEANING' ? (

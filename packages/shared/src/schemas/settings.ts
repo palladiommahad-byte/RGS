@@ -1,3 +1,4 @@
+import type { AppTheme } from '../stays';
 import { z } from 'zod';
 import { DEFAULT_CHECKOUT_TIME, DEFAULT_ROOM_READY_TIME, TIME_OF_DAY } from '../stays';
 
@@ -53,6 +54,8 @@ export type RiadSettingsDto = {
   roomReadyTime: string;
   /** Changes with every upload; null = no logo. */
   logoVersion: string | null;
+  /** App colour theme for everyone at the riad (staff and guest pages). */
+  theme: AppTheme;
   /** What the next invoice will be numbered. */
   nextInvoiceNumber: string;
 };

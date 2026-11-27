@@ -920,7 +920,13 @@
       "identity": "Printed on every invoice and receipt.",
       "invoicing": "Invoice numbering and the legal IDs Moroccan invoices must show.",
       "wifi": "Shown to guests after their online check-in.",
-      "stayCycle": "When guests are checked out and rooms become ready, automatically."
+      "stayCycle": "When guests are checked out and rooms become ready, automatically.",
+      "appearance": "The colours of the app, for all staff and on the guest check-in pages."
+    },
+    "appearance": "Appearance",
+    "themes": {
+      "teal": "Teal",
+      "blue": "Royal blue"
     }
   },
   "users": {

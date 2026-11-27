@@ -920,7 +920,13 @@
       "identity": "Imprimé sur chaque facture et reçu.",
       "invoicing": "Numérotation des factures et identifiants légaux exigés au Maroc.",
       "wifi": "Affiché aux clients après leur enregistrement en ligne.",
-      "stayCycle": "Heure de départ automatique et heure à laquelle les chambres sont prêtes."
+      "stayCycle": "Heure de départ automatique et heure à laquelle les chambres sont prêtes.",
+      "appearance": "Les couleurs de l’application, pour toute l’équipe et sur les pages d’enregistrement des clients."
+    },
+    "appearance": "Apparence",
+    "themes": {
+      "teal": "Sarcelle",
+      "blue": "Bleu roi"
     }
   },
   "users": {

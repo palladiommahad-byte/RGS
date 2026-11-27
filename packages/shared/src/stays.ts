@@ -35,6 +35,11 @@ export function accommodationTotal(pricePerNight: Centimes, nights: number): Cen
 }
 
 /** A time of day, riad time: "HH:MM" (24 h). */
+/** App colour themes (Settings › Appearance). The first is the default. */
+export const APP_THEMES = ['teal', 'blue'] as const;
+export type AppTheme = (typeof APP_THEMES)[number];
+export const asAppTheme = (v: string | null | undefined): AppTheme => ((APP_THEMES as readonly string[]).includes(v ?? '') ? (v as AppTheme) : 'teal');
+
 export const TIME_OF_DAY = /^([01]\d|2[0-3]):[0-5]\d$/;
 /** Defaults of the automatic stay cycle (each riad can change them in its settings). */
 export const DEFAULT_CHECKOUT_TIME = '12:00';

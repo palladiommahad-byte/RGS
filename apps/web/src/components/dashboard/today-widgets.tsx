@@ -10,13 +10,15 @@ import { StayStatusBadge } from '@/components/status-badges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { formatDate, formatMoney, intlLocale } from '@/lib/format';
+import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
-const TEAL = '#134e48';
-const TEAL_LIGHT = '#9fc4bd';
 
 /** Revenue (area) and expenses (dashed line) over the last 6 months, HT. */
 export function RevenueOverview({ months, className }: { months: FinanceDashboardDto['months']; className?: string }) {
+  const brand = useThemeColors();
+  const TEAL = brand.c900;
+  const TEAL_LIGHT = brand.c300;
   const t = useTranslations();
   const locale = useLocale();
   const compact = new Intl.NumberFormat(intlLocale(locale), { notation: 'compact', maximumFractionDigits: 1 });
@@ -70,16 +72,17 @@ export function RevenueOverview({ months, className }: { months: FinanceDashboar
   );
 }
 
-const STATUS_COLORS: Record<RoomDto['status'], string> = {
-  OCCUPIED: TEAL,
-  FREE: '#5c948b',
+const statusColors = (brand: { c900: string; c500: string }): Record<RoomDto['status'], string> => ({
+  OCCUPIED: brand.c900,
+  FREE: brand.c500,
   CLEANING: '#e0b04a',
-  OUT_OF_SERVICE: '#d4dcda',
-};
+  OUT_OF_SERVICE: '#d4d8dd',
+});
 const STATUS_ORDER: RoomDto['status'][] = ['OCCUPIED', 'FREE', 'CLEANING', 'OUT_OF_SERVICE'];
 
 /** Ring of today's room statuses, % occupied in the middle. */
 export function RoomStatusRing({ rooms, className }: { rooms: RoomDto[]; className?: string }) {
+  const STATUS_COLORS = statusColors(useThemeColors());
   const t = useTranslations();
   const active = rooms.filter((r) => r.isActive);
   const total = active.length || 1;

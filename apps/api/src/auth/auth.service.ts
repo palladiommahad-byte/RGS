@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { AuthUser } from '@riad/shared';
+import { asAppTheme, type AuthUser } from '@riad/shared';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { AppException } from '../common/app-exception';
@@ -129,7 +129,7 @@ export class AuthService {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       include: {
-        riad: { select: { id: true, name: true, logoKey: true } },
+        riad: { select: { id: true, name: true, logoKey: true, theme: true } },
         role: { include: { permissions: { include: { permission: true } } } },
       },
     });
@@ -145,7 +145,7 @@ export class AuthService {
         nameAr: user.role.nameAr,
       },
       permissions: user.role.permissions.map((rp) => rp.permission.code).sort(),
-      riad: { id: user.riad.id, name: user.riad.name, logoVersion: logoVersion(user.riad.logoKey) },
+      riad: { id: user.riad.id, name: user.riad.name, logoVersion: logoVersion(user.riad.logoKey), theme: asAppTheme(user.riad.theme) },
     };
   }
 

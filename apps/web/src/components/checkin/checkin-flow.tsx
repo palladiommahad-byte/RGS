@@ -14,6 +14,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { applyTheme } from '@/lib/theme';
 import { guestValuesForSchema } from '@/components/stays/stay-form';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
@@ -56,7 +57,10 @@ export function CheckinFlow({ link }: { link: CheckinLink }) {
   useEffect(() => {
     checkinApi
       .context<CheckinContextDto>(link)
-      .then(setContext)
+      .then((c) => {
+        applyTheme(c.theme); // guest pages in the riad's colours
+        setContext(c);
+      })
       .catch(() => setContextError(true));
   }, [link]);
 
