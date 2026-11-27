@@ -161,7 +161,7 @@
     "invalid": "Wrong email or password.",
     "tooMany": "Too many attempts. Try again in a few minutes.",
     "error": "Something went wrong. Please try again.",
-    "appName": "Riad Manager",
+    "appName": "EvoRiad",
     "badge": "Internal riad system",
     "headline1": "Every stay,",
     "headline2": "well kept.",
@@ -184,7 +184,7 @@
     "secure": "Secure sign-in · Accounts are created by management"
   },
   "nav": {
-    "today": "Today",
+    "today": "Dashboard",
     "rooms": "Rooms",
     "stays": "Stays",
     "guests": "Guest register",
@@ -925,7 +925,7 @@
     },
     "appearance": "Appearance",
     "themes": {
-      "teal": "Teal",
+      "teal": "Green",
       "blue": "Royal blue"
     }
   },

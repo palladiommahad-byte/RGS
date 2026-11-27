@@ -39,7 +39,7 @@ export function buildPnl(months: MonthInput[], categories: ExpenseCategory[]): P
 
 export async function pnlToXlsx(table: PnlTable, title: string): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Riad Manager';
+  wb.creator = 'EvoRiad';
   const sheet = wb.addWorksheet('Compte de résultat', { views: [{ state: 'frozen', xSplit: 1, ySplit: 2 }] });
   sheet.addRow([title]).font = { bold: true, size: 13 };
   const header = sheet.addRow(['', ...table.months]);

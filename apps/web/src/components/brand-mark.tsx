@@ -1,6 +1,7 @@
+import { AppLogo } from '@/components/app-logo';
 import { cn } from '@/lib/utils';
 
-/** Riad logo (uploaded in Settings), else the Riad Manager emblem, next to the name. */
+/** Riad logo (uploaded in Settings), else the EvoRiad mark, next to the name. */
 export function BrandMark({
   name,
   className,
@@ -18,15 +19,7 @@ export function BrandMark({
       {logoVersion ? (
         <img src={`/api/v1/riad/logo?v=${logoVersion}`} alt="" className="size-9 shrink-0 rounded-lg object-contain" />
       ) : (
-        // On a white tile: the navy emblem must stay visible on dark backgrounds too.
-        <span
-          className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-lg bg-white p-0.5',
-            !inverted && 'ring-1 ring-border',
-          )}
-        >
-          <img src="/brand/riad-manager-mark.png" alt="" className="size-full object-contain" />
-        </span>
+        <AppLogo mark className={cn('size-9 shrink-0', inverted && 'rounded-[22%] ring-1 ring-white/25')} />
       )}
       <span data-brand-name className="truncate text-lg font-semibold tracking-tight">{name}</span>
     </span>

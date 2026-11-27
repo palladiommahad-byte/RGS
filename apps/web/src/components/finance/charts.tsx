@@ -19,6 +19,11 @@ import { formatMoney, intlLocale } from '@/lib/format';
 import { useChartPalette, useThemeColors } from '@/lib/theme';
 
 
+/** Round scale; while there is no money yet, 0 – 1,000 MAD instead of a row of "0" labels (centimes). */
+export function moneyDomain(rows: { revenue: number; expenses: number }[]): [number, number | 'auto'] {
+  return rows.some((r) => r.revenue > 0 || r.expenses > 0) ? [0, 'auto'] : [0, 100_000];
+}
+
 function useMoney() {
   const locale = useLocale();
   const compact = new Intl.NumberFormat(intlLocale(locale), {
@@ -54,6 +59,8 @@ export function RevenueExpensesChart({ months }: { months: FinanceDashboardDto['
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
           <YAxis
+            domain={moneyDomain(data)}
+            allowDecimals={false}
             tickFormatter={money.axis}
             tickLine={false}
             axisLine={false}

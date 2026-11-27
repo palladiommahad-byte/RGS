@@ -192,7 +192,7 @@ export class TaxesService {
     const r = await this.report(riadId, month);
     const riad = await this.prisma.riad.findUniqueOrThrow({ where: { id: riadId } });
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Riad Manager';
+    wb.creator = 'EvoRiad';
     const mad = (c: number) => c / 100;
     const head = (sheet: ExcelJS.Worksheet) => {
       const row = sheet.getRow(1);

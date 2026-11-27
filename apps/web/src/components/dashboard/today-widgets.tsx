@@ -10,6 +10,7 @@ import { StayStatusBadge } from '@/components/status-badges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { formatDate, formatMoney, intlLocale } from '@/lib/format';
+import { moneyDomain } from '@/components/finance/charts';
 import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +58,7 @@ export function RevenueOverview({ months, className }: { months: FinanceDashboar
               </defs>
               <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" />
               <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} tick={{ fill: 'var(--muted-foreground)' }} />
-              <YAxis tickFormatter={(v: number) => compact.format(v / 100)} tickLine={false} axisLine={false} fontSize={12} width={44} tick={{ fill: 'var(--muted-foreground)' }} />
+              <YAxis domain={moneyDomain(data)} allowDecimals={false} tickFormatter={(v: number) => compact.format(v / 100)} tickLine={false} axisLine={false} fontSize={12} width={44} tick={{ fill: 'var(--muted-foreground)' }} />
               <Tooltip
                 formatter={(v) => formatMoney(Number(v), locale)}
                 contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', fontSize: 12 }}

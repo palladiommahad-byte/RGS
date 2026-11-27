@@ -25,13 +25,13 @@ export function initials(name: string): string {
 const panel =
   'z-50 rounded-2xl border bg-popover text-popover-foreground shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
 const roundButton =
-  'relative flex size-11 items-center justify-center rounded-full bg-muted/70 text-foreground/80 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent';
+  'relative flex size-9 items-center justify-center rounded-full bg-muted/70 text-foreground/80 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent';
 
 /** Top-right of every staff page: language, the notification center and the account menu. */
 export function TopBarActions() {
   const { can } = useAuth();
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <LanguageMenu />
       {can('stays.read', 'rooms.read', 'expenses.read_all', 'expenses.write_petty_cash') && (
         <NotificationCenter
@@ -62,14 +62,14 @@ function UserMenu() {
           className="flex items-center gap-2 rounded-full p-0.5 pe-2 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent"
           aria-label={t('common.account')}
         >
-          <span className="flex size-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground ring-2 ring-background">
+          <span className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground ring-2 ring-background">
             {initials(user.name)}
           </span>
           <span className="hidden min-w-0 text-start leading-tight lg:block">
-            <span className="block max-w-40 truncate text-sm font-medium">{user.name}</span>
-            <span className="block text-xs text-muted-foreground">{roleName}</span>
+            <span className="block max-w-40 truncate text-[13px] font-medium">{user.name}</span>
+            <span className="block text-[11px] text-muted-foreground">{roleName}</span>
           </span>
-          <ChevronDown className="hidden size-4 text-muted-foreground lg:block" aria-hidden />
+          <ChevronDown className="hidden size-3.5 text-muted-foreground lg:block" aria-hidden />
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content align="end" sideOffset={8} collisionPadding={12} className={cn(panel, 'w-64 p-1.5')}>

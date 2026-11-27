@@ -45,7 +45,7 @@
     "invalid": "E-mail ou mot de passe incorrect.",
     "tooMany": "Trop de tentatives. Réessayez dans quelques minutes.",
     "error": "Une erreur est survenue. Réessayez.",
-    "appName": "Riad Manager",
+    "appName": "EvoRiad",
     "badge": "Système interne du riad",
     "headline1": "Chaque séjour,",
     "headline2": "bien tenu.",
@@ -68,7 +68,7 @@
     "secure": "Connexion sécurisée · Les comptes sont créés par la direction"
   },
   "nav": {
-    "today": "Aujourd'hui",
+    "today": "Tableau de bord",
     "rooms": "Chambres",
     "stays": "Séjours",
     "guests": "Registre des clients",
@@ -925,7 +925,7 @@
     },
     "appearance": "Apparence",
     "themes": {
-      "teal": "Sarcelle",
+      "teal": "Vert",
       "blue": "Bleu roi"
     }
   },

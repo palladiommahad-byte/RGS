@@ -94,11 +94,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           aria-label={c ? t('common.expandMenu') : t('common.collapseMenu')}
           title={c ? t('common.expandMenu') : t('common.collapseMenu')}
           aria-expanded={!c}
-          className="absolute -end-3.5 top-7 z-10 hidden size-7 rounded-full bg-card shadow-sm max-lg:hidden lg:flex"
+          className="absolute -end-3.5 top-[18px] z-10 hidden size-7 rounded-full bg-card shadow-sm max-lg:hidden lg:flex"
         >
           <ChevronsLeft className={cn('size-4 text-primary transition-transform', c ? 'rotate-180 rtl:rotate-0' : 'rtl:rotate-180')} />
         </Button>
-        <div className={cn('flex h-20 items-center justify-between gap-2 px-5', c && 'lg:justify-center lg:px-0 lg:[&>span>span:last-child]:hidden')}>
+        <div className={cn('flex h-14 items-center justify-between gap-2 px-5 lg:h-16', c && 'lg:justify-center lg:px-0 lg:[&>span>span:last-child]:hidden')}>
           <BrandMark name={user.riad.name} logoVersion={user.riad.logoVersion} />
           <Button
             variant="ghost"
@@ -131,7 +131,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div className={cn('transition-[padding] lg:ps-64 print:ps-0', c && 'lg:ps-[76px]')}>
         {/* A bar of its own: white, with a line and a soft shadow, above the grey page. */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card/95 px-4 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] backdrop-blur lg:h-[72px] lg:px-8 print:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card/95 px-4 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] backdrop-blur lg:h-16 lg:px-8 print:hidden">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label={t('common.openMenu')}>
             <Menu />
           </Button>
@@ -144,7 +144,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <TopBarActions />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1440px] p-4 md:px-8 md:pt-2 md:pb-8 print:p-0">{children}</main>
+        {/* Full width: pages use the whole screen beside the sidebar. */}
+        <main className="w-full p-4 md:px-8 md:pt-2 md:pb-8 print:p-0">{children}</main>
       </div>
     </div>
   );
@@ -165,14 +166,14 @@ function TopSearch() {
         router.push(term ? `/dashboard/stays?q=${encodeURIComponent(term)}` : '/dashboard/stays');
       }}
     >
-      <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-primary" aria-hidden />
+      <Search className="pointer-events-none absolute start-3 top-1/2 size-[15px] -translate-y-1/2 text-primary" aria-hidden />
       <input
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={t('common.searchStays')}
         aria-label={t('common.searchStays')}
-        className="h-11 w-full rounded-xl border border-transparent bg-muted/60 ps-10 pe-3 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:bg-muted focus-visible:border-ring focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/40"
+        className="h-9 w-full rounded-lg border border-transparent bg-muted/60 ps-9 pe-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground hover:bg-muted focus-visible:border-ring focus-visible:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/40"
       />
     </form>
   );

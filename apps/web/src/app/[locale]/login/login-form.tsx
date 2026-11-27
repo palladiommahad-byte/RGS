@@ -1,5 +1,6 @@
 'use client';
 
+import { AppLogo } from '@/components/app-logo';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -47,7 +48,7 @@ export function LoginForm() {
   return (
     <div className="relative flex w-full max-w-sm flex-col gap-8">
       <div className="flex items-start justify-between gap-3">
-        <img src="/brand/riad-manager-logo.png" alt={t('appName')} className="h-16 w-auto sm:h-20" />
+        <AppLogo alt={t('appName')} className="h-12 w-auto sm:h-14" />
         <LanguageMenu className="h-10 shadow-xs sm:h-10" />
       </div>
 

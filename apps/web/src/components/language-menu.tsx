@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 const panel =
   'z-50 rounded-2xl border bg-popover text-popover-foreground shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95';
 const roundButton =
-  'relative flex size-11 items-center justify-center rounded-full bg-muted/70 text-foreground/80 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent';
+  'relative flex size-9 items-center justify-center rounded-full bg-muted/70 text-foreground/80 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent';
 
 /** Compact language picker (globe + code, list on click). Keeps the page and its query string. */
 export function LanguageMenu({
@@ -30,12 +30,12 @@ export function LanguageMenu({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className={cn(roundButton, 'gap-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 data-[state=open]:bg-sky-100 sm:w-auto sm:px-3.5', className)}
+        className={cn(roundButton, 'gap-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 data-[state=open]:bg-sky-100 sm:w-auto sm:px-3', className)}
         aria-label={`${t('common.language')}: ${t(`localeNames.${current}`)}`}
         title={t('common.language')}
       >
-        <Globe className="hidden size-[18px] sm:block" aria-hidden />
-        <span className="text-sm font-semibold" lang={current}>
+        <Globe className="hidden size-4 sm:block" aria-hidden />
+        <span className="text-[13px] font-semibold" lang={current}>
           {short(current)}
         </span>
         <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" aria-hidden />

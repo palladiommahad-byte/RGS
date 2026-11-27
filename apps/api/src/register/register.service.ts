@@ -118,7 +118,7 @@ export class RegisterService {
     }
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Riad Manager';
+    wb.creator = 'EvoRiad';
     const sheet = wb.addWorksheet('Registre', { views: [{ state: 'frozen', ySplit: 1 }] });
     sheet.columns = COLUMNS.map((c) => ({ header: c.header, width: c.width }));
     sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };

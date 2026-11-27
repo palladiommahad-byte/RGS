@@ -2,39 +2,44 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant theme-blue (&:where([data-theme='blue'] *));
 
-/* Brand: deep teal on soft grey-green neutrals, white cards. */
+/*
+ * Default theme ("Green", key 'teal'): the green of the EvoRiad logo, #3B793A, on
+ * EvoTech's neutrals (near-white page, white cards, slate text, light grey lines).
+ * The "teal" ramp names are the brand ramp: every theme redefines them.
+ */
 :root {
   --radius: 0.75rem;
-  --background: #ecf1ef;
-  --foreground: #14211f;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #14211f;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #14211f;
-  --primary: #134e48;
-  --primary-hover: #0f413c;
+  --popover-foreground: #0f172a;
+  --primary: #3b793a;
+  --primary-hover: #316630;
   --primary-foreground: #ffffff;
-  --secondary: #e2ebe8;
-  --secondary-foreground: #1d3b37;
-  --muted: #f0f4f3;
-  --muted-foreground: #5a6b67;
-  --accent: #dfeae7;
-  --accent-foreground: #134e48;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #eef6ee;
+  --accent-foreground: #2f632e;
   --destructive: #c2410c;
-  --border: #d5dfdc;
-  --input: #c7d3d0;
-  --ring: #2f7a70;
-  /* Teal ramp for charts, calendar bars and highlights (dark -> light). */
-  --teal-900: #134e48;
-  --teal-800: #18564f;
-  --teal-700: #2e6b63;
-  --teal-500: #5c948b;
-  --teal-300: #9fc4bd;
-  --teal-100: #dcebe8;
-  --teal-50: #eef6f4;
+  --border: #e5e7eb;
+  --input: #dcdfe4;
+  --ring: #5a9a59;
+  /* Brand ramp for charts, calendar bars and highlights (dark -> light). */
+  --teal-900: #2f632e;
+  --teal-800: #356e34;
+  --teal-700: #4a8a49;
+  --teal-500: #6fa56e;
+  --teal-300: #a9cca8;
+  --teal-100: #e1efe1;
+  --teal-50: #f1f8f1;
   /* Very dark brand shade (login panel). */
-  --brand-ink: #0b1f1c;
+  --brand-ink: #0c1f0e;
 }
 
 /*
@@ -43,20 +48,21 @@
  * Chart colours mirror these in lib/theme.ts.
  */
 :root[data-theme='blue'] {
-  --background: #eef1f7;
-  --foreground: #121a2e;
-  --card-foreground: #121a2e;
-  --popover-foreground: #121a2e;
+  /* Neutrals as in EvoTech: near-white page, white cards, slate text, light grey lines. */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-foreground: #0f172a;
+  --popover-foreground: #0f172a;
   --primary: #1d4fd7;
   --primary-hover: #1840b3;
-  --secondary: #e3e9f6;
-  --secondary-foreground: #1b2c5a;
-  --muted: #f1f4fa;
-  --muted-foreground: #5a6478;
-  --accent: #e1e8fb;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #eef3fe;
   --accent-foreground: #1d4fd7;
-  --border: #d5dceb;
-  --input: #c6cfe2;
+  --border: #e5e7eb;
+  --input: #dcdfe4;
   --ring: #4f78e6;
   --teal-900: #1d4fd7;
   --teal-800: #1a45bd;
@@ -69,7 +75,14 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  /* Type scale as in EvoTech: small text a touch open, large text a touch tight. */
+  --text-xs--letter-spacing: 0.01em;
+  --text-sm--letter-spacing: 0.01em;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl--letter-spacing: -0.02em;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -109,9 +122,17 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    line-height: 1.5;
+    font-feature-settings: 'kern' 1;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
   }
   html[lang='ar'] body {
-    font-family: var(--font-plex-arabic), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-plex-arabic), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   }
 }
 

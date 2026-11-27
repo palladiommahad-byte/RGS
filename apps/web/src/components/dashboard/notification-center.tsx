@@ -48,9 +48,9 @@ export function NotificationCenter({ buttonClassName, panelClassName }: { button
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger className={buttonClassName} aria-label={unread ? t('labelUnread', { count: unread }) : t('title')}>
-        <Bell className="size-5" aria-hidden />
+        <Bell className="size-[18px]" aria-hidden />
         {unread > 0 && (
-          <span className="absolute -end-0.5 -top-0.5 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] leading-5 font-semibold text-white ring-2 ring-background">
+          <span className="absolute -end-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] leading-4 font-semibold text-white ring-2 ring-background">
             {unread > 99 ? '99+' : unread}
           </span>
         )}

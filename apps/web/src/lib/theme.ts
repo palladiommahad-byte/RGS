@@ -9,7 +9,7 @@ import { useSyncExternalStore } from 'react';
  * Keep both in step.
  */
 export const THEME_COLORS: Record<AppTheme, { swatch: string; c900: string; c700: string; c500: string; c300: string }> = {
-  teal: { swatch: '#134e48', c900: '#134e48', c700: '#2e6b63', c500: '#5c948b', c300: '#9fc4bd' },
+  teal: { swatch: '#3b793a', c900: '#3b793a', c700: '#4a8a49', c500: '#6fa56e', c300: '#a9cca8' },
   blue: { swatch: '#1d4fd7', c900: '#1d4fd7', c700: '#3864e0', c500: '#6e8fea', c300: '#a8bdf3' },
 };
 
@@ -36,7 +36,18 @@ export function applyTheme(theme: AppTheme): void {
   } catch {
     // private browsing: the riad setting still applies on the next load
   }
+  setTabIcon(theme);
   listeners.forEach((l) => l());
+}
+
+/** The browser-tab icon follows the theme too (app/icon.png is the green one). */
+function setTabIcon(theme: AppTheme): void {
+  const links = document.querySelectorAll<HTMLLinkElement>('link[rel="icon"]');
+  links.forEach((link) => {
+    link.dataset.green ??= link.href;
+    link.type = theme === 'blue' ? 'image/svg+xml' : 'image/png';
+    link.href = theme === 'blue' ? '/brand/evoriad-mark-blue.svg' : link.dataset.green;
+  });
 }
 
 function subscribe(listener: () => void) {

@@ -2,12 +2,13 @@ import { THEME_BOOT_SCRIPT } from '@/lib/theme';
 import type { Metadata, Viewport } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { IBM_Plex_Sans_Arabic, Inter } from 'next/font/google';
+import { IBM_Plex_Sans_Arabic, Plus_Jakarta_Sans } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { isRtl, routing } from '@/i18n/routing';
 import '../globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+// Same typeface as EvoTech, so both apps read alike.
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-jakarta', display: 'swap' });
 const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
   weight: ['400', '500', '600', '700'],
@@ -16,7 +17,7 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Riad Manager', template: '%s · Riad Manager' },
+  title: { default: 'EvoRiad', template: '%s · EvoRiad' },
 };
 
 export const viewport: Viewport = {
@@ -25,7 +26,7 @@ export const viewport: Viewport = {
   // Lets the layout use env(safe-area-inset-*) on phones with a notch / home bar.
   viewportFit: 'cover',
   // Phone browser bar in the page background colour.
-  themeColor: '#f3f6f5',
+  themeColor: '#f8fafc',
 };
 
 export function generateStaticParams() {
@@ -47,7 +48,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={isRtl(locale) ? 'rtl' : 'ltr'}
-      className={`${inter.variable} ${plexArabic.variable}`}
+      className={`${jakarta.variable} ${plexArabic.variable}`}
       suppressHydrationWarning
     >
       <head>
